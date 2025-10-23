@@ -8,11 +8,22 @@ class CoinCollectionApp {
         this.init();
     }
 
-    init() {
-        this.loadData();
+    async init() {
         this.setupEventListeners();
         this.populateCountrySelect();
+        
+        // Wait for Firebase to be ready
+        await this.waitForFirebase();
+        await this.loadData();
         this.renderMainScreen();
+    }
+    
+    async waitForFirebase() {
+        let attempts = 0;
+        while (!window.db && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
     }
 
     setupEventListeners() {
@@ -366,7 +377,7 @@ class CoinCollectionApp {
         if (window.db) {
             try {
                 await window.firestore.addDoc(window.firestore.collection(window.db, 'coins'), item);
-                this.items.push(item);
+                // Real-time listener will update this.items automatically
             } catch (error) {
                 console.error('Error adding item:', error);
                 // Fallback to localStorage
@@ -408,12 +419,14 @@ class CoinCollectionApp {
         }
         
         try {
-            const querySnapshot = await window.firestore.getDocs(window.firestore.collection(window.db, 'coins'));
-            this.items = [];
-            querySnapshot.forEach((doc) => {
-                this.items.push({ id: doc.id, ...doc.data() });
+            // Set up real-time listener
+            window.firestore.onSnapshot(window.firestore.collection(window.db, 'coins'), (querySnapshot) => {
+                this.items = [];
+                querySnapshot.forEach((doc) => {
+                    this.items.push({ id: doc.id, ...doc.data() });
+                });
+                this.renderMainScreen();
             });
-            this.renderMainScreen();
         } catch (error) {
             console.error('Error loading data:', error);
             // Fallback to localStorage
