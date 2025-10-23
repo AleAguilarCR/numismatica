@@ -4,6 +4,7 @@ class CoinCollectionApp {
     constructor() {
         this.items = [];
         this.currentScreen = 'main';
+        this.previousScreen = 'main';
         this.init();
     }
 
@@ -25,6 +26,9 @@ class CoinCollectionApp {
         document.getElementById('backFromCountry').addEventListener('click', () => this.showScreen('main'));
         document.getElementById('backFromContinents').addEventListener('click', () => this.showScreen('main'));
         document.getElementById('backFromEdit').addEventListener('click', () => this.showScreen('country'));
+        
+        // Título como botón home
+        document.getElementById('appTitle').addEventListener('click', () => this.showScreen('main'));
 
         // Formulario agregar
         document.getElementById('addForm').addEventListener('submit', (e) => this.handleAddItem(e));
@@ -43,6 +47,9 @@ class CoinCollectionApp {
     }
 
     showScreen(screenName) {
+        // Guardar pantalla anterior
+        this.previousScreen = this.currentScreen;
+        
         // Ocultar todas las pantallas
         document.querySelectorAll('.screen, .main-screen').forEach(screen => {
             screen.classList.add('hidden');
@@ -52,6 +59,12 @@ class CoinCollectionApp {
         if (screenName === 'main') {
             document.getElementById('mainScreen').classList.remove('hidden');
             this.renderMainScreen();
+        } else if (screenName === 'country') {
+            document.getElementById('countryScreen').classList.remove('hidden');
+            // Refrescar lista si venimos de editar
+            if (this.previousScreen === 'edit') {
+                this.showCountryItems(this.currentCountryCode);
+            }
         } else {
             document.getElementById(screenName + 'Screen').classList.remove('hidden');
         }
@@ -101,6 +114,7 @@ class CoinCollectionApp {
     }
 
     showCountryItems(countryCode) {
+        this.currentCountryCode = countryCode;
         const country = COUNTRIES[countryCode];
         const countryItems = this.items.filter(item => item.countryCode === countryCode);
 
@@ -248,7 +262,7 @@ class CoinCollectionApp {
         this.showScreen('edit');
     }
 
-    handleEditItem(event) {
+    async handleEditItem(event) {
         event.preventDefault();
         
         if (!this.currentEditingItem) return;
@@ -276,17 +290,38 @@ class CoinCollectionApp {
             };
         }
         
-        this.saveData();
+        if (window.db) {
+            try {
+                const docRef = window.firestore.doc(window.db, 'coins', this.currentEditingItem.id);
+                await window.firestore.updateDoc(docRef, this.items[itemIndex]);
+            } catch (error) {
+                console.error('Error updating item:', error);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            }
+        } else {
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+        }
         this.currentEditingItem = null;
         this.showScreen('country');
     }
 
-    deleteItem() {
+    async deleteItem() {
         if (!this.currentEditingItem) return;
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
-            this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
-            this.saveData();
+            if (window.db) {
+                try {
+                    await window.firestore.deleteDoc(window.firestore.doc(window.db, 'coins', this.currentEditingItem.id));
+                    this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                } catch (error) {
+                    console.error('Error deleting item:', error);
+                    this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                }
+            } else {
+                this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            }
             this.currentEditingItem = null;
             this.showScreen('main');
         }
@@ -303,7 +338,7 @@ class CoinCollectionApp {
         });
     }
 
-    handleAddItem(event) {
+    async handleAddItem(event) {
         event.preventDefault();
         
         const formData = new FormData(event.target);
@@ -328,8 +363,20 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        this.items.push(item);
-        this.saveData();
+        if (window.db) {
+            try {
+                await window.firestore.addDoc(window.firestore.collection(window.db, 'coins'), item);
+                this.items.push(item);
+            } catch (error) {
+                console.error('Error adding item:', error);
+                // Fallback to localStorage
+                this.items.push(item);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            }
+        } else {
+            this.items.push(item);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+        }
         
         // Limpiar formulario
         event.target.reset();
@@ -339,21 +386,41 @@ class CoinCollectionApp {
         delete photoPreviewBack.dataset.photo;
         document.getElementById('catalogLink').value = '';
         
-        this.showScreen('main');
+        this.showScreen(this.previousScreen);
     }
 
     searchByImage() {
         alert('Función de búsqueda por imagen próximamente. Se integrará con APIs de reconocimiento de monedas.');
     }
 
-    saveData() {
-        localStorage.setItem('coinCollection', JSON.stringify(this.items));
+    async saveData() {
+        // Firebase will handle saving automatically
     }
 
-    loadData() {
-        const saved = localStorage.getItem('coinCollection');
-        if (saved) {
-            this.items = JSON.parse(saved);
+    async loadData() {
+        if (!window.db) {
+            console.log('Firebase not ready, using localStorage');
+            const saved = localStorage.getItem('coinCollection');
+            if (saved) {
+                this.items = JSON.parse(saved);
+            }
+            return;
+        }
+        
+        try {
+            const querySnapshot = await window.firestore.getDocs(window.firestore.collection(window.db, 'coins'));
+            this.items = [];
+            querySnapshot.forEach((doc) => {
+                this.items.push({ id: doc.id, ...doc.data() });
+            });
+            this.renderMainScreen();
+        } catch (error) {
+            console.error('Error loading data:', error);
+            // Fallback to localStorage
+            const saved = localStorage.getItem('coinCollection');
+            if (saved) {
+                this.items = JSON.parse(saved);
+            }
         }
     }
 }
