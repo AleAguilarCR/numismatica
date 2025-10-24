@@ -747,11 +747,13 @@ class CoinCollectionApp {
     }
     
     async searchNumistaAPI(keywords) {
+        console.log('Buscando en Numista con palabras clave:', keywords);
         const results = [];
         
-        for (const keyword of keywords.slice(0, 3)) { // Máximo 3 búsquedas
+        for (const keyword of keywords.slice(0, 3)) {
             try {
                 const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(keyword)}&lang=es&per_page=5`;
+                console.log('URL de búsqueda:', searchUrl);
                 
                 const response = await fetch(searchUrl, {
                     headers: {
@@ -760,8 +762,11 @@ class CoinCollectionApp {
                     }
                 });
                 
+                console.log(`Respuesta para '${keyword}':`, response.status, response.statusText);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log(`Datos recibidos para '${keyword}':`, data);
                     
                     if (data.coins && data.coins.length > 0) {
                         data.coins.forEach(coin => {
@@ -778,20 +783,26 @@ class CoinCollectionApp {
                             });
                         });
                     }
+                } else {
+                    console.error(`Error HTTP ${response.status} para '${keyword}':`, await response.text());
                 }
             } catch (error) {
                 console.error(`Error buscando '${keyword}':`, error);
             }
         }
         
-        // Eliminar duplicados y ordenar por confianza
+        console.log('Resultados totales encontrados:', results.length);
+        
         const uniqueResults = results.filter((result, index, self) => 
             index === self.findIndex(r => r.link === result.link)
         );
         
-        return uniqueResults
+        const finalResults = uniqueResults
             .sort((a, b) => b.confidence - a.confidence)
             .slice(0, 5);
+            
+        console.log('Resultados finales:', finalResults);
+        return finalResults;
     }
     
     calculateConfidence(searchKeyword, coin, allKeywords) {
