@@ -841,6 +841,23 @@ class CoinCollectionApp {
                 currency: 'euro',
                 type: 'billete'
             },
+            // Lempiras hondureñas
+            'lempira': {
+                patterns: [
+                    /(?:cien|100)\s*lempira/,
+                    /(?:cincuenta|50)\s*lempira/,
+                    /(?:veinte|20)\s*lempira/,
+                    /(?:diez|10)\s*lempira/,
+                    /(?:cinco|5)\s*lempira/,
+                    /(?:un|1)\s*lempira/,
+                    /(\d+)\s*lempira/,
+                    /(?:diez|10)\s*centavos.*lempira/,
+                    /(?:cinco|5)\s*centavos.*lempira/,
+                    /(\d+)\s*centavos.*lempira/
+                ],
+                currency: 'lempira',
+                type: 'moneda'
+            },
             // Pesos
             'peso': {
                 patterns: [
@@ -982,7 +999,7 @@ class CoinCollectionApp {
                                 type: this.mapNumistaCategory(type.category) || coinInfo.type,
                                 denomination: `${type.value || ''} ${type.currency || coinInfo.denomination || ''}`.trim(),
                                 description: type.composition || type.obverse || 'Información de Numista',
-                                link: `https://numista.com/catalogue/pieces${type.id}.html`,
+                                link: type.id ? `https://en.numista.com/catalogue/pieces${type.id}.html` : `https://numista.com/catalogue/index.php?mode=simplifie&p=1&r=${encodeURIComponent(coinInfo.country || '')}&e=y&d=${encodeURIComponent(coinInfo.denomination || '')}&ca=3&no=${coinInfo.year || ''}`,
                                 confidence: confidence,
                                 strategy: strategy.name
                             });
@@ -1147,7 +1164,7 @@ class CoinCollectionApp {
             type: coinInfo.type,
             denomination: coinInfo.denomination || 'Valor desconocido',
             description: `${coinInfo.type === 'billete' ? 'Billete' : 'Moneda'} identificada automáticamente`,
-            link: 'https://numista.com/catalogue/',
+            link: `https://numista.com/catalogue/index.php?mode=simplifie&p=1&r=${encodeURIComponent(coinInfo.country || '')}&e=y&d=${encodeURIComponent(coinInfo.denomination || '')}&ca=3&no=${coinInfo.year || ''}`,
             confidence: 75
         };
         
@@ -1197,7 +1214,7 @@ class CoinCollectionApp {
             type: type,
             denomination: denomination,
             description: `${type === 'billete' ? 'Billete' : 'Moneda'} identificada automáticamente`,
-            link: 'https://numista.com/catalogue/',
+            link: `https://numista.com/catalogue/index.php?mode=simplifie&p=1&r=${encodeURIComponent(country)}&e=y&d=${encodeURIComponent(denomination)}&ca=3&no=${year !== 'Desconocido' ? year : ''}`,
             confidence: 75
         });
         

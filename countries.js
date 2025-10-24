@@ -81,6 +81,7 @@ const COUNTRIES = {
     'GL': { name: 'Groenlandia', flag: '🇬🇱', continent: 'América del Norte' },
     'GP': { name: 'Guadalupe', flag: '🇬🇵', continent: 'América del Norte' },
     'GT': { name: 'Guatemala', flag: '🇬🇹', continent: 'América del Norte' },
+    'HN': { name: 'Honduras', flag: '🇭🇳', continent: 'América del Norte' },
     'GG': { name: 'Guernsey', flag: '🇬🇬', continent: 'Europa' },
     'GN': { name: 'Guinea', flag: '🇬🇳', continent: 'África' },
     'GQ': { name: 'Guinea Ecuatorial', flag: '🇬🇶', continent: 'África' },
