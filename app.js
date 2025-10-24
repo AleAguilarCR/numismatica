@@ -710,9 +710,22 @@ class CoinCollectionApp {
         }
         
         // Detectar denominación y tipo
-        if (text.includes('cinco colones') || (text.includes('5') && text.includes('colones'))) {
+        if (text.includes('mil') && text.includes('colones')) {
+            info.denomination = '1000 colones';
+            info.type = 'billete';
+        } else if (text.includes('cinco colones') || (text.includes('5') && text.includes('colones'))) {
             info.denomination = '5 colones';
             info.type = 'billete';
+        } else if (text.includes('1000') && text.includes('colones')) {
+            info.denomination = '1000 colones';
+            info.type = 'billete';
+        } else if (text.includes('colones')) {
+            // Buscar número antes de colones
+            const match = text.match(/(\d+).*colones/);
+            if (match) {
+                info.denomination = `${match[1]} colones`;
+                info.type = 'billete';
+            }
         } else if (text.includes('dollar')) {
             info.denomination = 'dollar';
         } else if (text.includes('peso')) {
