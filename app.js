@@ -1248,6 +1248,11 @@ class CoinCollectionApp {
         this.showManualNumistaForm(url);
     }
     
+    // Funciones eliminadas para evitar problemas CORS
+    fetchNumistaData() { return null; }
+    extractNumistaInfo() { return null; }
+    displayNumistaPreview() { return null; }
+    
     showManualNumistaForm(url) {
         const preview = document.getElementById('numistaPreview');
         preview.innerHTML = `
@@ -1330,219 +1335,7 @@ class CoinCollectionApp {
     
 
     
-    extractNumistaInfo(doc, url, htmlText = null) {
-        if (!htmlText) {
-            htmlText = doc.documentElement.innerHTML;
-        }
-        const info = {
-            title: '',
-            type: 'moneda',
-            country: '',
-            countryCode: '',
-            denomination: '',
-            year: '',
-            images: [],
-            catalogLink: url
-        };
-        
-        console.log('Extrayendo información de Numista...');
-        
-        // Extraer título usando regex más amplio
-        const titlePatterns = [
-            /<h1[^>]*>([^<]+)<\/h1>/i,
-            /<title[^>]*>([^<]+)<\/title>/i,
-            /class=["']coin-title["'][^>]*>([^<]+)</i
-        ];
-        
-        for (const pattern of titlePatterns) {
-            const match = htmlText.match(pattern);
-            if (match && match[1]) {
-                info.title = match[1].trim().replace(/\s+/g, ' ');
-                console.log('Título encontrado:', info.title);
-                break;
-            }
-        }
-        
-        // Log del HTML para debug
-        console.log('Buscando en HTML de longitud:', htmlText.length);
-        console.log('Muestra del HTML:', htmlText.substring(0, 500));
-        
-        // Buscar emisor con patrones más amplios
-        const issuerPatterns = [
-            /<td[^>]*>\s*Emisor\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /<td[^>]*>\s*Issuer\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /Emisor[\s\t]*([^\n\r<]+)/i,
-            /Issuer[\s\t]*([^\n\r<]+)/i,
-            /"issuer"[^>]*>([^<]+)</i,
-            /issuer["']?\s*:\s*["']([^"']+)["']/i
-        ];
-        
-        for (const pattern of issuerPatterns) {
-            const match = htmlText.match(pattern);
-            if (match && match[1]) {
-                const countryText = match[1].trim().replace(/\s+/g, ' ');
-                info.country = this.mapNumistaCountry(countryText);
-                info.countryCode = this.getCountryCode(info.country);
-                console.log('Emisor encontrado:', countryText, '->', info.country);
-                break;
-            }
-        }
-        
-        // Buscar valor con patrones más amplios
-        const valuePatterns = [
-            /<td[^>]*>\s*Valor\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /<td[^>]*>\s*Value\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /Valor[\s\t]*([^\n\r<\(]+)/i,
-            /Value[\s\t]*([^\n\r<\(]+)/i,
-            /"value"[^>]*>([^<]+)</i,
-            /value["']?\s*:\s*["']([^"']+)["']/i,
-            /face_value["']?\s*:\s*["']([^"']+)["']/i
-        ];
-        
-        for (const pattern of valuePatterns) {
-            const match = htmlText.match(pattern);
-            if (match && match[1]) {
-                info.denomination = match[1].trim().replace(/\s+/g, ' ');
-                console.log('Valor encontrado:', info.denomination);
-                break;
-            }
-        }
-        
-        // Buscar años con patrones más amplios
-        const yearPatterns = [
-            /<td[^>]*>\s*Años\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /<td[^>]*>\s*Years\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i,
-            /Años[\s\t]*([^\n\r<]+)/i,
-            /Years[\s\t]*([^\n\r<]+)/i,
-            /"year"[^>]*>([^<]+)</i,
-            /year["']?\s*:\s*["']?([^"'\n\r]+)["']?/i,
-            /(\d{4})[-–](\d{4})/g,
-            /(\d{4})/g
-        ];
-        
-        for (const pattern of yearPatterns) {
-            const match = htmlText.match(pattern);
-            if (match && match[1]) {
-                let yearText = match[1].trim().replace(/\s+/g, ' ');
-                // Si es un rango, tomar el primer año
-                const yearMatch = yearText.match(/(\d{4})/);
-                if (yearMatch) {
-                    info.year = yearMatch[1];
-                    console.log('Año encontrado:', info.year, 'del texto:', yearText);
-                    break;
-                }
-            }
-        }
-        
-        // Detectar tipo usando el formato específico de Numista
-        const typePatterns = [
-            /<td[^>]*>\s*Tipo\s*<\/td>\s*<td[^>]*>([^<]+)</i,
-            /<td[^>]*>\s*Type\s*<\/td>\s*<td[^>]*>([^<]+)</i,
-            /Tipo\s*([^\n\r]+)/i,
-            /Type\s*([^\n\r]+)/i
-        ];
-        
-        for (const pattern of typePatterns) {
-            const match = htmlText.match(pattern);
-            if (match && match[1]) {
-                const typeText = match[1].toLowerCase();
-                if (typeText.includes('billete') || typeText.includes('banknote') || typeText.includes('bill')) {
-                    info.type = 'billete';
-                    console.log('Tipo detectado: billete');
-                } else {
-                    info.type = 'moneda';
-                    console.log('Tipo detectado: moneda');
-                }
-                break;
-            }
-        }
-        
-        // Fallback: detectar por palabras clave
-        if (info.type === 'moneda' && (htmlText.toLowerCase().includes('banknote') || htmlText.toLowerCase().includes('billetes'))) {
-            info.type = 'billete';
-        }
-        
-        // Extraer imágenes de Numista
-        const imagePatterns = [
-            // Imágenes principales de Numista
-            /src\s*=\s*["']([^"']*\/images\/pieces\/[^"']*\.(jpg|jpeg|png|webp))["']/gi,
-            /src\s*=\s*["']([^"']*numista[^"']*\/[^"']*\.(jpg|jpeg|png|webp))["']/gi,
-            // Imágenes con obverse/reverse
-            /https?:\/\/[^\s"']*\/(obverse|reverse)[^\s"']*\.(jpg|jpeg|png|webp)/gi,
-            // Imágenes generales de monedas
-            /src\s*=\s*["']([^"']*\/(coin|piece|money)[^"']*\.(jpg|jpeg|png|webp))["']/gi
-        ];
-        
-        const foundImages = new Set();
-        
-        // Buscar imágenes usando los patrones
-        for (const pattern of imagePatterns) {
-            let match;
-            pattern.lastIndex = 0; // Reset regex
-            while ((match = pattern.exec(htmlText)) !== null) {
-                let imageUrl = match[1] || match[0];
-                
-                // Limpiar y validar URL
-                if (imageUrl && !imageUrl.includes('flag') && !imageUrl.includes('icon') && 
-                    !imageUrl.includes('avatar') && !imageUrl.includes('logo')) {
-                    
-                    // Convertir URLs relativas a absolutas
-                    if (imageUrl.startsWith('/')) {
-                        imageUrl = 'https://en.numista.com' + imageUrl;
-                    } else if (imageUrl.startsWith('//')) {
-                        imageUrl = 'https:' + imageUrl;
-                    }
-                    
-                    foundImages.add(imageUrl);
-                }
-            }
-        }
-        
-        // Buscar imágenes en elementos img específicos
-        const imgElements = doc.querySelectorAll('img');
-        imgElements.forEach(img => {
-            const src = img.src || img.getAttribute('src');
-            if (src && (src.includes('pieces') || src.includes('coin') || src.includes('obverse') || src.includes('reverse'))) {
-                let imageUrl = src;
-                if (imageUrl.startsWith('/')) {
-                    imageUrl = 'https://en.numista.com' + imageUrl;
-                }
-                foundImages.add(imageUrl);
-            }
-        });
-        
-        info.images = Array.from(foundImages).slice(0, 4);
-        console.log('Imágenes encontradas:', info.images.length, info.images);
-        
-        // Si no encontramos información, intentar con el título
-        if (!info.country && !info.denomination && info.title) {
-            console.log('Extrayendo información del título:', info.title);
-            const titleParts = info.title.split(/[-,\(\)]/);
-            
-            // Buscar país en el título
-            for (const part of titleParts) {
-                const cleanPart = part.trim();
-                for (const [code, countryData] of Object.entries(COUNTRIES)) {
-                    if (cleanPart.toLowerCase().includes(countryData.name.toLowerCase()) || 
-                        cleanPart.toLowerCase() === countryData.name.toLowerCase()) {
-                        info.country = countryData.name;
-                        info.countryCode = code;
-                        break;
-                    }
-                }
-                if (info.country) break;
-            }
-            
-            // Buscar denominación en el título
-            const denomMatch = info.title.match(/(\d+\s*\w+|\w+\s+\w+)/i);
-            if (denomMatch && !info.denomination) {
-                info.denomination = denomMatch[0];
-            }
-        }
-        
-        console.log('Información extraída:', info);
-        return info;
-    }
+
     
     mapNumistaCountry(numistaCountry) {
         // Limpiar el texto del país
@@ -1619,32 +1412,7 @@ class CoinCollectionApp {
         return cleanCountry;
     }
     
-    displayNumistaPreview(data) {
-        const preview = document.getElementById('numistaPreview');
-        
-        // Convertir imágenes a base64 para evitar problemas de CORS
-        const imagesHtml = data.images.slice(0, 2).map((img, index) => {
-            // Si la imagen es de Numista, usar proxy
-            const proxyImg = img.startsWith('http') ? 
-                `https://images.weserv.nl/?url=${encodeURIComponent(img)}&w=150&h=150&fit=contain` : img;
-            return `<img src="${proxyImg}" alt="Imagen ${index + 1}" style="max-width: 150px; margin: 5px; border-radius: 8px; border: 1px solid #ddd;" 
-                     onerror="this.style.display='none'">`;
-        }).join('');
-        
-        preview.innerHTML = `
-            <div class="numista-info">
-                <h3>${data.title || 'Sin título'}</h3>
-                <p><strong>Tipo:</strong> ${data.type}</p>
-                <p><strong>País:</strong> ${data.country || 'No detectado'}</p>
-                <p><strong>Denominación:</strong> ${data.denomination || 'No detectada'}</p>
-                <p><strong>Año:</strong> ${data.year || 'No detectado'}</p>
-                <div class="numista-images">${imagesHtml}</div>
-                <button class="btn btn-primary" onclick="app.importFromNumista()">Importar a Colección</button>
-            </div>
-        `;
-        
-        this.currentNumistaData = data;
-    }
+
     
     async importFromNumista() {
         if (!this.currentNumistaData) return;
