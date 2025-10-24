@@ -733,34 +733,22 @@ class CoinCollectionApp {
     }
     
     detectCountry(text) {
-        const countryPatterns = {
-            'Costa Rica': ['costa rica', 'costarica', 'banco central de costa rica'],
-            'Estados Unidos': ['united states', 'america', 'usa', 'united states of america', 'federal reserve'],
-            'México': ['mexico', 'estados unidos mexicanos', 'banco de mexico'],
-            'España': ['espana', 'spain', 'banco de espana'],
-            'Francia': ['france', 'republique francaise', 'banque de france'],
-            'Alemania': ['deutschland', 'germany', 'bundesrepublik deutschland'],
-            'Reino Unido': ['united kingdom', 'great britain', 'bank of england'],
-            'Canadá': ['canada', 'bank of canada'],
-            'Australia': ['australia', 'reserve bank of australia'],
-            'Japón': ['japan', 'nippon', 'bank of japan'],
-            'China': ['china', 'peoples republic of china'],
-            'Brasil': ['brasil', 'brazil', 'banco central do brasil'],
-            'Argentina': ['argentina', 'republica argentina', 'banco central'],
-            'Chile': ['chile', 'republica de chile', 'banco central de chile'],
-            'Perú': ['peru', 'republica del peru', 'banco central de reserva'],
-            'Colombia': ['colombia', 'republica de colombia', 'banco de la republica'],
-            'Venezuela': ['venezuela', 'republica bolivariana', 'banco central de venezuela'],
-            'Ecuador': ['ecuador', 'republica del ecuador', 'banco central del ecuador'],
-            'Uruguay': ['uruguay', 'republica oriental del uruguay'],
-            'Paraguay': ['paraguay', 'republica del paraguay']
-        };
-        
-        for (const [country, patterns] of Object.entries(countryPatterns)) {
-            for (const pattern of patterns) {
-                if (text.includes(pattern)) {
-                    console.log(`País detectado: ${country} (patrón: ${pattern})`);
-                    return country;
+        // Buscar directamente en la base de datos de países
+        for (const [code, countryData] of Object.entries(COUNTRIES)) {
+            const countryName = countryData.name.toLowerCase();
+            
+            // Buscar nombre completo del país
+            if (text.includes(countryName)) {
+                console.log(`País detectado: ${countryData.name} (${code})`);
+                return countryData.name;
+            }
+            
+            // Buscar variaciones comunes
+            const variations = this.getCountryVariations(countryName);
+            for (const variation of variations) {
+                if (text.includes(variation)) {
+                    console.log(`País detectado: ${countryData.name} (variación: ${variation})`);
+                    return countryData.name;
                 }
             }
         }
@@ -768,31 +756,31 @@ class CoinCollectionApp {
         return null;
     }
     
-    getCountryCode(country) {
-        const countryCodes = {
-            'Costa Rica': 'CR',
-            'Estados Unidos': 'US',
-            'México': 'MX',
-            'España': 'ES',
-            'Francia': 'FR',
-            'Alemania': 'DE',
-            'Reino Unido': 'GB',
-            'Canadá': 'CA',
-            'Australia': 'AU',
-            'Japón': 'JP',
-            'China': 'CN',
-            'Brasil': 'BR',
-            'Argentina': 'AR',
-            'Chile': 'CL',
-            'Perú': 'PE',
-            'Colombia': 'CO',
-            'Venezuela': 'VE',
-            'Ecuador': 'EC',
-            'Uruguay': 'UY',
-            'Paraguay': 'PY'
-        };
+    getCountryVariations(countryName) {
+        const variations = [];
         
-        return countryCodes[country] || 'XX';
+        // Agregar variaciones específicas según el país
+        if (countryName.includes('honduras')) {
+            variations.push('lempira', 'republica de honduras');
+        } else if (countryName.includes('costa rica')) {
+            variations.push('costarica', 'banco central de costa rica');
+        } else if (countryName.includes('estados unidos')) {
+            variations.push('united states', 'america', 'usa', 'federal reserve');
+        } else if (countryName.includes('méxico')) {
+            variations.push('mexico', 'estados unidos mexicanos');
+        }
+        
+        return variations;
+    }
+    
+    getCountryCode(country) {
+        // Buscar el código en la base de datos de países
+        for (const [code, countryData] of Object.entries(COUNTRIES)) {
+            if (countryData.name === country) {
+                return code;
+            }
+        }
+        return 'XX';
     }
     
     detectDenomination(text) {
