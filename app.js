@@ -551,17 +551,23 @@ class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
         
         try {
-            // Búsqueda simulada - Vision API completamente deshabilitada
-            console.log('Iniciando búsqueda simulada');
+            let visionResults;
             
-            // Simular análisis de imagen
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const visionResults = {
-                texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
-                objects: ['coin', 'currency', 'money'],
-                webEntities: ['currency', 'money', 'numismatics', 'collectible']
-            };
+            try {
+                // Intentar usar Google Vision API
+                console.log('Intentando usar Google Vision API...');
+                visionResults = await this.analyzeImageWithVision(this.searchImageData);
+                console.log('Vision API exitosa:', visionResults);
+            } catch (visionError) {
+                console.log('Vision API falló, usando búsqueda simulada:', visionError.message);
+                // Fallback a búsqueda simulada
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                visionResults = {
+                    texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
+                    objects: ['coin', 'currency', 'money'],
+                    webEntities: ['currency', 'money', 'numismatics', 'collectible']
+                };
+            }
             
             // Buscar en base de datos de monedas
             const coinResults = await this.searchCoinsDatabase(visionResults);
@@ -591,7 +597,70 @@ class CoinCollectionApp {
         }
     }
     
-    // Vision API completamente removida - solo búsqueda simulada
+    async analyzeImageWithVision(imageData) {
+        const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
+        const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+        
+        // Convertir imagen a base64 sin el prefijo data:image
+        const base64Image = imageData.split(',')[1];
+        
+        const requestBody = {
+            requests: [{
+                image: { content: base64Image },
+                features: [
+                    { type: 'TEXT_DETECTION', maxResults: 10 },
+                    { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
+                    { type: 'WEB_DETECTION', maxResults: 5 }
+                ]
+            }]
+        };
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Referer': 'https://aleaguilarcr.github.io/'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Vision API Error:', response.status, errorText);
+            throw new Error(`Vision API Error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        return this.processVisionResults(data);
+    }
+    
+    processVisionResults(visionData) {
+        const result = visionData.responses[0];
+        const extractedInfo = {
+            texts: [],
+            objects: [],
+            webEntities: []
+        };
+        
+        // Extraer texto detectado
+        if (result.textAnnotations) {
+            extractedInfo.texts = result.textAnnotations.map(text => text.description);
+        }
+        
+        // Extraer objetos detectados
+        if (result.localizedObjectAnnotations) {
+            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name);
+        }
+        
+        // Extraer entidades web
+        if (result.webDetection && result.webDetection.webEntities) {
+            extractedInfo.webEntities = result.webDetection.webEntities
+                .filter(entity => entity.score > 0.5)
+                .map(entity => entity.description);
+        }
+        
+        return extractedInfo;
+    }
     
     processVisionResults(visionData) {
         const result = visionData.responses[0];
