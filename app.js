@@ -661,23 +661,22 @@ class CoinCollectionApp {
     }
     
     async searchCoinsDatabase(visionResults) {
-        // Combinar todos los textos detectados
         const allTexts = [...visionResults.texts, ...visionResults.objects, ...visionResults.webEntities]
             .join(' ').toLowerCase();
         
         console.log('Textos detectados:', allTexts);
         
-        // Extraer palabras clave para búsqueda
-        const keywords = this.extractSearchKeywords(allTexts);
-        console.log('Palabras clave extraídas:', keywords);
+        // Analizar información de la moneda/billete
+        const coinInfo = this.analyzeCoinInfo(allTexts);
+        console.log('Información analizada:', coinInfo);
         
-        if (keywords.length === 0) {
-            return [];
+        if (!coinInfo.country && !coinInfo.denomination) {
+            return this.fallbackSearch(allTexts);
         }
         
         try {
-            // Buscar en Numista API
-            const results = await this.searchNumistaAPI(keywords);
+            // Buscar en Numista con parámetros específicos
+            const results = await this.searchNumistaWithParams(coinInfo);
             if (results.length > 0) {
                 return results;
             }
@@ -685,9 +684,124 @@ class CoinCollectionApp {
             console.error('Error buscando en Numista:', error);
         }
         
-        // Usar búsqueda local inteligente
-        console.log('Usando búsqueda local inteligente...');
-        return this.fallbackSearch(allTexts);
+        // Crear resultado basado en información detectada
+        return this.createResultFromAnalysis(coinInfo, allTexts);
+    }
+    
+    analyzeCoinInfo(text) {
+        const info = {
+            country: null,
+            countryCode: null,
+            denomination: null,
+            year: null,
+            type: 'moneda'
+        };
+        
+        // Detectar país
+        if (text.includes('costa rica')) {
+            info.country = 'Costa Rica';
+            info.countryCode = 'CR';
+        } else if (text.includes('united states') || text.includes('america')) {
+            info.country = 'Estados Unidos';
+            info.countryCode = 'US';
+        } else if (text.includes('mexico')) {
+            info.country = 'México';
+            info.countryCode = 'MX';
+        }
+        
+        // Detectar denominación y tipo
+        if (text.includes('cinco colones') || (text.includes('5') && text.includes('colones'))) {
+            info.denomination = '5 colones';
+            info.type = 'billete';
+        } else if (text.includes('dollar')) {
+            info.denomination = 'dollar';
+        } else if (text.includes('peso')) {
+            info.denomination = 'peso';
+        } else if (text.includes('euro')) {
+            info.denomination = 'euro';
+        }
+        
+        // Detectar año
+        const yearMatch = text.match(/\b(19|20)\d{2}\b/);
+        if (yearMatch) {
+            info.year = yearMatch[0];
+        }
+        
+        return info;
+    }
+    
+    async searchNumistaWithParams(coinInfo) {
+        const NUMISTA_API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
+        const results = [];
+        
+        // Construir consulta de búsqueda
+        let query = '';
+        if (coinInfo.denomination) query += coinInfo.denomination + ' ';
+        if (coinInfo.country) query += coinInfo.country + ' ';
+        if (coinInfo.year) query += coinInfo.year + ' ';
+        
+        query = query.trim();
+        if (!query) return [];
+        
+        console.log('Buscando en Numista:', query);
+        
+        try {
+            const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(query)}&lang=es&per_page=10`;
+            
+            const response = await fetch(searchUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Numista-API-Key': NUMISTA_API_KEY
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Respuesta de Numista:', data);
+                
+                if (data.coins && data.coins.length > 0) {
+                    data.coins.forEach(coin => {
+                        results.push({
+                            title: coin.title || `${coin.value} ${coin.currency}`,
+                            country: coin.issuer?.name || coinInfo.country || 'Desconocido',
+                            countryCode: coin.issuer?.code || coinInfo.countryCode || 'XX',
+                            year: coin.min_year || coin.max_year || coinInfo.year || 'Desconocido',
+                            type: coinInfo.type,
+                            denomination: `${coin.value || ''} ${coin.currency || coinInfo.denomination || ''}`.trim(),
+                            description: coin.composition || 'Información de Numista',
+                            link: `https://numista.com/catalogue/pieces${coin.id}.html`,
+                            confidence: 85
+                        });
+                    });
+                }
+            } else {
+                console.error('Error en Numista API:', response.status, await response.text());
+            }
+        } catch (error) {
+            console.error('Error consultando Numista:', error);
+        }
+        
+        return results.slice(0, 5);
+    }
+    
+    createResultFromAnalysis(coinInfo, allTexts) {
+        if (!coinInfo.country && !coinInfo.denomination) {
+            return this.fallbackSearch(allTexts);
+        }
+        
+        const result = {
+            title: `${coinInfo.denomination || 'Moneda'} - ${coinInfo.country || 'País desconocido'}`,
+            country: coinInfo.country || 'Desconocido',
+            countryCode: coinInfo.countryCode || 'XX',
+            year: coinInfo.year || 'Desconocido',
+            type: coinInfo.type,
+            denomination: coinInfo.denomination || 'Valor desconocido',
+            description: `${coinInfo.type === 'billete' ? 'Billete' : 'Moneda'} identificada automáticamente`,
+            link: 'https://numista.com/catalogue/',
+            confidence: 75
+        };
+        
+        return [result];
     }
     
     extractSearchKeywords(text) {
