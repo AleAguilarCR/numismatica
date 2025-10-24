@@ -569,7 +569,7 @@ class CoinCollectionApp {
                 };
             }
             
-            // Buscar en base de datos de monedas
+            // Buscar en Numista API
             const coinResults = await this.searchCoinsDatabase(visionResults);
             
             if (coinResults.length === 0) {
@@ -691,65 +691,146 @@ class CoinCollectionApp {
     }
     
     async searchCoinsDatabase(visionResults) {
-        // Base de datos simulada de monedas (en producción usarías una API real)
-        const coinsDatabase = [
-            {
-                title: 'Moneda de 1 Dólar Estadounidense',
-                country: 'Estados Unidos',
-                countryCode: 'US',
-                year: '2020',
-                type: 'moneda',
-                denomination: '1 Dollar',
-                keywords: ['dollar', 'liberty', 'united states', 'america', '1'],
-                description: 'Moneda de 1 dólar americano',
-                link: 'https://numista.com/catalogue/pieces1234.html'
-            },
-            {
-                title: 'Quarter Dollar - Estados Unidos',
-                country: 'Estados Unidos',
-                countryCode: 'US',
-                year: '2019',
-                type: 'moneda',
-                denomination: '25 Centavos',
-                keywords: ['quarter', 'liberty', 'united states', 'america', '25'],
-                description: 'Moneda de 25 centavos de dólar',
-                link: 'https://numista.com/catalogue/pieces5678.html'
-            },
-            {
-                title: 'Euro - Alemania',
-                country: 'Alemania',
-                countryCode: 'DE',
-                year: '2018',
-                type: 'moneda',
-                denomination: '1 Euro',
-                keywords: ['euro', 'deutschland', 'germany', 'europa', '1'],
-                description: 'Moneda de 1 euro alemán',
-                link: 'https://numista.com/catalogue/pieces9999.html'
-            }
-        ];
-        
         // Combinar todos los textos detectados
         const allTexts = [...visionResults.texts, ...visionResults.objects, ...visionResults.webEntities]
             .join(' ').toLowerCase();
         
-        // Buscar coincidencias
-        const matches = coinsDatabase.map(coin => {
-            let score = 0;
-            coin.keywords.forEach(keyword => {
-                if (allTexts.includes(keyword.toLowerCase())) {
-                    score += 1;
-                }
-            });
-            
-            return {
-                ...coin,
-                confidence: Math.min(Math.round((score / coin.keywords.length) * 100), 95)
-            };
-        }).filter(coin => coin.confidence > 20)
-          .sort((a, b) => b.confidence - a.confidence)
-          .slice(0, 3); // Top 3 resultados
+        console.log('Textos detectados:', allTexts);
         
-        return matches;
+        // Extraer palabras clave para búsqueda
+        const keywords = this.extractSearchKeywords(allTexts);
+        console.log('Palabras clave extraídas:', keywords);
+        
+        if (keywords.length === 0) {
+            return [];
+        }
+        
+        try {
+            // Buscar en Numista API
+            const results = await this.searchNumistaAPI(keywords);
+            return results;
+        } catch (error) {
+            console.error('Error buscando en Numista:', error);
+            // Fallback a búsqueda local básica
+            return this.fallbackSearch(allTexts);
+        }
+    }
+    
+    extractSearchKeywords(text) {
+        const keywords = [];
+        
+        // Países comunes
+        const countries = ['united states', 'america', 'usa', 'germany', 'deutschland', 'france', 'spain', 'mexico', 'canada', 'australia', 'japan', 'china', 'russia', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay'];
+        countries.forEach(country => {
+            if (text.includes(country)) keywords.push(country);
+        });
+        
+        // Denominaciones
+        const denominations = ['dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
+        denominations.forEach(denom => {
+            if (text.includes(denom)) keywords.push(denom);
+        });
+        
+        // Números
+        const numbers = text.match(/\b(\d{1,4})\b/g);
+        if (numbers) {
+            keywords.push(...numbers.slice(0, 3)); // Máximo 3 números
+        }
+        
+        // Palabras relacionadas con monedas
+        const coinWords = ['coin', 'liberty', 'republic', 'kingdom', 'empire', 'federal', 'national'];
+        coinWords.forEach(word => {
+            if (text.includes(word)) keywords.push(word);
+        });
+        
+        return [...new Set(keywords)]; // Eliminar duplicados
+    }
+    
+    async searchNumistaAPI(keywords) {
+        const results = [];
+        
+        for (const keyword of keywords.slice(0, 3)) { // Máximo 3 búsquedas
+            try {
+                const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(keyword)}&lang=es&per_page=5`;
+                
+                const response = await fetch(searchUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'CoinCollectionApp/1.0'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.coins && data.coins.length > 0) {
+                        data.coins.forEach(coin => {
+                            results.push({
+                                title: coin.title || `${coin.value} ${coin.currency}`,
+                                country: coin.issuer?.name || 'Desconocido',
+                                countryCode: coin.issuer?.code || 'XX',
+                                year: coin.min_year || coin.max_year || 'Desconocido',
+                                type: 'moneda',
+                                denomination: `${coin.value || ''} ${coin.currency || ''}`.trim(),
+                                description: coin.composition || 'Información no disponible',
+                                link: `https://numista.com/catalogue/pieces${coin.id}.html`,
+                                confidence: this.calculateConfidence(keyword, coin, keywords)
+                            });
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`Error buscando '${keyword}':`, error);
+            }
+        }
+        
+        // Eliminar duplicados y ordenar por confianza
+        const uniqueResults = results.filter((result, index, self) => 
+            index === self.findIndex(r => r.link === result.link)
+        );
+        
+        return uniqueResults
+            .sort((a, b) => b.confidence - a.confidence)
+            .slice(0, 5);
+    }
+    
+    calculateConfidence(searchKeyword, coin, allKeywords) {
+        let confidence = 30; // Base
+        
+        const coinText = `${coin.title} ${coin.issuer?.name} ${coin.value} ${coin.currency}`.toLowerCase();
+        
+        // Coincidencia con palabra de búsqueda
+        if (coinText.includes(searchKeyword.toLowerCase())) {
+            confidence += 40;
+        }
+        
+        // Coincidencias adicionales
+        allKeywords.forEach(keyword => {
+            if (coinText.includes(keyword.toLowerCase())) {
+                confidence += 10;
+            }
+        });
+        
+        return Math.min(confidence, 95);
+    }
+    
+    fallbackSearch(allTexts) {
+        // Búsqueda básica local como respaldo
+        const basicResults = [
+            {
+                title: 'Moneda no identificada',
+                country: 'Desconocido',
+                countryCode: 'XX',
+                year: 'Desconocido',
+                type: 'moneda',
+                denomination: 'Valor desconocido',
+                description: 'No se pudo identificar la moneda. Intenta con una imagen más clara.',
+                link: 'https://numista.com/catalogue/',
+                confidence: 25
+            }
+        ];
+        
+        return basicResults;
     }
     
     addSearchResultToCollection(resultIndex) {
