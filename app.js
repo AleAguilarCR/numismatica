@@ -744,7 +744,6 @@ class CoinCollectionApp {
     }
     
     async searchNumistaWithParams(coinInfo) {
-        const CLIENT_ID = '529122';
         const API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const results = [];
         
@@ -760,44 +759,40 @@ class CoinCollectionApp {
         console.log('Buscando en Numista:', query);
         
         try {
-            // Primero obtener token OAuth
-            const accessToken = await this.getNumistaAccessToken(CLIENT_ID, API_KEY);
-            
-            if (!accessToken) {
-                console.log('No se pudo obtener token de acceso');
-                return [];
-            }
-            
-            const searchUrl = `https://api.numista.com/api/v2/coins?q=${encodeURIComponent(query)}&lang=es&per_page=10`;
+            const searchUrl = `https://api.numista.com/v3/types?q=${encodeURIComponent(query)}&lang=es&count=10`;
+            console.log('URL de búsqueda:', searchUrl);
             
             const response = await fetch(searchUrl, {
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
+                    'Numista-API-Key': API_KEY
                 }
             });
+            
+            console.log('Respuesta HTTP:', response.status, response.statusText);
             
             if (response.ok) {
                 const data = await response.json();
                 console.log('Respuesta de Numista:', data);
                 
-                if (data.coins && data.coins.length > 0) {
-                    data.coins.forEach(coin => {
+                if (data.types && data.types.length > 0) {
+                    data.types.forEach(type => {
                         results.push({
-                            title: coin.title || `${coin.value} ${coin.currency}`,
-                            country: coin.issuer?.name || coinInfo.country || 'Desconocido',
-                            countryCode: coin.issuer?.code || coinInfo.countryCode || 'XX',
-                            year: coin.min_year || coin.max_year || coinInfo.year || 'Desconocido',
+                            title: type.title || `${type.value} ${type.currency}`,
+                            country: type.issuer?.name || coinInfo.country || 'Desconocido',
+                            countryCode: type.issuer?.code || coinInfo.countryCode || 'XX',
+                            year: type.min_year || type.max_year || coinInfo.year || 'Desconocido',
                             type: coinInfo.type,
-                            denomination: `${coin.value || ''} ${coin.currency || coinInfo.denomination || ''}`.trim(),
-                            description: coin.composition || 'Información de Numista',
-                            link: `https://numista.com/catalogue/pieces${coin.id}.html`,
+                            denomination: `${type.value || ''} ${type.currency || coinInfo.denomination || ''}`.trim(),
+                            description: type.composition || 'Información de Numista',
+                            link: `https://numista.com/catalogue/pieces${type.id}.html`,
                             confidence: 85
                         });
                     });
                 }
             } else {
-                console.error('Error en Numista API:', response.status, await response.text());
+                const errorText = await response.text();
+                console.error('Error en Numista API:', response.status, errorText);
             }
         } catch (error) {
             console.error('Error consultando Numista:', error);
@@ -806,34 +801,7 @@ class CoinCollectionApp {
         return results.slice(0, 5);
     }
     
-    async getNumistaAccessToken(clientId, apiKey) {
-        try {
-            const response = await fetch('https://api.numista.com/api/v2/oauth_token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    'grant_type': 'client_credentials',
-                    'client_id': clientId,
-                    'client_secret': apiKey,
-                    'scope': 'view_collection'
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Token OAuth obtenido:', data.access_token ? 'Sí' : 'No');
-                return data.access_token;
-            } else {
-                console.error('Error obteniendo token OAuth:', response.status, await response.text());
-                return null;
-            }
-        } catch (error) {
-            console.error('Error en autenticación OAuth:', error);
-            return null;
-        }
-    }
+
     
     createResultFromAnalysis(coinInfo, allTexts) {
         if (!coinInfo.country && !coinInfo.denomination) {
@@ -855,131 +823,7 @@ class CoinCollectionApp {
         return [result];
     }
     
-    extractSearchKeywords(text) {
-        const keywords = [];
-        
-        console.log('Texto para extracción:', text);
-        
-        // Países comunes
-        const countries = ['costa rica', 'united states', 'america', 'usa', 'germany', 'deutschland', 'france', 'spain', 'mexico', 'canada', 'australia', 'japan', 'china', 'russia', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay'];
-        countries.forEach(country => {
-            if (text.includes(country)) {
-                keywords.push(country);
-                console.log('País detectado:', country);
-            }
-        });
-        
-        // Denominaciones
-        const denominations = ['colones', 'cinco colones', 'dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
-        denominations.forEach(denom => {
-            if (text.includes(denom)) {
-                keywords.push(denom);
-                console.log('Denominación detectada:', denom);
-            }
-        });
-        
-        // Números
-        const numbers = text.match(/\b(\d{1,4})\b/g);
-        if (numbers) {
-            keywords.push(...numbers.slice(0, 3));
-        }
-        
-        // Palabras relacionadas con monedas
-        const coinWords = ['coin', 'liberty', 'republic', 'kingdom', 'empire', 'federal', 'national', 'banco', 'central'];
-        coinWords.forEach(word => {
-            if (text.includes(word)) keywords.push(word);
-        });
-        
-        return [...new Set(keywords)];
-    }
-    
-    async searchNumistaAPI(keywords) {
-        console.log('Buscando en Numista con palabras clave:', keywords);
-        
-        const NUMISTA_API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
-        
-        if (!NUMISTA_API_KEY) {
-            console.log('API key de Numista no configurada, usando fallback');
-            throw new Error('Numista API key no configurada');
-        }
-        
-        const results = [];
-        
-        for (const keyword of keywords.slice(0, 3)) {
-            try {
-                const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(keyword)}&lang=es&per_page=5`;
-                console.log('URL de búsqueda:', searchUrl);
-                
-                const response = await fetch(searchUrl, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Numista-API-Key': NUMISTA_API_KEY,
-                        'User-Agent': 'CoinCollectionApp/1.0'
-                    }
-                });
-                
-                console.log(`Respuesta para '${keyword}':`, response.status, response.statusText);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(`Datos recibidos para '${keyword}':`, data);
-                    
-                    if (data.coins && data.coins.length > 0) {
-                        data.coins.forEach(coin => {
-                            results.push({
-                                title: coin.title || `${coin.value} ${coin.currency}`,
-                                country: coin.issuer?.name || 'Desconocido',
-                                countryCode: coin.issuer?.code || 'XX',
-                                year: coin.min_year || coin.max_year || 'Desconocido',
-                                type: 'moneda',
-                                denomination: `${coin.value || ''} ${coin.currency || ''}`.trim(),
-                                description: coin.composition || 'Información no disponible',
-                                link: `https://numista.com/catalogue/pieces${coin.id}.html`,
-                                confidence: this.calculateConfidence(keyword, coin, keywords)
-                            });
-                        });
-                    }
-                } else {
-                    console.error(`Error HTTP ${response.status} para '${keyword}':`, await response.text());
-                }
-            } catch (error) {
-                console.error(`Error buscando '${keyword}':`, error);
-            }
-        }
-        
-        console.log('Resultados totales encontrados:', results.length);
-        
-        const uniqueResults = results.filter((result, index, self) => 
-            index === self.findIndex(r => r.link === result.link)
-        );
-        
-        const finalResults = uniqueResults
-            .sort((a, b) => b.confidence - a.confidence)
-            .slice(0, 5);
-            
-        console.log('Resultados finales:', finalResults);
-        return finalResults;
-    }
-    
-    calculateConfidence(searchKeyword, coin, allKeywords) {
-        let confidence = 30; // Base
-        
-        const coinText = `${coin.title} ${coin.issuer?.name} ${coin.value} ${coin.currency}`.toLowerCase();
-        
-        // Coincidencia con palabra de búsqueda
-        if (coinText.includes(searchKeyword.toLowerCase())) {
-            confidence += 40;
-        }
-        
-        // Coincidencias adicionales
-        allKeywords.forEach(keyword => {
-            if (coinText.includes(keyword.toLowerCase())) {
-                confidence += 10;
-            }
-        });
-        
-        return Math.min(confidence, 95);
-    }
+
     
     fallbackSearch(allTexts) {
         const results = [];
