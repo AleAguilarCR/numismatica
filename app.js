@@ -19,12 +19,7 @@ class CoinCollectionApp {
     }
     
     async waitForFirebase() {
-        let attempts = 0;
-        while (!window.firebaseReady && attempts < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
-        console.log('Firebase ready after', attempts, 'attempts');
+        // Firebase deshabilitado
     }
 
     setupEventListeners() {
@@ -499,20 +494,15 @@ class CoinCollectionApp {
             };
         }
         
-        // Guardar en localStorage inmediatamente
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
-        // Intentar actualizar en Firebase solo si el ID es válido
-        if (window.db && typeof this.currentEditingItem.id === 'string' && !this.currentEditingItem.id.match(/^\d+$/)) {
+        if (window.db && typeof this.currentEditingItem.id === 'string') {
             try {
                 await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
             } catch (error) {
-                console.error('Error updating item in Firebase:', error);
+                console.error('Error updating Firebase:', error);
             }
         }
-        
-        // Actualizar pantalla principal
-        this.renderMainScreen();
         
         this.currentEditingItem = null;
         this.showCountryItems(this.currentCountryCode);
@@ -526,18 +516,15 @@ class CoinCollectionApp {
             const countryCode = this.currentEditingItem.countryCode;
             
             try {
-                // Eliminar de Firebase si es un ID válido
-                if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
+                if (window.db && typeof itemId === 'string') {
                     await window.db.collection('coins').doc(itemId).delete();
-                    console.log('Item eliminado de Firebase:', itemId);
                 } else {
-                    // Para IDs numéricos (localStorage), eliminar localmente
                     this.items = this.items.filter(i => i.id !== itemId);
                     localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                    this.renderMainScreen();
                 }
                 
                 this.currentEditingItem = null;
-                this.renderMainScreen();
                 this.showCountryItems(countryCode);
                 
             } catch (error) {
@@ -560,13 +547,11 @@ class CoinCollectionApp {
     async handleAddItem(event) {
         event.preventDefault();
         
-        const formData = new FormData(event.target);
-        const photoPreview = document.getElementById('photoPreview');
-        
         const photoPreviewFront = document.getElementById('photoPreviewFront');
         const photoPreviewBack = document.getElementById('photoPreviewBack');
         
         const item = {
+            id: Date.now(),
             type: document.getElementById('itemType').value,
             countryCode: document.getElementById('country').value,
             country: COUNTRIES[document.getElementById('country').value].name,
@@ -581,21 +566,8 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        if (window.db) {
-            try {
-                const docRef = await window.db.collection('coins').add(item);
-                console.log('Item agregado a Firebase:', docRef.id);
-            } catch (error) {
-                console.error('Error agregando a Firebase:', error);
-                item.id = Date.now();
-                this.items.push(item);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            }
-        } else {
-            item.id = Date.now();
-            this.items.push(item);
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-        }
+        this.items.push(item);
+        localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
         // Limpiar formulario
         event.target.reset();
@@ -1551,27 +1523,22 @@ class CoinCollectionApp {
     async loadData() {
         if (!window.db) {
             const saved = localStorage.getItem('coinCollection');
-            if (saved) {
-                this.items = JSON.parse(saved);
-            }
+            if (saved) this.items = JSON.parse(saved);
             return;
         }
         
         try {
-            this.firebaseUnsubscribe = window.db.collection('coins').onSnapshot((querySnapshot) => {
+            window.db.collection('coins').onSnapshot((snapshot) => {
                 this.items = [];
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach(doc => {
                     this.items.push({ id: doc.id, ...doc.data() });
                 });
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                // Siempre actualizar la pantalla principal para mantener conteos actualizados
-                this.renderMainScreen();
+                if (this.currentScreen === 'main') this.renderMainScreen();
             });
         } catch (error) {
             const saved = localStorage.getItem('coinCollection');
-            if (saved) {
-                this.items = JSON.parse(saved);
-            }
+            if (saved) this.items = JSON.parse(saved);
         }
     }
 }
