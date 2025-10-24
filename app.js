@@ -744,7 +744,8 @@ class CoinCollectionApp {
     }
     
     async searchNumistaWithParams(coinInfo) {
-        const NUMISTA_API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
+        const CLIENT_ID = '529122';
+        const API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const results = [];
         
         // Construir consulta de búsqueda
@@ -759,12 +760,20 @@ class CoinCollectionApp {
         console.log('Buscando en Numista:', query);
         
         try {
+            // Primero obtener token OAuth
+            const accessToken = await this.getNumistaAccessToken(CLIENT_ID, API_KEY);
+            
+            if (!accessToken) {
+                console.log('No se pudo obtener token de acceso');
+                return [];
+            }
+            
             const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(query)}&lang=es&per_page=10`;
             
             const response = await fetch(searchUrl, {
                 headers: {
                     'Accept': 'application/json',
-                    'Numista-API-Key': NUMISTA_API_KEY
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
             
@@ -795,6 +804,35 @@ class CoinCollectionApp {
         }
         
         return results.slice(0, 5);
+    }
+    
+    async getNumistaAccessToken(clientId, apiKey) {
+        try {
+            const response = await fetch('https://api.numista.com/api/v3/oauth_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'grant_type': 'client_credentials',
+                    'client_id': clientId,
+                    'client_secret': apiKey,
+                    'scope': 'view_collection'
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Token OAuth obtenido:', data.access_token ? 'Sí' : 'No');
+                return data.access_token;
+            } else {
+                console.error('Error obteniendo token OAuth:', response.status, await response.text());
+                return null;
+            }
+        } catch (error) {
+            console.error('Error en autenticación OAuth:', error);
+            return null;
+        }
     }
     
     createResultFromAnalysis(coinInfo, allTexts) {
