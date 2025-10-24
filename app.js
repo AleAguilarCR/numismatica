@@ -20,10 +20,11 @@ class CoinCollectionApp {
     
     async waitForFirebase() {
         let attempts = 0;
-        while (!window.db && attempts < 50) {
+        while (!window.firebaseReady && attempts < 50) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
+        console.log('Firebase ready after', attempts, 'attempts');
     }
 
     setupEventListeners() {
@@ -303,8 +304,7 @@ class CoinCollectionApp {
         
         if (window.db) {
             try {
-                const docRef = window.firestore.doc(window.db, 'coins', this.currentEditingItem.id);
-                await window.firestore.updateDoc(docRef, this.items[itemIndex]);
+                await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
             } catch (error) {
                 console.error('Error updating item:', error);
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
@@ -322,7 +322,7 @@ class CoinCollectionApp {
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             if (window.db) {
                 try {
-                    await window.firestore.deleteDoc(window.firestore.doc(window.db, 'coins', this.currentEditingItem.id));
+                    await window.db.collection('coins').doc(this.currentEditingItem.id).delete();
                     this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
                 } catch (error) {
                     console.error('Error deleting item:', error);
@@ -376,17 +376,22 @@ class CoinCollectionApp {
 
         if (window.db) {
             try {
-                await window.firestore.addDoc(window.firestore.collection(window.db, 'coins'), item);
+                console.log('Adding item to Firebase:', item);
+                await window.db.collection('coins').add(item);
+                console.log('Item added successfully');
                 // Real-time listener will update this.items automatically
             } catch (error) {
-                console.error('Error adding item:', error);
+                console.error('Error adding item to Firebase:', error);
                 // Fallback to localStorage
                 this.items.push(item);
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                this.renderMainScreen();
             }
         } else {
+            console.log('Firebase not available, using localStorage');
             this.items.push(item);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            this.renderMainScreen();
         }
         
         // Limpiar formulario
@@ -419,21 +424,33 @@ class CoinCollectionApp {
         }
         
         try {
+            console.log('Setting up Firebase listener...');
             // Set up real-time listener
-            window.firestore.onSnapshot(window.firestore.collection(window.db, 'coins'), (querySnapshot) => {
+            window.db.collection('coins').onSnapshot((querySnapshot) => {
+                console.log('Firebase data received:', querySnapshot.size, 'items');
                 this.items = [];
                 querySnapshot.forEach((doc) => {
                     this.items.push({ id: doc.id, ...doc.data() });
                 });
+                console.log('Items loaded:', this.items.length);
+                this.renderMainScreen();
+            }, (error) => {
+                console.error('Firebase listener error:', error);
+                // Fallback to localStorage
+                const saved = localStorage.getItem('coinCollection');
+                if (saved) {
+                    this.items = JSON.parse(saved);
+                }
                 this.renderMainScreen();
             });
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error setting up Firebase:', error);
             // Fallback to localStorage
             const saved = localStorage.getItem('coinCollection');
             if (saved) {
                 this.items = JSON.parse(saved);
             }
+            this.renderMainScreen();
         }
     }
 }
