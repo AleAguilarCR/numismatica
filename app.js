@@ -133,9 +133,15 @@ class CoinCollectionApp {
             countryCount[item.countryCode] = (countryCount[item.countryCode] || 0) + 1;
         });
 
-        // Renderizar banderas
+        // Renderizar banderas en orden alfabético
         countriesGrid.innerHTML = '';
-        Object.keys(countryCount).forEach(countryCode => {
+        const sortedCountries = Object.keys(countryCount).sort((a, b) => {
+            const nameA = COUNTRIES[a]?.name || '';
+            const nameB = COUNTRIES[b]?.name || '';
+            return nameA.localeCompare(nameB);
+        });
+        
+        sortedCountries.forEach(countryCode => {
             const country = COUNTRIES[countryCode];
             if (country) {
                 const flagElement = document.createElement('div');
@@ -189,6 +195,9 @@ class CoinCollectionApp {
             `;
             itemsList.appendChild(itemCard);
         });
+        
+        // Cambiar a la pantalla del país
+        this.showScreen('country');
     }
 
     showContinents() {
