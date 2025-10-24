@@ -36,7 +36,10 @@ class CoinCollectionApp {
 
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
-            document.getElementById('backFromCountry')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('backFromCountry')?.addEventListener('click', () => {
+                this.showScreen('main');
+                this.renderMainScreen();
+            });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromEdit')?.addEventListener('click', () => this.showScreen('country'));
             document.getElementById('backFromPhotoEditor')?.addEventListener('click', () => this.showScreen(this.previousScreen));
@@ -525,17 +528,7 @@ class CoinCollectionApp {
             
             console.log('Eliminando item:', itemId, 'del país:', countryCode);
             
-            // Deshabilitar actualizaciones de Firebase temporalmente
-            this.skipFirebaseUpdate = true;
-            
-            // Eliminar de la lista local inmediatamente
-            const originalLength = this.items.length;
-            this.items = this.items.filter(i => i.id !== itemId);
-            console.log('Items antes:', originalLength, 'Items después:', this.items.length);
-            
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            
-            // Intentar eliminar de Firebase
+            // Eliminar de Firebase primero
             if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                 try {
                     await window.db.collection('coins').doc(itemId).delete();
@@ -545,15 +538,13 @@ class CoinCollectionApp {
                 }
             }
             
-            // Reactivar actualizaciones de Firebase después de un breve delay
-            setTimeout(() => {
-                this.skipFirebaseUpdate = false;
-            }, 1000);
+            // Eliminar de la lista local
+            this.items = this.items.filter(i => i.id !== itemId);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
             this.currentEditingItem = null;
             
             // Regresar a la lista del país y refrescar
-            console.log('Regresando a la lista del país:', countryCode);
             this.showCountryItems(countryCode);
         }
     }
@@ -1580,10 +1571,6 @@ class CoinCollectionApp {
             console.log('Setting up Firebase listener...');
             // Set up real-time listener
             this.firebaseUnsubscribe = window.db.collection('coins').onSnapshot((querySnapshot) => {
-                if (this.skipFirebaseUpdate) {
-                    console.log('Skipping Firebase update during local operation');
-                    return;
-                }
                 console.log('Firebase data received:', querySnapshot.size, 'items');
                 this.items = [];
                 querySnapshot.forEach((doc) => {
