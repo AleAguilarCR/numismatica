@@ -822,5 +822,4 @@ class CoinCollectionApp {
     }
 }
 
-// Inicializar la aplicación
-const app = new CoinCollectionApp();
+// La aplicación se inicializará desde el HTML cuando el DOM esté listo

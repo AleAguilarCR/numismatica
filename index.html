@@ -281,5 +281,16 @@
     </script>
     <script src="countries.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Asegurar que la app se inicialice después de que el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof CoinCollectionApp !== 'undefined') {
+                console.log('Inicializando aplicación...');
+                window.app = new CoinCollectionApp();
+            } else {
+                console.error('CoinCollectionApp no está definida');
+            }
+        });
+    </script>
 </body>
 </html>
