@@ -551,28 +551,13 @@ class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
         
         try {
-            let visionResults;
-            
-            // Usar búsqueda simulada por ahora (Vision API requiere configuración adicional)
-            console.log('Usando búsqueda simulada');
-            visionResults = {
-                texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso'],
-                objects: ['coin', 'currency'],
-                webEntities: ['currency', 'money', 'numismatics']
+            // Usar búsqueda simulada (Vision API deshabilitada)
+            console.log('Usando búsqueda simulada - Vision API deshabilitada');
+            const visionResults = {
+                texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
+                objects: ['coin', 'currency', 'money'],
+                webEntities: ['currency', 'money', 'numismatics', 'collectible']
             };
-            
-            // Para habilitar Vision API:
-            // 1. Configura restricciones en Google Cloud Console
-            // 2. Agrega tu dominio a HTTP referrers
-            // 3. Descomenta el código siguiente:
-            /*
-            try {
-                visionResults = await this.analyzeImageWithVision(this.searchImageData);
-            } catch (visionError) {
-                console.log('Vision API error:', visionError);
-                // Usar datos simulados como fallback
-            }
-            */
             
             // Buscar en base de datos de monedas
             const coinResults = await this.searchCoinsDatabase(visionResults);
@@ -602,39 +587,14 @@ class CoinCollectionApp {
         }
     }
     
+    // Google Vision API deshabilitada - usar solo búsqueda simulada
     async analyzeImageWithVision(imageData) {
-        // Configuración de Google Vision API
-        const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
-        const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
-        
-        // Convertir imagen a base64 sin el prefijo data:image
-        const base64Image = imageData.split(',')[1];
-        
-        const requestBody = {
-            requests: [{
-                image: { content: base64Image },
-                features: [
-                    { type: 'TEXT_DETECTION', maxResults: 10 },
-                    { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
-                    { type: 'WEB_DETECTION', maxResults: 5 }
-                ]
-            }]
-        };
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Vision API Error:', response.status, errorText);
-            throw new Error(`Vision API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return this.processVisionResults(data);
+        // Esta función está deshabilitada para evitar errores 403
+        // Para habilitarla:
+        // 1. Ve a Google Cloud Console
+        // 2. Configura restricciones HTTP referrers en tu API Key
+        // 3. Agrega: https://aleaguilarcr.github.io/*
+        throw new Error('Vision API deshabilitada - usando búsqueda simulada');
     }
     
     processVisionResults(visionData) {
