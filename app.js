@@ -482,26 +482,25 @@ class CoinCollectionApp {
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             const itemId = this.currentEditingItem.id;
-            console.log('Intentando eliminar item con ID:', itemId, 'tipo:', typeof itemId);
+            console.log('Eliminando item con ID:', itemId, 'tipo:', typeof itemId);
             
-            // Eliminar de la lista local primero
+            // Eliminar de la lista local inmediatamente
             this.items = this.items.filter(i => i.id !== itemId);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            // Intentar eliminar de Firebase si el ID es válido
-            if (window.db && itemId && typeof itemId === 'string' && itemId.length > 10) {
+            // Solo intentar Firebase si el ID es string válido
+            if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                 try {
-                    await window.db.collection('coins').doc(itemId).delete();
+                    await window.db.collection('coins').doc(String(itemId)).delete();
                     console.log('Item eliminado de Firebase');
                 } catch (error) {
-                    console.error('Error eliminando de Firebase:', error);
+                    console.error('Error eliminando de Firebase (ignorado):', error.message);
                 }
-            } else {
-                console.log('Item eliminado solo de localStorage (ID no válido para Firebase)');
             }
             
             this.currentEditingItem = null;
-            this.showScreen('main');
+            // Renderizar inmediatamente sin esperar Firebase
+            this.renderMainScreen();
         }
     }
 
@@ -1460,23 +1459,31 @@ class CoinCollectionApp {
     
 
     
-    async importFromNumista() {
+    importFromNumista() {
         if (!this.currentNumistaData) return;
         
         const data = this.currentNumistaData;
+        console.log('Importando datos de Numista:', data);
         
-        // Pre-llenar formulario
-        document.getElementById('itemType').value = data.type;
-        if (data.countryCode && data.countryCode !== 'XX') {
-            document.getElementById('country').value = data.countryCode;
+        // Pre-llenar formulario con validaciones
+        const itemType = document.getElementById('itemType');
+        const country = document.getElementById('country');
+        const denomination = document.getElementById('denomination');
+        const year = document.getElementById('year');
+        const catalogLink = document.getElementById('catalogLink');
+        const notes = document.getElementById('notes');
+        
+        if (itemType) itemType.value = data.type || 'moneda';
+        if (country && data.countryCode && data.countryCode !== 'XX') {
+            country.value = data.countryCode;
         }
-        document.getElementById('denomination').value = data.denomination || '';
-        document.getElementById('year').value = data.year || '';
-        document.getElementById('catalogLink').value = data.catalogLink;
-        document.getElementById('notes').value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
+        if (denomination) denomination.value = data.denomination || '';
+        if (year) year.value = data.year || '';
+        if (catalogLink) catalogLink.value = data.catalogLink || '';
+        if (notes) notes.value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
         
-        // Agregar imágenes directamente (sin conversión)
-        if (data.images.length > 0) {
+        // Agregar imágenes directamente
+        if (data.images && data.images.length > 0) {
             const frontPreview = document.getElementById('photoPreviewFront');
             if (frontPreview && data.images[0]) {
                 frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" onerror="this.style.display='none'">`;
@@ -1492,7 +1499,7 @@ class CoinCollectionApp {
             }
         }
         
-        // Ir a pantalla de agregar
+        console.log('Datos importados correctamente');
         this.showScreen('add');
     }
     
