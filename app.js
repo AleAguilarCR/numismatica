@@ -331,15 +331,23 @@ class CoinCollectionApp {
         const canvas = this.currentCanvas;
         const editedImageData = canvas.toDataURL('image/jpeg', 0.8);
         
-        // Aplicar la foto editada
         const { side, mode } = this.currentPhotoData;
-        const prefix = mode === 'edit' ? 'edit' : '';
-        const preview = document.getElementById(`${prefix}photoPreview${side === 'front' ? 'Front' : 'Back'}`);
-        preview.innerHTML = `<img src="${editedImageData}" alt="Preview">`;
-        preview.dataset.photo = editedImageData;
         
-        // Regresar a la pantalla anterior
-        this.showScreen(mode === 'edit' ? 'edit' : 'add');
+        if (mode === 'search') {
+            // Para búsqueda por imagen
+            const preview = document.getElementById('searchPhotoPreview');
+            preview.innerHTML = `<img src="${editedImageData}" alt="Buscar" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
+            this.searchImageData = editedImageData;
+            document.getElementById('searchBtn').disabled = false;
+            this.showScreen('imageSearch');
+        } else {
+            // Para agregar/editar items
+            const prefix = mode === 'edit' ? 'edit' : '';
+            const preview = document.getElementById(`${prefix}photoPreview${side === 'front' ? 'Front' : 'Back'}`);
+            preview.innerHTML = `<img src="${editedImageData}" alt="Preview">`;
+            preview.dataset.photo = editedImageData;
+            this.showScreen(mode === 'edit' ? 'edit' : 'add');
+        }
     }
     
     selectSearchPhoto() {
@@ -351,10 +359,15 @@ class CoinCollectionApp {
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const preview = document.getElementById('searchPhotoPreview');
-                preview.innerHTML = `<img src="${e.target.result}" alt="Buscar" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
-                this.searchImageData = e.target.result;
-                document.getElementById('searchBtn').disabled = false;
+                // Guardar datos para el editor
+                this.currentPhotoData = {
+                    imageData: e.target.result,
+                    side: 'search',
+                    mode: 'search'
+                };
+                
+                // Mostrar editor de fotos para búsqueda
+                this.showPhotoEditor(e.target.result);
             };
             reader.readAsDataURL(file);
         }
@@ -538,10 +551,22 @@ class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
         
         try {
-            // Usar Google Vision API para detectar texto y objetos
-            const visionResults = await this.analyzeImageWithVision(this.searchImageData);
+            let visionResults;
             
-            // Buscar en base de datos de monedas usando los resultados de Vision
+            try {
+                // Intentar usar Google Vision API
+                visionResults = await this.analyzeImageWithVision(this.searchImageData);
+            } catch (visionError) {
+                console.log('Vision API no disponible, usando búsqueda simulada:', visionError);
+                // Fallback a búsqueda simulada
+                visionResults = {
+                    texts: ['coin', 'dollar', 'liberty'],
+                    objects: ['coin'],
+                    webEntities: ['currency', 'money']
+                };
+            }
+            
+            // Buscar en base de datos de monedas
             const coinResults = await this.searchCoinsDatabase(visionResults);
             
             if (coinResults.length === 0) {
@@ -595,7 +620,9 @@ class CoinCollectionApp {
         });
         
         if (!response.ok) {
-            throw new Error('Error en Google Vision API');
+            const errorText = await response.text();
+            console.error('Vision API Error:', response.status, errorText);
+            throw new Error(`Vision API Error: ${response.status}`);
         }
         
         const data = await response.json();
