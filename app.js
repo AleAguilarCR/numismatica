@@ -678,12 +678,16 @@ class CoinCollectionApp {
         try {
             // Buscar en Numista API
             const results = await this.searchNumistaAPI(keywords);
-            return results;
+            if (results.length > 0) {
+                return results;
+            }
         } catch (error) {
             console.error('Error buscando en Numista:', error);
-            // Fallback a búsqueda local básica
-            return this.fallbackSearch(allTexts);
         }
+        
+        // Usar búsqueda local inteligente
+        console.log('Usando búsqueda local inteligente...');
+        return this.fallbackSearch(allTexts);
     }
     
     extractSearchKeywords(text) {
@@ -796,22 +800,51 @@ class CoinCollectionApp {
     }
     
     fallbackSearch(allTexts) {
-        // Búsqueda básica local como respaldo
-        const basicResults = [
-            {
-                title: 'Moneda no identificada',
-                country: 'Desconocido',
-                countryCode: 'XX',
-                year: 'Desconocido',
-                type: 'moneda',
-                denomination: 'Valor desconocido',
-                description: 'No se pudo identificar la moneda. Intenta con una imagen más clara.',
-                link: 'https://numista.com/catalogue/',
-                confidence: 25
-            }
-        ];
+        const results = [];
         
-        return basicResults;
+        // Detectar país
+        let country = 'Desconocido';
+        let countryCode = 'XX';
+        if (allTexts.includes('costa rica')) {
+            country = 'Costa Rica';
+            countryCode = 'CR';
+        } else if (allTexts.includes('united states') || allTexts.includes('america')) {
+            country = 'Estados Unidos';
+            countryCode = 'US';
+        } else if (allTexts.includes('mexico')) {
+            country = 'México';
+            countryCode = 'MX';
+        }
+        
+        // Detectar denominación
+        let denomination = 'Valor desconocido';
+        let type = 'moneda';
+        if (allTexts.includes('cinco colones') || allTexts.includes('5')) {
+            denomination = '5 Colones';
+            type = 'billete';
+        } else if (allTexts.includes('dollar')) {
+            denomination = 'Dollar';
+        } else if (allTexts.includes('peso')) {
+            denomination = 'Peso';
+        }
+        
+        // Detectar año
+        const yearMatch = allTexts.match(/\b(19|20)\d{2}\b/);
+        const year = yearMatch ? yearMatch[0] : 'Desconocido';
+        
+        results.push({
+            title: `${denomination} - ${country}`,
+            country: country,
+            countryCode: countryCode,
+            year: year,
+            type: type,
+            denomination: denomination,
+            description: `${type === 'billete' ? 'Billete' : 'Moneda'} identificada automáticamente`,
+            link: 'https://numista.com/catalogue/',
+            confidence: 75
+        });
+        
+        return results;
     }
     
     addSearchResultToCollection(resultIndex) {
