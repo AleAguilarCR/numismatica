@@ -37,6 +37,11 @@ class CoinCollectionApp {
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromCountry')?.addEventListener('click', () => {
+                // Recargar datos desde localStorage
+                const saved = localStorage.getItem('coinCollection');
+                if (saved) {
+                    this.items = JSON.parse(saved);
+                }
                 this.renderMainScreen();
                 this.showScreen('main');
             });
