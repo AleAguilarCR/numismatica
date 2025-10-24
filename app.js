@@ -554,14 +554,11 @@ class CoinCollectionApp {
             let visionResults;
             
             try {
-                // Intentar usar Google Vision API
                 console.log('Intentando usar Google Vision API...');
                 visionResults = await this.analyzeImageWithVision(this.searchImageData);
                 console.log('Vision API exitosa:', visionResults);
             } catch (visionError) {
                 console.log('Vision API falló, usando búsqueda simulada:', visionError.message);
-                // Fallback a búsqueda simulada
-                await new Promise(resolve => setTimeout(resolve, 1000));
                 visionResults = {
                     texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
                     objects: ['coin', 'currency', 'money'],
@@ -569,7 +566,6 @@ class CoinCollectionApp {
                 };
             }
             
-            // Buscar en Numista API
             const coinResults = await this.searchCoinsDatabase(visionResults);
             
             if (coinResults.length === 0) {
@@ -601,7 +597,6 @@ class CoinCollectionApp {
         const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
         const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
         
-        // Convertir imagen a base64 sin el prefijo data:image
         const base64Image = imageData.split(',')[1];
         
         const requestBody = {
@@ -615,23 +610,25 @@ class CoinCollectionApp {
             }]
         };
         
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Referer': 'https://aleaguilarcr.github.io/'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Vision API Error:', response.status, errorText);
-            throw new Error(`Vision API Error: ${response.status} - ${errorText}`);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Vision API Error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return this.processVisionResults(data);
+        } catch (error) {
+            console.error('Vision API Error:', error);
+            throw error;
         }
-        
-        const data = await response.json();
-        return this.processVisionResults(data);
     }
     
     processVisionResults(visionData) {
@@ -644,49 +641,22 @@ class CoinCollectionApp {
         
         // Extraer texto detectado
         if (result.textAnnotations) {
-            extractedInfo.texts = result.textAnnotations.map(text => text.description);
+            extractedInfo.texts = result.textAnnotations.map(text => text.description.toLowerCase());
         }
         
         // Extraer objetos detectados
         if (result.localizedObjectAnnotations) {
-            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name);
+            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name.toLowerCase());
         }
         
-        // Extraer entidades web
+        // Extraer entidades web con umbral más bajo
         if (result.webDetection && result.webDetection.webEntities) {
             extractedInfo.webEntities = result.webDetection.webEntities
-                .filter(entity => entity.score > 0.5)
-                .map(entity => entity.description);
+                .filter(entity => entity.score > 0.3)
+                .map(entity => entity.description ? entity.description.toLowerCase() : '');
         }
         
-        return extractedInfo;
-    }
-    
-    processVisionResults(visionData) {
-        const result = visionData.responses[0];
-        const extractedInfo = {
-            texts: [],
-            objects: [],
-            webEntities: []
-        };
-        
-        // Extraer texto detectado
-        if (result.textAnnotations) {
-            extractedInfo.texts = result.textAnnotations.map(text => text.description);
-        }
-        
-        // Extraer objetos detectados
-        if (result.localizedObjectAnnotations) {
-            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name);
-        }
-        
-        // Extraer entidades web
-        if (result.webDetection && result.webDetection.webEntities) {
-            extractedInfo.webEntities = result.webDetection.webEntities
-                .filter(entity => entity.score > 0.5)
-                .map(entity => entity.description);
-        }
-        
+        console.log('Información extraída:', extractedInfo);
         return extractedInfo;
     }
     
