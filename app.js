@@ -768,7 +768,7 @@ class CoinCollectionApp {
                 return [];
             }
             
-            const searchUrl = `https://api.numista.com/api/v3/coins?q=${encodeURIComponent(query)}&lang=es&per_page=10`;
+            const searchUrl = `https://api.numista.com/api/v2/coins?q=${encodeURIComponent(query)}&lang=es&per_page=10`;
             
             const response = await fetch(searchUrl, {
                 headers: {
@@ -808,7 +808,7 @@ class CoinCollectionApp {
     
     async getNumistaAccessToken(clientId, apiKey) {
         try {
-            const response = await fetch('https://api.numista.com/api/v3/oauth_token', {
+            const response = await fetch('https://api.numista.com/api/v2/oauth_token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
