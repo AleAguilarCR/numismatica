@@ -693,16 +693,24 @@ class CoinCollectionApp {
     extractSearchKeywords(text) {
         const keywords = [];
         
-        // Países comunes (incluyendo Costa Rica)
+        console.log('Texto para extracción:', text);
+        
+        // Países comunes
         const countries = ['costa rica', 'united states', 'america', 'usa', 'germany', 'deutschland', 'france', 'spain', 'mexico', 'canada', 'australia', 'japan', 'china', 'russia', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay'];
         countries.forEach(country => {
-            if (text.includes(country)) keywords.push(country);
+            if (text.includes(country)) {
+                keywords.push(country);
+                console.log('País detectado:', country);
+            }
         });
         
-        // Denominaciones (incluyendo colones)
-        const denominations = ['colones', 'dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
+        // Denominaciones
+        const denominations = ['colones', 'cinco colones', 'dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
         denominations.forEach(denom => {
-            if (text.includes(denom)) keywords.push(denom);
+            if (text.includes(denom)) {
+                keywords.push(denom);
+                console.log('Denominación detectada:', denom);
+            }
         });
         
         // Números
@@ -740,7 +748,7 @@ class CoinCollectionApp {
                 const response = await fetch(searchUrl, {
                     headers: {
                         'Accept': 'application/json',
-                        'Authorization': `Bearer ${NUMISTA_API_KEY}`,
+                        'Numista-API-Key': NUMISTA_API_KEY,
                         'User-Agent': 'CoinCollectionApp/1.0'
                     }
                 });
