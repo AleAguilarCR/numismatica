@@ -1284,58 +1284,207 @@ class CoinCollectionApp {
             catalogLink: url
         };
         
-        // Extraer título
-        const titleEl = doc.querySelector('h1') || doc.querySelector('.coin-title');
-        if (titleEl) {
-            info.title = titleEl.textContent.trim();
+        console.log('Extrayendo información de Numista...');
+        
+        // Extraer título - múltiples selectores
+        const titleSelectors = ['h1', '.coin-title', '.piece-title', 'title'];
+        for (const selector of titleSelectors) {
+            const el = doc.querySelector(selector);
+            if (el && el.textContent.trim()) {
+                info.title = el.textContent.trim();
+                console.log('Título encontrado:', info.title);
+                break;
+            }
         }
         
-        // Extraer tipo (moneda/billete)
-        const typeEl = doc.querySelector('.coin-type') || doc.querySelector('[data-type]');
-        if (typeEl && typeEl.textContent.toLowerCase().includes('banknote')) {
+        // Extraer información del HTML completo usando regex
+        const htmlText = doc.documentElement.innerHTML;
+        
+        // Buscar emisor usando el formato específico de Numista
+        const issuerPatterns = [
+            /<td[^>]*>\s*Emisor\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /<td[^>]*>\s*Issuer\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /Emisor\s*([^\n\r]+)/i,
+            /Issuer\s*([^\n\r]+)/i
+        ];
+        
+        for (const pattern of issuerPatterns) {
+            const match = htmlText.match(pattern);
+            if (match && match[1]) {
+                const countryText = match[1].trim();
+                info.country = this.mapNumistaCountry(countryText);
+                info.countryCode = this.getCountryCode(info.country);
+                console.log('Emisor encontrado:', countryText, '->', info.country);
+                break;
+            }
+        }
+        
+        // Buscar valor usando el formato específico de Numista
+        const valuePatterns = [
+            /<td[^>]*>\s*Valor\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /<td[^>]*>\s*Value\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /Valor\s*([^\n\r\(]+)/i,
+            /Value\s*([^\n\r\(]+)/i
+        ];
+        
+        for (const pattern of valuePatterns) {
+            const match = htmlText.match(pattern);
+            if (match && match[1]) {
+                info.denomination = match[1].trim();
+                console.log('Valor encontrado:', info.denomination);
+                break;
+            }
+        }
+        
+        // Buscar años usando el formato específico de Numista
+        const yearPatterns = [
+            /<td[^>]*>\s*Años\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /<td[^>]*>\s*Years\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /Años\s*([^\n\r]+)/i,
+            /Years\s*([^\n\r]+)/i,
+            /(\d{4})[-–](\d{4})/,
+            /(\d{4})/
+        ];
+        
+        for (const pattern of yearPatterns) {
+            const match = htmlText.match(pattern);
+            if (match && match[1]) {
+                let yearText = match[1].trim();
+                // Si es un rango, tomar el primer año
+                const yearMatch = yearText.match(/(\d{4})/);
+                if (yearMatch) {
+                    info.year = yearMatch[1];
+                    console.log('Año encontrado:', info.year, 'del texto:', yearText);
+                    break;
+                }
+            }
+        }
+        
+        // Detectar tipo usando el formato específico de Numista
+        const typePatterns = [
+            /<td[^>]*>\s*Tipo\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /<td[^>]*>\s*Type\s*<\/td>\s*<td[^>]*>([^<]+)</i,
+            /Tipo\s*([^\n\r]+)/i,
+            /Type\s*([^\n\r]+)/i
+        ];
+        
+        for (const pattern of typePatterns) {
+            const match = htmlText.match(pattern);
+            if (match && match[1]) {
+                const typeText = match[1].toLowerCase();
+                if (typeText.includes('billete') || typeText.includes('banknote') || typeText.includes('bill')) {
+                    info.type = 'billete';
+                    console.log('Tipo detectado: billete');
+                } else {
+                    info.type = 'moneda';
+                    console.log('Tipo detectado: moneda');
+                }
+                break;
+            }
+        }
+        
+        // Fallback: detectar por palabras clave
+        if (info.type === 'moneda' && (htmlText.toLowerCase().includes('banknote') || htmlText.toLowerCase().includes('billetes'))) {
             info.type = 'billete';
         }
         
-        // Extraer país
-        const countryEl = doc.querySelector('.issuer') || doc.querySelector('[data-issuer]');
-        if (countryEl) {
-            const countryText = countryEl.textContent.trim();
-            info.country = this.mapNumistaCountry(countryText);
-            info.countryCode = this.getCountryCode(info.country);
-        }
+        // Extraer imágenes de Numista
+        const imagePatterns = [
+            // Imágenes principales de Numista
+            /src\s*=\s*["']([^"']*\/images\/pieces\/[^"']*\.(jpg|jpeg|png|webp))["']/gi,
+            /src\s*=\s*["']([^"']*numista[^"']*\/[^"']*\.(jpg|jpeg|png|webp))["']/gi,
+            // Imágenes con obverse/reverse
+            /https?:\/\/[^\s"']*\/(obverse|reverse)[^\s"']*\.(jpg|jpeg|png|webp)/gi,
+            // Imágenes generales de monedas
+            /src\s*=\s*["']([^"']*\/(coin|piece|money)[^"']*\.(jpg|jpeg|png|webp))["']/gi
+        ];
         
-        // Extraer denominación
-        const denomEl = doc.querySelector('.denomination') || doc.querySelector('[data-value]');
-        if (denomEl) {
-            info.denomination = denomEl.textContent.trim();
-        }
+        const foundImages = new Set();
         
-        // Extraer año
-        const yearEl = doc.querySelector('.year') || doc.querySelector('[data-year]');
-        if (yearEl) {
-            const yearText = yearEl.textContent.trim();
-            const yearMatch = yearText.match(/\d{4}/);
-            if (yearMatch) {
-                info.year = yearMatch[0];
+        // Buscar imágenes usando los patrones
+        for (const pattern of imagePatterns) {
+            let match;
+            pattern.lastIndex = 0; // Reset regex
+            while ((match = pattern.exec(htmlText)) !== null) {
+                let imageUrl = match[1] || match[0];
+                
+                // Limpiar y validar URL
+                if (imageUrl && !imageUrl.includes('flag') && !imageUrl.includes('icon') && 
+                    !imageUrl.includes('avatar') && !imageUrl.includes('logo')) {
+                    
+                    // Convertir URLs relativas a absolutas
+                    if (imageUrl.startsWith('/')) {
+                        imageUrl = 'https://en.numista.com' + imageUrl;
+                    } else if (imageUrl.startsWith('//')) {
+                        imageUrl = 'https:' + imageUrl;
+                    }
+                    
+                    foundImages.add(imageUrl);
+                }
             }
         }
         
-        // Extraer imágenes
-        const imgElements = doc.querySelectorAll('img[src*="coin"], img[src*="piece"], .coin-image img');
+        // Buscar imágenes en elementos img específicos
+        const imgElements = doc.querySelectorAll('img');
         imgElements.forEach(img => {
-            if (img.src && !img.src.includes('flag') && !img.src.includes('icon')) {
-                info.images.push(img.src);
+            const src = img.src || img.getAttribute('src');
+            if (src && (src.includes('pieces') || src.includes('coin') || src.includes('obverse') || src.includes('reverse'))) {
+                let imageUrl = src;
+                if (imageUrl.startsWith('/')) {
+                    imageUrl = 'https://en.numista.com' + imageUrl;
+                }
+                foundImages.add(imageUrl);
             }
         });
         
+        info.images = Array.from(foundImages).slice(0, 4);
+        console.log('Imágenes encontradas:', info.images.length, info.images);
+        
+        // Si no encontramos información, intentar con el título
+        if (!info.country && !info.denomination && info.title) {
+            console.log('Extrayendo información del título:', info.title);
+            const titleParts = info.title.split(/[-,\(\)]/);
+            
+            // Buscar país en el título
+            for (const part of titleParts) {
+                const cleanPart = part.trim();
+                for (const [code, countryData] of Object.entries(COUNTRIES)) {
+                    if (cleanPart.toLowerCase().includes(countryData.name.toLowerCase()) || 
+                        cleanPart.toLowerCase() === countryData.name.toLowerCase()) {
+                        info.country = countryData.name;
+                        info.countryCode = code;
+                        break;
+                    }
+                }
+                if (info.country) break;
+            }
+            
+            // Buscar denominación en el título
+            const denomMatch = info.title.match(/(\d+\s*\w+|\w+\s+\w+)/i);
+            if (denomMatch && !info.denomination) {
+                info.denomination = denomMatch[0];
+            }
+        }
+        
+        console.log('Información extraída:', info);
         return info;
     }
     
     mapNumistaCountry(numistaCountry) {
-        // Mapear nombres de países de Numista a nuestra base de datos
+        // Limpiar el texto del país
+        const cleanCountry = numistaCountry.replace(/\([^)]*\)/g, '').trim();
+        
+        // Buscar coincidencia exacta en nuestra base de datos
+        for (const [code, countryData] of Object.entries(COUNTRIES)) {
+            if (countryData.name.toLowerCase() === cleanCountry.toLowerCase()) {
+                return countryData.name;
+            }
+        }
+        
+        // Mapear nombres comunes de Numista
         const countryMappings = {
             'United States': 'Estados Unidos de América',
-            'United Kingdom': 'Reino Unido',
+            'United Kingdom': 'Reino Unido', 
             'Germany': 'Alemania',
             'France': 'Francia',
             'Spain': 'España',
@@ -1350,26 +1499,71 @@ class CoinCollectionApp {
             'Uruguay': 'Uruguay',
             'Paraguay': 'Paraguay',
             'Costa Rica': 'Costa Rica',
-            'Honduras': 'Honduras'
+            'Honduras': 'Honduras',
+            'Canada': 'Canadá',
+            'Australia': 'Australia',
+            'Japan': 'Japón',
+            'China': 'China República Popular',
+            'Russia': 'Rusia',
+            'Italy': 'Italia',
+            'Netherlands': 'Países Bajos',
+            'Switzerland': 'Suiza',
+            'Austria': 'Austria',
+            'Belgium': 'Bélgica',
+            'Portugal': 'Portugal',
+            'Poland': 'Polonia',
+            'Czech Republic': 'República Checa',
+            'Hungary': 'Hungría',
+            'Greece': 'Grecia',
+            'Turkey': 'Turquía',
+            'India': 'India',
+            'South Africa': 'Sudáfrica',
+            'Egypt': 'Egipto',
+            'Israel': 'Israel',
+            'Thailand': 'Tailandia',
+            'Philippines': 'Filipinas',
+            'Indonesia': 'Indonesia',
+            'Malaysia': 'Malasia',
+            'Singapore': 'Singapur',
+            'South Korea': 'Corea del Sur',
+            'North Korea': 'Corea del Norte',
+            'Vietnam': 'Vietnam',
+            'New Zealand': 'Nueva Zelanda'
         };
         
-        return countryMappings[numistaCountry] || numistaCountry;
+        const mapped = countryMappings[cleanCountry];
+        if (mapped) return mapped;
+        
+        // Búsqueda parcial
+        for (const [code, countryData] of Object.entries(COUNTRIES)) {
+            if (countryData.name.toLowerCase().includes(cleanCountry.toLowerCase()) ||
+                cleanCountry.toLowerCase().includes(countryData.name.toLowerCase())) {
+                return countryData.name;
+            }
+        }
+        
+        return cleanCountry;
     }
     
     displayNumistaPreview(data) {
         const preview = document.getElementById('numistaPreview');
         
-        const imagesHtml = data.images.slice(0, 2).map((img, index) => 
-            `<img src="${img}" alt="Imagen ${index + 1}" style="max-width: 150px; margin: 5px; border-radius: 8px;">`
-        ).join('');
+        // Convertir imágenes a base64 para evitar problemas de CORS
+        const imagesHtml = data.images.slice(0, 2).map((img, index) => {
+            // Si la imagen es de Numista, usar proxy
+            const proxyImg = img.startsWith('http') ? 
+                `https://images.weserv.nl/?url=${encodeURIComponent(img)}&w=150&h=150&fit=contain` : img;
+            return `<img src="${proxyImg}" alt="Imagen ${index + 1}" style="max-width: 150px; margin: 5px; border-radius: 8px; border: 1px solid #ddd;" 
+                     onerror="this.style.display='none'">`;
+        }).join('');
         
         preview.innerHTML = `
             <div class="numista-info">
-                <h3>${data.title}</h3>
+                <h3>${data.title || 'Sin título'}</h3>
                 <p><strong>Tipo:</strong> ${data.type}</p>
-                <p><strong>País:</strong> ${data.country}</p>
-                <p><strong>Denominación:</strong> ${data.denomination}</p>
-                <p><strong>Año:</strong> ${data.year}</p>
+                <p><strong>País:</strong> ${data.country || 'No detectado'}</p>
+                <p><strong>Denominación:</strong> ${data.denomination || 'No detectada'}</p>
+                <p><strong>Año:</strong> ${data.year || 'No detectado'}</p>
                 <div class="numista-images">${imagesHtml}</div>
                 <button class="btn btn-primary" onclick="app.importFromNumista()">Importar a Colección</button>
             </div>
@@ -1378,34 +1572,68 @@ class CoinCollectionApp {
         this.currentNumistaData = data;
     }
     
-    importFromNumista() {
+    async importFromNumista() {
         if (!this.currentNumistaData) return;
         
         const data = this.currentNumistaData;
         
         // Pre-llenar formulario
         document.getElementById('itemType').value = data.type;
-        document.getElementById('country').value = data.countryCode;
-        document.getElementById('denomination').value = data.denomination;
-        document.getElementById('year').value = data.year;
+        if (data.countryCode && data.countryCode !== 'XX') {
+            document.getElementById('country').value = data.countryCode;
+        }
+        document.getElementById('denomination').value = data.denomination || '';
+        document.getElementById('year').value = data.year || '';
         document.getElementById('catalogLink').value = data.catalogLink;
-        document.getElementById('notes').value = `Importado desde Numista: ${data.title}`;
+        document.getElementById('notes').value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
         
-        // Agregar imágenes si están disponibles
+        // Convertir y agregar imágenes
         if (data.images.length > 0) {
-            const frontPreview = document.getElementById('photoPreviewFront');
-            frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso">`;
-            frontPreview.dataset.photo = data.images[0];
-            
-            if (data.images.length > 1) {
-                const backPreview = document.getElementById('photoPreviewBack');
-                backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso">`;
-                backPreview.dataset.photo = data.images[1];
+            try {
+                // Convertir primera imagen
+                const img1 = await this.convertImageToBase64(data.images[0]);
+                if (img1) {
+                    const frontPreview = document.getElementById('photoPreviewFront');
+                    frontPreview.innerHTML = `<img src="${img1}" alt="Anverso">`;
+                    frontPreview.dataset.photo = img1;
+                }
+                
+                // Convertir segunda imagen si existe
+                if (data.images.length > 1) {
+                    const img2 = await this.convertImageToBase64(data.images[1]);
+                    if (img2) {
+                        const backPreview = document.getElementById('photoPreviewBack');
+                        backPreview.innerHTML = `<img src="${img2}" alt="Reverso">`;
+                        backPreview.dataset.photo = img2;
+                    }
+                }
+            } catch (error) {
+                console.error('Error convirtiendo imágenes:', error);
             }
         }
         
         // Ir a pantalla de agregar
         this.showScreen('add');
+    }
+    
+    async convertImageToBase64(imageUrl) {
+        try {
+            // Usar proxy para evitar CORS
+            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&w=400&h=400&fit=contain`;
+            
+            const response = await fetch(proxyUrl);
+            const blob = await response.blob();
+            
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('Error convirtiendo imagen:', error);
+            return null;
+        }
     }
 
     async saveData() {
