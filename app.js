@@ -482,21 +482,22 @@ class CoinCollectionApp {
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             const itemId = this.currentEditingItem.id;
+            console.log('Intentando eliminar item con ID:', itemId, 'tipo:', typeof itemId);
             
-            if (window.db && typeof itemId === 'string') {
+            // Eliminar de la lista local primero
+            this.items = this.items.filter(i => i.id !== itemId);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            // Intentar eliminar de Firebase si el ID es válido
+            if (window.db && itemId && typeof itemId === 'string' && itemId.length > 10) {
                 try {
                     await window.db.collection('coins').doc(itemId).delete();
-                    console.log('Item deleted from Firebase');
+                    console.log('Item eliminado de Firebase');
                 } catch (error) {
-                    console.error('Error deleting item:', error);
-                    // Fallback a localStorage
-                    this.items = this.items.filter(i => i.id !== itemId);
-                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                    console.error('Error eliminando de Firebase:', error);
                 }
             } else {
-                // Eliminar de localStorage
-                this.items = this.items.filter(i => i.id !== itemId);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                console.log('Item eliminado solo de localStorage (ID no válido para Firebase)');
             }
             
             this.currentEditingItem = null;
@@ -525,7 +526,6 @@ class CoinCollectionApp {
         const photoPreviewBack = document.getElementById('photoPreviewBack');
         
         const item = {
-            id: Date.now(),
             type: document.getElementById('itemType').value,
             countryCode: document.getElementById('country').value,
             country: COUNTRIES[document.getElementById('country').value].name,
@@ -543,18 +543,20 @@ class CoinCollectionApp {
         if (window.db) {
             try {
                 console.log('Adding item to Firebase:', item);
-                await window.db.collection('coins').add(item);
-                console.log('Item added successfully');
-                // Real-time listener will update this.items automatically
+                const docRef = await window.db.collection('coins').add(item);
+                console.log('Item added to Firebase with ID:', docRef.id);
+                // El listener en tiempo real actualizará this.items automáticamente
             } catch (error) {
                 console.error('Error adding item to Firebase:', error);
-                // Fallback to localStorage
+                // Fallback to localStorage con ID numérico
+                item.id = Date.now();
                 this.items.push(item);
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 this.renderMainScreen();
             }
         } else {
             console.log('Firebase not available, using localStorage');
+            item.id = Date.now();
             this.items.push(item);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             this.renderMainScreen();
@@ -1473,28 +1475,20 @@ class CoinCollectionApp {
         document.getElementById('catalogLink').value = data.catalogLink;
         document.getElementById('notes').value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
         
-        // Convertir y agregar imágenes
+        // Agregar imágenes directamente (sin conversión)
         if (data.images.length > 0) {
-            try {
-                // Convertir primera imagen
-                const img1 = await this.convertImageToBase64(data.images[0]);
-                if (img1) {
-                    const frontPreview = document.getElementById('photoPreviewFront');
-                    frontPreview.innerHTML = `<img src="${img1}" alt="Anverso">`;
-                    frontPreview.dataset.photo = img1;
+            const frontPreview = document.getElementById('photoPreviewFront');
+            if (frontPreview && data.images[0]) {
+                frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" onerror="this.style.display='none'">`;
+                frontPreview.dataset.photo = data.images[0];
+            }
+            
+            if (data.images.length > 1) {
+                const backPreview = document.getElementById('photoPreviewBack');
+                if (backPreview && data.images[1]) {
+                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" onerror="this.style.display='none'">`;
+                    backPreview.dataset.photo = data.images[1];
                 }
-                
-                // Convertir segunda imagen si existe
-                if (data.images.length > 1) {
-                    const img2 = await this.convertImageToBase64(data.images[1]);
-                    if (img2) {
-                        const backPreview = document.getElementById('photoPreviewBack');
-                        backPreview.innerHTML = `<img src="${img2}" alt="Reverso">`;
-                        backPreview.dataset.photo = img2;
-                    }
-                }
-            } catch (error) {
-                console.error('Error convirtiendo imágenes:', error);
             }
         }
         
@@ -1502,10 +1496,8 @@ class CoinCollectionApp {
         this.showScreen('add');
     }
     
-    async convertImageToBase64(imageUrl) {
-        // Por ahora, simplemente usar la URL directamente
-        // Los proxies CORS no están funcionando correctamente
-        console.log('Usando imagen directamente:', imageUrl);
+    convertImageToBase64(imageUrl) {
+        // Simplemente devolver la URL sin intentar convertir
         return imageUrl;
     }
 
