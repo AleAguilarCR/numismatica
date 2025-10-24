@@ -102,7 +102,8 @@ class CoinCollectionApp {
             const mainScreen = document.getElementById('mainScreen');
             if (mainScreen) {
                 mainScreen.classList.remove('hidden');
-                this.renderMainScreen();
+                // Siempre renderizar la pantalla principal para actualizar contadores
+                setTimeout(() => this.renderMainScreen(), 100);
             }
         } else if (screenName === 'country') {
             const countryScreen = document.getElementById('countryScreen');
@@ -517,35 +518,33 @@ class CoinCollectionApp {
     }
 
     async deleteItem() {
-        if (!this.currentEditingItem) {
-            console.error('No hay item para eliminar');
-            return;
-        }
+        if (!this.currentEditingItem) return;
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             const itemId = this.currentEditingItem.id;
             const countryCode = this.currentEditingItem.countryCode;
             
-            console.log('Eliminando item:', itemId, 'del país:', countryCode);
-            
-            // Eliminar de Firebase primero
-            if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
-                try {
+            try {
+                // Eliminar de Firebase si es un ID válido
+                if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                     await window.db.collection('coins').doc(itemId).delete();
-                    console.log('Item eliminado de Firebase');
-                } catch (error) {
-                    console.error('Error eliminando de Firebase:', error);
+                    console.log('Item eliminado de Firebase:', itemId);
                 }
+                
+                // Eliminar de localStorage también
+                this.items = this.items.filter(i => i.id !== itemId);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                
+                this.currentEditingItem = null;
+                
+                // El listener de Firebase actualizará automáticamente la UI
+                // Pero forzamos la actualización local inmediatamente
+                this.showCountryItems(countryCode);
+                
+            } catch (error) {
+                console.error('Error eliminando item:', error);
+                alert('Error al eliminar el item. Inténtalo de nuevo.');
             }
-            
-            // Eliminar de la lista local
-            this.items = this.items.filter(i => i.id !== itemId);
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            
-            this.currentEditingItem = null;
-            
-            // Regresar a la lista del país y refrescar
-            this.showCountryItems(countryCode);
         }
     }
 
