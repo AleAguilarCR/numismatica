@@ -139,6 +139,40 @@
             <div class="continents-list" id="continentsList"></div>
         </div>
 
+        <!-- Pantalla Editor de Foto -->
+        <div class="screen hidden" id="photoEditorScreen">
+            <header class="screen-header">
+                <button class="back-btn" id="backFromPhotoEditor">←</button>
+                <h2>Editar Foto</h2>
+            </header>
+            <div class="photo-editor">
+                <canvas id="photoCanvas" style="max-width: 100%; border: 1px solid #ccc;"></canvas>
+                <div class="editor-controls">
+                    <button class="btn btn-secondary" id="cropBtn">Recortar</button>
+                    <button class="btn btn-secondary" id="rotateBtn">Rotar</button>
+                    <button class="btn btn-primary" id="savePhotoBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla Buscar por Imagen -->
+        <div class="screen hidden" id="imageSearchScreen">
+            <header class="screen-header">
+                <button class="back-btn" id="backFromImageSearch">←</button>
+                <h2>Buscar por Imagen</h2>
+            </header>
+            <div class="image-search">
+                <div class="search-upload">
+                    <div class="photo-preview" id="searchPhotoPreview">
+                        <span>📷 Subir Foto para Buscar</span>
+                    </div>
+                    <input type="file" id="searchPhotoInput" accept="image/*" hidden>
+                </div>
+                <button class="btn btn-primary btn-full" id="searchBtn" disabled>Buscar Moneda</button>
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </div>
+
         <!-- Pantalla Editar Item -->
         <div class="screen hidden" id="editScreen">
             <header class="screen-header">

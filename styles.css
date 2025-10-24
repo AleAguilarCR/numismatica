@@ -324,6 +324,68 @@ body {
     align-self: flex-start;
 }
 
+/* Editor de fotos */
+.photo-editor {
+    padding: 20px;
+    text-align: center;
+}
+
+.editor-controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Búsqueda por imagen */
+.image-search {
+    padding: 20px;
+}
+
+.search-upload {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.search-results {
+    margin-top: 20px;
+}
+
+.search-result {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: left;
+}
+
+.search-result h4 {
+    margin-bottom: 10px;
+    color: #2196F3;
+}
+
+.search-result p {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.search-result a {
+    color: #2196F3;
+    text-decoration: none;
+}
+
+.search-result a:hover {
+    text-decoration: underline;
+}
+
+.search-result .btn {
+    margin-top: 10px;
+    width: 100%;
+}
+
 /* Continentes */
 .continents-list {
     display: flex;

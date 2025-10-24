@@ -38,9 +38,22 @@ class CoinCollectionApp {
         document.getElementById('backFromCountry').addEventListener('click', () => this.showScreen('main'));
         document.getElementById('backFromContinents').addEventListener('click', () => this.showScreen('main'));
         document.getElementById('backFromEdit').addEventListener('click', () => this.showScreen('country'));
+        document.getElementById('backFromPhotoEditor').addEventListener('click', () => this.showScreen(this.previousScreen));
+        document.getElementById('backFromImageSearch').addEventListener('click', () => this.showScreen('main'));
         
         // Título como botón home
         document.getElementById('appTitle').addEventListener('click', () => this.showScreen('main'));
+        
+        // Editor de fotos
+        document.getElementById('cropBtn').addEventListener('click', () => this.cropPhoto());
+        document.getElementById('rotateBtn').addEventListener('click', () => this.rotatePhoto());
+        document.getElementById('savePhotoBtn').addEventListener('click', () => this.saveEditedPhoto());
+        
+        // Búsqueda por imagen
+        document.getElementById('searchImageBtn').addEventListener('click', () => this.showScreen('imageSearch'));
+        document.getElementById('searchPhotoPreview').addEventListener('click', () => this.selectSearchPhoto());
+        document.getElementById('searchPhotoInput').addEventListener('change', (e) => this.handleSearchPhotoSelect(e));
+        document.getElementById('searchBtn').addEventListener('click', () => this.searchByImage());
 
         // Formulario agregar
         document.getElementById('addForm').addEventListener('submit', (e) => this.handleAddItem(e));
@@ -225,10 +238,123 @@ class CoinCollectionApp {
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const prefix = mode === 'edit' ? 'edit' : '';
-                const preview = document.getElementById(`${prefix}photoPreview${side === 'front' ? 'Front' : 'Back'}`);
-                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                preview.dataset.photo = e.target.result;
+                // Guardar datos para el editor
+                this.currentPhotoData = {
+                    imageData: e.target.result,
+                    side: side,
+                    mode: mode
+                };
+                
+                // Mostrar editor de fotos
+                this.showPhotoEditor(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    showPhotoEditor(imageData) {
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = () => {
+            // Ajustar tamaño del canvas
+            const maxWidth = 400;
+            const maxHeight = 400;
+            let { width, height } = img;
+            
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            this.currentImage = img;
+            this.currentCanvas = canvas;
+        };
+        
+        img.src = imageData;
+        this.showScreen('photoEditor');
+    }
+    
+    cropPhoto() {
+        // Implementación básica de crop (centro de la imagen)
+        const canvas = this.currentCanvas;
+        const ctx = canvas.getContext('2d');
+        const size = Math.min(canvas.width, canvas.height);
+        
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = size;
+        tempCanvas.height = size;
+        
+        const x = (canvas.width - size) / 2;
+        const y = (canvas.height - size) / 2;
+        
+        tempCtx.drawImage(canvas, x, y, size, size, 0, 0, size, size);
+        
+        canvas.width = size;
+        canvas.height = size;
+        ctx.drawImage(tempCanvas, 0, 0);
+    }
+    
+    rotatePhoto() {
+        const canvas = this.currentCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = canvas.height;
+        tempCanvas.height = canvas.width;
+        
+        tempCtx.translate(canvas.height / 2, canvas.width / 2);
+        tempCtx.rotate(Math.PI / 2);
+        tempCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+        
+        canvas.width = tempCanvas.width;
+        canvas.height = tempCanvas.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(tempCanvas, 0, 0);
+    }
+    
+    saveEditedPhoto() {
+        const canvas = this.currentCanvas;
+        const editedImageData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Aplicar la foto editada
+        const { side, mode } = this.currentPhotoData;
+        const prefix = mode === 'edit' ? 'edit' : '';
+        const preview = document.getElementById(`${prefix}photoPreview${side === 'front' ? 'Front' : 'Back'}`);
+        preview.innerHTML = `<img src="${editedImageData}" alt="Preview">`;
+        preview.dataset.photo = editedImageData;
+        
+        // Regresar a la pantalla anterior
+        this.showScreen(mode === 'edit' ? 'edit' : 'add');
+    }
+    
+    selectSearchPhoto() {
+        document.getElementById('searchPhotoInput').click();
+    }
+    
+    handleSearchPhotoSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('searchPhotoPreview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Buscar" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
+                this.searchImageData = e.target.result;
+                document.getElementById('searchBtn').disabled = false;
             };
             reader.readAsDataURL(file);
         }
@@ -405,8 +531,189 @@ class CoinCollectionApp {
         this.showScreen(this.previousScreen);
     }
 
-    searchByImage() {
-        alert('Función de búsqueda por imagen próximamente. Se integrará con APIs de reconocimiento de monedas.');
+    async searchByImage() {
+        if (!this.searchImageData) return;
+        
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
+        
+        try {
+            // Usar Google Vision API para detectar texto y objetos
+            const visionResults = await this.analyzeImageWithVision(this.searchImageData);
+            
+            // Buscar en base de datos de monedas usando los resultados de Vision
+            const coinResults = await this.searchCoinsDatabase(visionResults);
+            
+            if (coinResults.length === 0) {
+                resultsDiv.innerHTML = '<p>No se encontraron monedas similares. Intenta con una imagen más clara.</p>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = coinResults.map((result, index) => `
+                <div class="search-result">
+                    <h4>${result.title}</h4>
+                    <p><strong>País:</strong> ${result.country}</p>
+                    <p><strong>Año:</strong> ${result.year}</p>
+                    <p><strong>Confianza:</strong> ${result.confidence}%</p>
+                    <p><strong>Descripción:</strong> ${result.description}</p>
+                    <p><a href="${result.link}" target="_blank" rel="noopener">Ver en catálogo</a></p>
+                    <button class="btn btn-primary" onclick="app.addSearchResultToCollection(${index})">➕ Agregar a mi colección</button>
+                </div>
+            `).join('');
+            
+            this.currentSearchResults = coinResults;
+            
+        } catch (error) {
+            console.error('Error en búsqueda:', error);
+            resultsDiv.innerHTML = '<p>Error en la búsqueda. Verifica tu conexión e inténtalo de nuevo.</p>';
+        }
+    }
+    
+    async analyzeImageWithVision(imageData) {
+        // Configuración de Google Vision API
+        const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
+        const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+        
+        // Convertir imagen a base64 sin el prefijo data:image
+        const base64Image = imageData.split(',')[1];
+        
+        const requestBody = {
+            requests: [{
+                image: { content: base64Image },
+                features: [
+                    { type: 'TEXT_DETECTION', maxResults: 10 },
+                    { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
+                    { type: 'WEB_DETECTION', maxResults: 5 }
+                ]
+            }]
+        };
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error en Google Vision API');
+        }
+        
+        const data = await response.json();
+        return this.processVisionResults(data);
+    }
+    
+    processVisionResults(visionData) {
+        const result = visionData.responses[0];
+        const extractedInfo = {
+            texts: [],
+            objects: [],
+            webEntities: []
+        };
+        
+        // Extraer texto detectado
+        if (result.textAnnotations) {
+            extractedInfo.texts = result.textAnnotations.map(text => text.description);
+        }
+        
+        // Extraer objetos detectados
+        if (result.localizedObjectAnnotations) {
+            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name);
+        }
+        
+        // Extraer entidades web
+        if (result.webDetection && result.webDetection.webEntities) {
+            extractedInfo.webEntities = result.webDetection.webEntities
+                .filter(entity => entity.score > 0.5)
+                .map(entity => entity.description);
+        }
+        
+        return extractedInfo;
+    }
+    
+    async searchCoinsDatabase(visionResults) {
+        // Base de datos simulada de monedas (en producción usarías una API real)
+        const coinsDatabase = [
+            {
+                title: 'Moneda de 1 Dólar Estadounidense',
+                country: 'Estados Unidos',
+                countryCode: 'US',
+                year: '2020',
+                type: 'moneda',
+                denomination: '1 Dollar',
+                keywords: ['dollar', 'liberty', 'united states', 'america', '1'],
+                description: 'Moneda de 1 dólar americano',
+                link: 'https://numista.com/catalogue/pieces1234.html'
+            },
+            {
+                title: 'Quarter Dollar - Estados Unidos',
+                country: 'Estados Unidos',
+                countryCode: 'US',
+                year: '2019',
+                type: 'moneda',
+                denomination: '25 Centavos',
+                keywords: ['quarter', 'liberty', 'united states', 'america', '25'],
+                description: 'Moneda de 25 centavos de dólar',
+                link: 'https://numista.com/catalogue/pieces5678.html'
+            },
+            {
+                title: 'Euro - Alemania',
+                country: 'Alemania',
+                countryCode: 'DE',
+                year: '2018',
+                type: 'moneda',
+                denomination: '1 Euro',
+                keywords: ['euro', 'deutschland', 'germany', 'europa', '1'],
+                description: 'Moneda de 1 euro alemán',
+                link: 'https://numista.com/catalogue/pieces9999.html'
+            }
+        ];
+        
+        // Combinar todos los textos detectados
+        const allTexts = [...visionResults.texts, ...visionResults.objects, ...visionResults.webEntities]
+            .join(' ').toLowerCase();
+        
+        // Buscar coincidencias
+        const matches = coinsDatabase.map(coin => {
+            let score = 0;
+            coin.keywords.forEach(keyword => {
+                if (allTexts.includes(keyword.toLowerCase())) {
+                    score += 1;
+                }
+            });
+            
+            return {
+                ...coin,
+                confidence: Math.min(Math.round((score / coin.keywords.length) * 100), 95)
+            };
+        }).filter(coin => coin.confidence > 20)
+          .sort((a, b) => b.confidence - a.confidence)
+          .slice(0, 3); // Top 3 resultados
+        
+        return matches;
+    }
+    
+    addSearchResultToCollection(resultIndex) {
+        const result = this.currentSearchResults[resultIndex];
+        if (!result) return;
+        
+        // Pre-llenar formulario con datos del resultado
+        document.getElementById('itemType').value = result.type;
+        document.getElementById('country').value = result.countryCode;
+        document.getElementById('denomination').value = result.denomination;
+        document.getElementById('year').value = result.year;
+        document.getElementById('condition').value = 'Bueno'; // Valor por defecto
+        document.getElementById('catalogLink').value = result.link;
+        document.getElementById('notes').value = `Agregado desde búsqueda por imagen: ${result.description}`;
+        
+        // Si hay foto de búsqueda, usarla como anverso
+        if (this.searchImageData) {
+            const preview = document.getElementById('photoPreviewFront');
+            preview.innerHTML = `<img src="${this.searchImageData}" alt="Preview">`;
+            preview.dataset.photo = this.searchImageData;
+        }
+        
+        // Ir a pantalla de agregar
+        this.showScreen('add');
     }
 
     async saveData() {
