@@ -413,6 +413,37 @@ body {
     gap: 10px;
 }
 
+/* Numista Import */
+.numista-import {
+    padding: 20px;
+}
+
+.numista-preview {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 10px;
+}
+
+.numista-info h3 {
+    color: #2196F3;
+    margin-bottom: 10px;
+}
+
+.numista-info p {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.numista-images {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.numista-images img {
+    border: 1px solid #ddd;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
     .app {

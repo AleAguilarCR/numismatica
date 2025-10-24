@@ -40,6 +40,7 @@ class CoinCollectionApp {
         document.getElementById('backFromEdit').addEventListener('click', () => this.showScreen('country'));
         document.getElementById('backFromPhotoEditor').addEventListener('click', () => this.showScreen(this.previousScreen));
         document.getElementById('backFromImageSearch').addEventListener('click', () => this.showScreen('main'));
+        document.getElementById('backFromNumista').addEventListener('click', () => this.showScreen('add'));
         
         // Título como botón home
         document.getElementById('appTitle').addEventListener('click', () => this.showScreen('main'));
@@ -69,6 +70,10 @@ class CoinCollectionApp {
         document.getElementById('editPhotoInputFront').addEventListener('change', (e) => this.handlePhotoSelect(e, 'front', 'edit'));
         document.getElementById('editPhotoInputBack').addEventListener('change', (e) => this.handlePhotoSelect(e, 'back', 'edit'));
         document.getElementById('deleteItemBtn').addEventListener('click', () => this.deleteItem());
+        
+        // Numista import
+        document.getElementById('numistaBtnAdd').addEventListener('click', () => this.showScreen('numista'));
+        document.getElementById('parseNumistaBtn').addEventListener('click', () => this.parseNumistaUrl());
     }
 
     showScreen(screenName) {
@@ -1227,6 +1232,176 @@ class CoinCollectionApp {
             const preview = document.getElementById('photoPreviewFront');
             preview.innerHTML = `<img src="${this.searchImageData}" alt="Preview">`;
             preview.dataset.photo = this.searchImageData;
+        }
+        
+        // Ir a pantalla de agregar
+        this.showScreen('add');
+    }
+    
+    async parseNumistaUrl() {
+        const url = document.getElementById('numistaUrl').value;
+        if (!url || !url.includes('numista.com')) {
+            alert('Por favor ingresa una URL válida de Numista');
+            return;
+        }
+        
+        const preview = document.getElementById('numistaPreview');
+        preview.innerHTML = '<p>Extrayendo información...</p>';
+        
+        try {
+            const data = await this.fetchNumistaData(url);
+            this.displayNumistaPreview(data);
+        } catch (error) {
+            console.error('Error parsing Numista:', error);
+            preview.innerHTML = '<p>Error al extraer información. Verifica la URL.</p>';
+        }
+    }
+    
+    async fetchNumistaData(url) {
+        // Usar un proxy CORS para obtener el HTML de Numista
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+        const html = data.contents;
+        
+        // Crear un parser DOM temporal
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        return this.extractNumistaInfo(doc, url);
+    }
+    
+    extractNumistaInfo(doc, url) {
+        const info = {
+            title: '',
+            type: 'moneda',
+            country: '',
+            countryCode: '',
+            denomination: '',
+            year: '',
+            images: [],
+            catalogLink: url
+        };
+        
+        // Extraer título
+        const titleEl = doc.querySelector('h1') || doc.querySelector('.coin-title');
+        if (titleEl) {
+            info.title = titleEl.textContent.trim();
+        }
+        
+        // Extraer tipo (moneda/billete)
+        const typeEl = doc.querySelector('.coin-type') || doc.querySelector('[data-type]');
+        if (typeEl && typeEl.textContent.toLowerCase().includes('banknote')) {
+            info.type = 'billete';
+        }
+        
+        // Extraer país
+        const countryEl = doc.querySelector('.issuer') || doc.querySelector('[data-issuer]');
+        if (countryEl) {
+            const countryText = countryEl.textContent.trim();
+            info.country = this.mapNumistaCountry(countryText);
+            info.countryCode = this.getCountryCode(info.country);
+        }
+        
+        // Extraer denominación
+        const denomEl = doc.querySelector('.denomination') || doc.querySelector('[data-value]');
+        if (denomEl) {
+            info.denomination = denomEl.textContent.trim();
+        }
+        
+        // Extraer año
+        const yearEl = doc.querySelector('.year') || doc.querySelector('[data-year]');
+        if (yearEl) {
+            const yearText = yearEl.textContent.trim();
+            const yearMatch = yearText.match(/\d{4}/);
+            if (yearMatch) {
+                info.year = yearMatch[0];
+            }
+        }
+        
+        // Extraer imágenes
+        const imgElements = doc.querySelectorAll('img[src*="coin"], img[src*="piece"], .coin-image img');
+        imgElements.forEach(img => {
+            if (img.src && !img.src.includes('flag') && !img.src.includes('icon')) {
+                info.images.push(img.src);
+            }
+        });
+        
+        return info;
+    }
+    
+    mapNumistaCountry(numistaCountry) {
+        // Mapear nombres de países de Numista a nuestra base de datos
+        const countryMappings = {
+            'United States': 'Estados Unidos de América',
+            'United Kingdom': 'Reino Unido',
+            'Germany': 'Alemania',
+            'France': 'Francia',
+            'Spain': 'España',
+            'Mexico': 'México',
+            'Brazil': 'Brasil',
+            'Argentina': 'Argentina',
+            'Chile': 'Chile',
+            'Colombia': 'Colombia',
+            'Peru': 'Perú',
+            'Venezuela': 'Venezuela',
+            'Ecuador': 'Ecuador',
+            'Uruguay': 'Uruguay',
+            'Paraguay': 'Paraguay',
+            'Costa Rica': 'Costa Rica',
+            'Honduras': 'Honduras'
+        };
+        
+        return countryMappings[numistaCountry] || numistaCountry;
+    }
+    
+    displayNumistaPreview(data) {
+        const preview = document.getElementById('numistaPreview');
+        
+        const imagesHtml = data.images.slice(0, 2).map((img, index) => 
+            `<img src="${img}" alt="Imagen ${index + 1}" style="max-width: 150px; margin: 5px; border-radius: 8px;">`
+        ).join('');
+        
+        preview.innerHTML = `
+            <div class="numista-info">
+                <h3>${data.title}</h3>
+                <p><strong>Tipo:</strong> ${data.type}</p>
+                <p><strong>País:</strong> ${data.country}</p>
+                <p><strong>Denominación:</strong> ${data.denomination}</p>
+                <p><strong>Año:</strong> ${data.year}</p>
+                <div class="numista-images">${imagesHtml}</div>
+                <button class="btn btn-primary" onclick="app.importFromNumista()">Importar a Colección</button>
+            </div>
+        `;
+        
+        this.currentNumistaData = data;
+    }
+    
+    importFromNumista() {
+        if (!this.currentNumistaData) return;
+        
+        const data = this.currentNumistaData;
+        
+        // Pre-llenar formulario
+        document.getElementById('itemType').value = data.type;
+        document.getElementById('country').value = data.countryCode;
+        document.getElementById('denomination').value = data.denomination;
+        document.getElementById('year').value = data.year;
+        document.getElementById('catalogLink').value = data.catalogLink;
+        document.getElementById('notes').value = `Importado desde Numista: ${data.title}`;
+        
+        // Agregar imágenes si están disponibles
+        if (data.images.length > 0) {
+            const frontPreview = document.getElementById('photoPreviewFront');
+            frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso">`;
+            frontPreview.dataset.photo = data.images[0];
+            
+            if (data.images.length > 1) {
+                const backPreview = document.getElementById('photoPreviewBack');
+                backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso">`;
+                backPreview.dataset.photo = data.images[1];
+            }
         }
         
         // Ir a pantalla de agregar
