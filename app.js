@@ -206,8 +206,13 @@ class CoinCollectionApp {
                     ${item.value ? `<p><strong>Valor:</strong> $${item.value}</p>` : ''}
                     ${item.catalogLink ? `<p><strong>Catálogo:</strong> <a href="${item.catalogLink}" target="_blank" rel="noopener">Ver enlace</a></p>` : ''}
                 </div>
-                <button class="btn btn-secondary edit-btn" onclick="app.editItem(${item.id})">Editar</button>
+                <button class="btn btn-secondary edit-btn">Editar</button>
             `;
+            
+            // Agregar event listener al botón de editar
+            const editBtn = itemCard.querySelector('.edit-btn');
+            editBtn.addEventListener('click', () => this.editItem(item.id));
+            
             itemsList.appendChild(itemCard);
         });
     }
@@ -501,20 +506,29 @@ class CoinCollectionApp {
     }
 
     async deleteItem() {
-        if (!this.currentEditingItem) return;
+        if (!this.currentEditingItem) {
+            console.error('No hay item para eliminar');
+            return;
+        }
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             const itemId = this.currentEditingItem.id;
             const countryCode = this.currentEditingItem.countryCode;
             
+            console.log('Eliminando item:', itemId, 'del país:', countryCode);
+            
             // Eliminar de la lista local inmediatamente
+            const originalLength = this.items.length;
             this.items = this.items.filter(i => i.id !== itemId);
+            console.log('Items antes:', originalLength, 'Items después:', this.items.length);
+            
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
             // Intentar eliminar de Firebase solo si el ID es válido
             if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                 try {
                     await window.db.collection('coins').doc(itemId).delete();
+                    console.log('Item eliminado de Firebase');
                 } catch (error) {
                     console.error('Error eliminando de Firebase:', error);
                 }
@@ -523,6 +537,7 @@ class CoinCollectionApp {
             this.currentEditingItem = null;
             
             // Regresar a la lista del país y refrescar
+            console.log('Regresando a la lista del país:', countryCode);
             this.showCountryItems(countryCode);
         }
     }
