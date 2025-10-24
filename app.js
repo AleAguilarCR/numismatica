@@ -553,18 +553,26 @@ class CoinCollectionApp {
         try {
             let visionResults;
             
+            // Usar búsqueda simulada por ahora (Vision API requiere configuración adicional)
+            console.log('Usando búsqueda simulada');
+            visionResults = {
+                texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso'],
+                objects: ['coin', 'currency'],
+                webEntities: ['currency', 'money', 'numismatics']
+            };
+            
+            // Para habilitar Vision API:
+            // 1. Configura restricciones en Google Cloud Console
+            // 2. Agrega tu dominio a HTTP referrers
+            // 3. Descomenta el código siguiente:
+            /*
             try {
-                // Intentar usar Google Vision API
                 visionResults = await this.analyzeImageWithVision(this.searchImageData);
             } catch (visionError) {
-                console.log('Vision API no disponible, usando búsqueda simulada:', visionError);
-                // Fallback a búsqueda simulada
-                visionResults = {
-                    texts: ['coin', 'dollar', 'liberty'],
-                    objects: ['coin'],
-                    webEntities: ['currency', 'money']
-                };
+                console.log('Vision API error:', visionError);
+                // Usar datos simulados como fallback
             }
+            */
             
             // Buscar en base de datos de monedas
             const coinResults = await this.searchCoinsDatabase(visionResults);
