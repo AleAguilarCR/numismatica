@@ -1238,30 +1238,23 @@ class CoinCollectionApp {
         this.showScreen('add');
     }
     
-    async parseNumistaUrl() {
+    parseNumistaUrl() {
         const url = document.getElementById('numistaUrl').value;
         if (!url || !url.includes('numista.com')) {
             alert('Por favor ingresa una URL válida de Numista');
             return;
         }
         
-        const preview = document.getElementById('numistaPreview');
-        preview.innerHTML = '<p>Extrayendo información...</p>';
-        
-        try {
-            const data = await this.fetchNumistaData(url);
-            this.displayNumistaPreview(data);
-        } catch (error) {
-            console.error('Error parsing Numista:', error);
-            this.showManualNumistaForm(url);
-        }
+        this.showManualNumistaForm(url);
     }
     
     showManualNumistaForm(url) {
         const preview = document.getElementById('numistaPreview');
         preview.innerHTML = `
             <div class="manual-numista-form">
-                <p><strong>No se pudo extraer automáticamente. Ingresa manualmente:</strong></p>
+                <p><strong>Ingresa la información de Numista:</strong></p>
+                <p><small>Copia los datos de la página de Numista y pégalos aquí</small></p>
+                
                 <div class="form-group">
                     <label>Tipo:</label>
                     <select id="manualType">
@@ -1269,32 +1262,65 @@ class CoinCollectionApp {
                         <option value="billete">Billete</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
-                    <label>País:</label>
+                    <label>Emisor/País:</label>
                     <input type="text" id="manualCountry" placeholder="ej: Costa Rica">
+                    <small>Copia el campo "Emisor" de Numista</small>
                 </div>
+                
                 <div class="form-group">
-                    <label>Denominación:</label>
-                    <input type="text" id="manualDenomination" placeholder="ej: 5 colones">
+                    <label>Valor/Denominación:</label>
+                    <input type="text" id="manualDenomination" placeholder="ej: 5 colones (5 CRC)">
+                    <small>Copia el campo "Valor" de Numista</small>
                 </div>
+                
                 <div class="form-group">
-                    <label>Año:</label>
-                    <input type="number" id="manualYear" placeholder="ej: 1968">
+                    <label>Años:</label>
+                    <input type="text" id="manualYear" placeholder="ej: 1968 o 1968-1992">
+                    <small>Copia el campo "Años" de Numista</small>
                 </div>
-                <button class="btn btn-primary" onclick="app.importManualNumista('${url}')">Importar Manualmente</button>
+                
+                <div class="form-group">
+                    <label>URL de Imagen Anverso (opcional):</label>
+                    <input type="url" id="manualImageFront" placeholder="https://...">
+                </div>
+                
+                <div class="form-group">
+                    <label>URL de Imagen Reverso (opcional):</label>
+                    <input type="url" id="manualImageBack" placeholder="https://...">
+                </div>
+                
+                <button class="btn btn-primary btn-full" onclick="app.importManualNumista('${url}')">Importar a Colección</button>
             </div>
         `;
     }
     
     importManualNumista(url) {
+        const countryText = document.getElementById('manualCountry').value;
+        const yearText = document.getElementById('manualYear').value;
+        const imageFront = document.getElementById('manualImageFront').value;
+        const imageBack = document.getElementById('manualImageBack').value;
+        
+        // Extraer primer año si es un rango
+        let year = yearText;
+        const yearMatch = yearText.match(/(\d{4})/);
+        if (yearMatch) {
+            year = yearMatch[1];
+        }
+        
+        const images = [];
+        if (imageFront) images.push(imageFront);
+        if (imageBack) images.push(imageBack);
+        
         const data = {
             title: 'Item de Numista',
             type: document.getElementById('manualType').value,
-            country: document.getElementById('manualCountry').value,
-            countryCode: this.getCountryCode(document.getElementById('manualCountry').value),
+            country: this.mapNumistaCountry(countryText),
+            countryCode: this.getCountryCode(this.mapNumistaCountry(countryText)),
             denomination: document.getElementById('manualDenomination').value,
-            year: document.getElementById('manualYear').value,
-            images: [],
+            year: year,
+            images: images,
             catalogLink: url
         };
         
@@ -1302,42 +1328,7 @@ class CoinCollectionApp {
         this.importFromNumista();
     }
     
-    async fetchNumistaData(url) {
-        // Intentar múltiples proxies CORS
-        const proxies = [
-            `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-            `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            `https://cors-anywhere.herokuapp.com/${url}`
-        ];
-        
-        for (const proxyUrl of proxies) {
-            try {
-                console.log('Intentando proxy:', proxyUrl);
-                const response = await fetch(proxyUrl);
-                
-                let html;
-                if (proxyUrl.includes('allorigins')) {
-                    const data = await response.json();
-                    html = data.contents;
-                } else {
-                    html = await response.text();
-                }
-                
-                console.log('HTML obtenido, longitud:', html.length);
-                
-                // Crear un parser DOM temporal
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                return this.extractNumistaInfo(doc, url, html);
-            } catch (error) {
-                console.error('Error con proxy:', proxyUrl, error);
-                continue;
-            }
-        }
-        
-        throw new Error('No se pudo acceder a la página de Numista');
-    }
+
     
     extractNumistaInfo(doc, url, htmlText = null) {
         if (!htmlText) {
