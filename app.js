@@ -242,7 +242,7 @@ class CoinCollectionApp {
                 .map(countryCode => {
                     const country = COUNTRIES[countryCode];
                     const count = this.items.filter(item => item.countryCode === countryCode).length;
-                    return `<div class="country-flag" onclick="app.showCountryItems('${countryCode}'); app.showScreen('country');">
+                    return `<div class="country-flag" data-country="${countryCode}">
                         <div class="flag-emoji">
                             <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" 
                                  alt="${country.name}" 
@@ -259,6 +259,14 @@ class CoinCollectionApp {
                 <h3>${continentName}</h3>
                 <div class="continent-countries">${countriesHtml}</div>
             `;
+            
+            // Agregar event listeners a las banderas de países
+            section.querySelectorAll('.country-flag').forEach(flagElement => {
+                const countryCode = flagElement.dataset.country;
+                flagElement.addEventListener('click', () => {
+                    this.showCountryItems(countryCode);
+                });
+            });
             
             continentsList.appendChild(section);
         });
@@ -517,6 +525,9 @@ class CoinCollectionApp {
             
             console.log('Eliminando item:', itemId, 'del país:', countryCode);
             
+            // Deshabilitar actualizaciones de Firebase temporalmente
+            this.skipFirebaseUpdate = true;
+            
             // Eliminar de la lista local inmediatamente
             const originalLength = this.items.length;
             this.items = this.items.filter(i => i.id !== itemId);
@@ -524,7 +535,7 @@ class CoinCollectionApp {
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            // Intentar eliminar de Firebase solo si el ID es válido
+            // Intentar eliminar de Firebase
             if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                 try {
                     await window.db.collection('coins').doc(itemId).delete();
@@ -533,6 +544,11 @@ class CoinCollectionApp {
                     console.error('Error eliminando de Firebase:', error);
                 }
             }
+            
+            // Reactivar actualizaciones de Firebase después de un breve delay
+            setTimeout(() => {
+                this.skipFirebaseUpdate = false;
+            }, 1000);
             
             this.currentEditingItem = null;
             
@@ -1563,13 +1579,18 @@ class CoinCollectionApp {
         try {
             console.log('Setting up Firebase listener...');
             // Set up real-time listener
-            window.db.collection('coins').onSnapshot((querySnapshot) => {
+            this.firebaseUnsubscribe = window.db.collection('coins').onSnapshot((querySnapshot) => {
+                if (this.skipFirebaseUpdate) {
+                    console.log('Skipping Firebase update during local operation');
+                    return;
+                }
                 console.log('Firebase data received:', querySnapshot.size, 'items');
                 this.items = [];
                 querySnapshot.forEach((doc) => {
                     this.items.push({ id: doc.id, ...doc.data() });
                 });
                 console.log('Items loaded:', this.items.length);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 this.renderMainScreen();
             }, (error) => {
                 console.error('Firebase listener error:', error);
