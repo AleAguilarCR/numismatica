@@ -551,8 +551,12 @@ class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
         
         try {
-            // Usar búsqueda simulada (Vision API deshabilitada)
-            console.log('Usando búsqueda simulada - Vision API deshabilitada');
+            // Búsqueda simulada - Vision API completamente deshabilitada
+            console.log('Iniciando búsqueda simulada');
+            
+            // Simular análisis de imagen
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             const visionResults = {
                 texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
                 objects: ['coin', 'currency', 'money'],
@@ -587,15 +591,7 @@ class CoinCollectionApp {
         }
     }
     
-    // Google Vision API deshabilitada - usar solo búsqueda simulada
-    async analyzeImageWithVision(imageData) {
-        // Esta función está deshabilitada para evitar errores 403
-        // Para habilitarla:
-        // 1. Ve a Google Cloud Console
-        // 2. Configura restricciones HTTP referrers en tu API Key
-        // 3. Agrega: https://aleaguilarcr.github.io/*
-        throw new Error('Vision API deshabilitada - usando búsqueda simulada');
-    }
+    // Vision API completamente removida - solo búsqueda simulada
     
     processVisionResults(visionData) {
         const result = visionData.responses[0];
