@@ -524,27 +524,18 @@ class CoinCollectionApp {
             const itemId = this.currentEditingItem.id;
             const countryCode = this.currentEditingItem.countryCode;
             
-            try {
-                // Eliminar de Firebase si es un ID válido
-                if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
-                    await window.db.collection('coins').doc(itemId).delete();
-                    console.log('Item eliminado de Firebase:', itemId);
-                }
-                
-                // Eliminar de localStorage también
-                this.items = this.items.filter(i => i.id !== itemId);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                
-                this.currentEditingItem = null;
-                
-                // El listener de Firebase actualizará automáticamente la UI
-                // Pero forzamos la actualización local inmediatamente
-                this.showCountryItems(countryCode);
-                
-            } catch (error) {
-                console.error('Error eliminando item:', error);
-                alert('Error al eliminar el item. Inténtalo de nuevo.');
-            }
+            console.log('Eliminando item:', itemId);
+            
+            // Eliminar de la lista local
+            this.items = this.items.filter(i => i.id !== itemId);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            console.log('Items restantes:', this.items.length);
+            
+            this.currentEditingItem = null;
+            
+            // Regresar a la lista del país
+            this.showCountryItems(countryCode);
         }
     }
 
@@ -583,27 +574,12 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        if (window.db) {
-            try {
-                console.log('Adding item to Firebase:', item);
-                const docRef = await window.db.collection('coins').add(item);
-                console.log('Item added to Firebase with ID:', docRef.id);
-                // El listener en tiempo real actualizará this.items automáticamente
-            } catch (error) {
-                console.error('Error adding item to Firebase:', error);
-                // Fallback to localStorage con ID numérico
-                item.id = Date.now();
-                this.items.push(item);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                this.renderMainScreen();
-            }
-        } else {
-            console.log('Firebase not available, using localStorage');
-            item.id = Date.now();
-            this.items.push(item);
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            this.renderMainScreen();
-        }
+        // Usar solo localStorage
+        item.id = Date.now();
+        this.items.push(item);
+        localStorage.setItem('coinCollection', JSON.stringify(this.items));
+        console.log('Item agregado:', item.id);
+        this.renderMainScreen();
         
         // Limpiar formulario
         event.target.reset();
@@ -1557,45 +1533,12 @@ class CoinCollectionApp {
     }
 
     async loadData() {
-        if (!window.db) {
-            console.log('Firebase not ready, using localStorage');
-            const saved = localStorage.getItem('coinCollection');
-            if (saved) {
-                this.items = JSON.parse(saved);
-            }
-            return;
+        console.log('Loading data from localStorage only');
+        const saved = localStorage.getItem('coinCollection');
+        if (saved) {
+            this.items = JSON.parse(saved);
         }
-        
-        try {
-            console.log('Setting up Firebase listener...');
-            // Set up real-time listener
-            this.firebaseUnsubscribe = window.db.collection('coins').onSnapshot((querySnapshot) => {
-                console.log('Firebase data received:', querySnapshot.size, 'items');
-                this.items = [];
-                querySnapshot.forEach((doc) => {
-                    this.items.push({ id: doc.id, ...doc.data() });
-                });
-                console.log('Items loaded:', this.items.length);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                this.renderMainScreen();
-            }, (error) => {
-                console.error('Firebase listener error:', error);
-                // Fallback to localStorage
-                const saved = localStorage.getItem('coinCollection');
-                if (saved) {
-                    this.items = JSON.parse(saved);
-                }
-                this.renderMainScreen();
-            });
-        } catch (error) {
-            console.error('Error setting up Firebase:', error);
-            // Fallback to localStorage
-            const saved = localStorage.getItem('coinCollection');
-            if (saved) {
-                this.items = JSON.parse(saved);
-            }
-            this.renderMainScreen();
-        }
+        this.renderMainScreen();
     }
 }
 
