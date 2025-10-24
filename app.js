@@ -38,7 +38,6 @@ class CoinCollectionApp {
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromCountry')?.addEventListener('click', () => {
                 this.showScreen('main');
-                this.renderMainScreen();
             });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromEdit')?.addEventListener('click', () => this.showScreen('country'));
@@ -534,8 +533,13 @@ class CoinCollectionApp {
             
             this.currentEditingItem = null;
             
-            // Regresar a la lista del país
+            // Regresar a la lista del país y forzar actualización
             this.showCountryItems(countryCode);
+            
+            // Forzar actualización de la pantalla principal también
+            setTimeout(() => {
+                this.renderMainScreen();
+            }, 100);
         }
     }
 

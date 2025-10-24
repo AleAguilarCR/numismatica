@@ -274,27 +274,12 @@
         </div>
     </div>
 
-    <!-- Firebase CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+    <!-- Firebase deshabilitado temporalmente -->
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAo_Vx0cy85fY-N256Bg6iTAr6JQO_4TwA",
-            authDomain: "coin-collection-fa4ea.firebaseapp.com",
-            projectId: "coin-collection-fa4ea",
-            storageBucket: "coin-collection-fa4ea.firebasestorage.app",
-            messagingSenderId: "349426774595",
-            appId: "1:349426774595:web:e3833eb5ffdb6575a41af6"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        window.db = firebase.firestore();
-        window.firebaseReady = true;
-        
-        console.log('Firebase initialized:', window.db);
+        // Firebase deshabilitado
+        window.db = null;
+        window.firebaseReady = false;
+        console.log('Firebase deshabilitado - usando solo localStorage');
     </script>
     <script src="countries.js"></script>
     <script src="app.js"></script>
