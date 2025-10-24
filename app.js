@@ -693,14 +693,14 @@ class CoinCollectionApp {
     extractSearchKeywords(text) {
         const keywords = [];
         
-        // Países comunes
-        const countries = ['united states', 'america', 'usa', 'germany', 'deutschland', 'france', 'spain', 'mexico', 'canada', 'australia', 'japan', 'china', 'russia', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay'];
+        // Países comunes (incluyendo Costa Rica)
+        const countries = ['costa rica', 'united states', 'america', 'usa', 'germany', 'deutschland', 'france', 'spain', 'mexico', 'canada', 'australia', 'japan', 'china', 'russia', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay'];
         countries.forEach(country => {
             if (text.includes(country)) keywords.push(country);
         });
         
-        // Denominaciones
-        const denominations = ['dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
+        // Denominaciones (incluyendo colones)
+        const denominations = ['colones', 'dollar', 'euro', 'peso', 'yen', 'pound', 'franc', 'mark', 'ruble', 'real', 'cent', 'centavo', 'quarter', 'dime', 'nickel', 'penny'];
         denominations.forEach(denom => {
             if (text.includes(denom)) keywords.push(denom);
         });
@@ -708,20 +708,28 @@ class CoinCollectionApp {
         // Números
         const numbers = text.match(/\b(\d{1,4})\b/g);
         if (numbers) {
-            keywords.push(...numbers.slice(0, 3)); // Máximo 3 números
+            keywords.push(...numbers.slice(0, 3));
         }
         
         // Palabras relacionadas con monedas
-        const coinWords = ['coin', 'liberty', 'republic', 'kingdom', 'empire', 'federal', 'national'];
+        const coinWords = ['coin', 'liberty', 'republic', 'kingdom', 'empire', 'federal', 'national', 'banco', 'central'];
         coinWords.forEach(word => {
             if (text.includes(word)) keywords.push(word);
         });
         
-        return [...new Set(keywords)]; // Eliminar duplicados
+        return [...new Set(keywords)];
     }
     
     async searchNumistaAPI(keywords) {
         console.log('Buscando en Numista con palabras clave:', keywords);
+        
+        const NUMISTA_API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
+        
+        if (!NUMISTA_API_KEY) {
+            console.log('API key de Numista no configurada, usando fallback');
+            throw new Error('Numista API key no configurada');
+        }
+        
         const results = [];
         
         for (const keyword of keywords.slice(0, 3)) {
@@ -732,6 +740,7 @@ class CoinCollectionApp {
                 const response = await fetch(searchUrl, {
                     headers: {
                         'Accept': 'application/json',
+                        'Authorization': `Bearer ${NUMISTA_API_KEY}`,
                         'User-Agent': 'CoinCollectionApp/1.0'
                     }
                 });
