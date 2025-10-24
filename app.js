@@ -37,12 +37,6 @@ class CoinCollectionApp {
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromCountry')?.addEventListener('click', () => {
-                // Recargar datos desde localStorage
-                const saved = localStorage.getItem('coinCollection');
-                if (saved) {
-                    this.items = JSON.parse(saved);
-                }
-                this.renderMainScreen();
                 this.showScreen('main');
             });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
@@ -107,8 +101,7 @@ class CoinCollectionApp {
             const mainScreen = document.getElementById('mainScreen');
             if (mainScreen) {
                 mainScreen.classList.remove('hidden');
-                // Siempre renderizar la pantalla principal para actualizar contadores
-                setTimeout(() => this.renderMainScreen(), 100);
+                this.renderMainScreen();
             }
         } else if (screenName === 'country') {
             const countryScreen = document.getElementById('countryScreen');
@@ -518,6 +511,9 @@ class CoinCollectionApp {
             }
         }
         
+        // Actualizar pantalla principal
+        this.renderMainScreen();
+        
         this.currentEditingItem = null;
         this.showCountryItems(this.currentCountryCode);
     }
@@ -541,6 +537,7 @@ class CoinCollectionApp {
                 }
                 
                 this.currentEditingItem = null;
+                this.renderMainScreen();
                 this.showCountryItems(countryCode);
                 
             } catch (error) {
@@ -593,13 +590,11 @@ class CoinCollectionApp {
                 item.id = Date.now();
                 this.items.push(item);
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                this.renderMainScreen();
             }
         } else {
             item.id = Date.now();
             this.items.push(item);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            this.renderMainScreen();
         }
         
         // Limpiar formulario
@@ -1569,10 +1564,8 @@ class CoinCollectionApp {
                     this.items.push({ id: doc.id, ...doc.data() });
                 });
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                // Solo renderizar si estamos en la pantalla principal
-                if (this.currentScreen === 'main') {
-                    this.renderMainScreen();
-                }
+                // Siempre actualizar la pantalla principal para mantener conteos actualizados
+                this.renderMainScreen();
             });
         } catch (error) {
             const saved = localStorage.getItem('coinCollection');
