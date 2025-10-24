@@ -77,8 +77,14 @@ class CoinCollectionApp {
     }
 
     showScreen(screenName) {
+        // Prevenir recursión infinita
+        if (this.currentScreen === screenName) {
+            return;
+        }
+        
         // Guardar pantalla anterior
         this.previousScreen = this.currentScreen;
+        this.currentScreen = screenName;
         
         // Ocultar todas las pantallas
         document.querySelectorAll('.screen, .main-screen').forEach(screen => {
@@ -87,19 +93,22 @@ class CoinCollectionApp {
 
         // Mostrar pantalla seleccionada
         if (screenName === 'main') {
-            document.getElementById('mainScreen').classList.remove('hidden');
-            this.renderMainScreen();
+            const mainScreen = document.getElementById('mainScreen');
+            if (mainScreen) {
+                mainScreen.classList.remove('hidden');
+                this.renderMainScreen();
+            }
         } else if (screenName === 'country') {
-            document.getElementById('countryScreen').classList.remove('hidden');
-            // Refrescar lista si venimos de editar
-            if (this.previousScreen === 'edit') {
-                this.showCountryItems(this.currentCountryCode);
+            const countryScreen = document.getElementById('countryScreen');
+            if (countryScreen) {
+                countryScreen.classList.remove('hidden');
             }
         } else {
-            document.getElementById(screenName + 'Screen').classList.remove('hidden');
+            const screen = document.getElementById(screenName + 'Screen');
+            if (screen) {
+                screen.classList.remove('hidden');
+            }
         }
-
-        this.currentScreen = screenName;
     }
 
     renderMainScreen() {
@@ -153,9 +162,14 @@ class CoinCollectionApp {
         const country = COUNTRIES[countryCode];
         const countryItems = this.items.filter(item => item.countryCode === countryCode);
 
-        document.getElementById('countryTitle').textContent = country.name;
+        const countryTitle = document.getElementById('countryTitle');
+        if (countryTitle) {
+            countryTitle.textContent = country.name;
+        }
         
         const itemsList = document.getElementById('itemsList');
+        if (!itemsList) return;
+        
         itemsList.innerHTML = '';
 
         countryItems.forEach(item => {
@@ -175,8 +189,6 @@ class CoinCollectionApp {
             `;
             itemsList.appendChild(itemCard);
         });
-
-        this.showScreen('country');
     }
 
     showContinents() {
@@ -469,19 +481,24 @@ class CoinCollectionApp {
         if (!this.currentEditingItem) return;
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
-            if (window.db) {
+            const itemId = this.currentEditingItem.id;
+            
+            if (window.db && typeof itemId === 'string') {
                 try {
-                    await window.db.collection('coins').doc(this.currentEditingItem.id).delete();
-                    this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                    await window.db.collection('coins').doc(itemId).delete();
+                    console.log('Item deleted from Firebase');
                 } catch (error) {
                     console.error('Error deleting item:', error);
-                    this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                    // Fallback a localStorage
+                    this.items = this.items.filter(i => i.id !== itemId);
                     localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 }
             } else {
-                this.items = this.items.filter(i => i.id !== this.currentEditingItem.id);
+                // Eliminar de localStorage
+                this.items = this.items.filter(i => i.id !== itemId);
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
             }
+            
             this.currentEditingItem = null;
             this.showScreen('main');
         }
@@ -1486,39 +1503,10 @@ class CoinCollectionApp {
     }
     
     async convertImageToBase64(imageUrl) {
-        try {
-            // Intentar diferentes proxies para imágenes
-            const proxies = [
-                `https://cors-anywhere.herokuapp.com/${imageUrl}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`,
-                imageUrl // Intentar directo como último recurso
-            ];
-            
-            for (const proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.onerror = () => resolve(null);
-                            reader.readAsDataURL(blob);
-                        });
-                    }
-                } catch (proxyError) {
-                    console.log('Proxy fallo:', proxyUrl, proxyError.message);
-                    continue;
-                }
-            }
-            
-            // Si todos los proxies fallan, usar la URL directamente
-            return imageUrl;
-        } catch (error) {
-            console.error('Error convirtiendo imagen:', error);
-            return imageUrl; // Devolver URL original como fallback
-        }
+        // Por ahora, simplemente usar la URL directamente
+        // Los proxies CORS no están funcionando correctamente
+        console.log('Usando imagen directamente:', imageUrl);
+        return imageUrl;
     }
 
     async saveData() {
