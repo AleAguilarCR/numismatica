@@ -106,6 +106,11 @@ class CoinCollectionApp {
         const countriesGrid = document.getElementById('countriesGrid');
         const emptyState = document.getElementById('emptyState');
 
+        if (!countriesGrid || !emptyState) {
+            console.error('Elementos no encontrados en renderMainScreen');
+            return;
+        }
+
         if (this.items.length === 0) {
             emptyState.style.display = 'block';
             return;
@@ -546,7 +551,7 @@ class CoinCollectionApp {
         delete photoPreviewBack.dataset.photo;
         document.getElementById('catalogLink').value = '';
         
-        this.showScreen(this.previousScreen);
+        this.showScreen('main');
     }
 
     async searchByImage() {
@@ -1270,8 +1275,10 @@ class CoinCollectionApp {
                 
                 <div class="form-group">
                     <label>Emisor/País:</label>
-                    <input type="text" id="manualCountry" placeholder="ej: Costa Rica">
-                    <small>Copia el campo "Emisor" de Numista</small>
+                    <select id="manualCountry">
+                        <option value="">Seleccionar país...</option>
+                    </select>
+                    <small>Selecciona el país emisor</small>
                 </div>
                 
                 <div class="form-group">
@@ -1299,13 +1306,33 @@ class CoinCollectionApp {
                 <button class="btn btn-primary btn-full" onclick="app.importManualNumista('${url}')">Importar a Colección</button>
             </div>
         `;
+        
+        // Poblar dropdown de países
+        this.populateManualCountrySelect();
+    }
+    
+    populateManualCountrySelect() {
+        const select = document.getElementById('manualCountry');
+        if (!select) return;
+        
+        Object.keys(COUNTRIES).forEach(code => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = `${COUNTRIES[code].flag} ${COUNTRIES[code].name}`;
+            select.appendChild(option);
+        });
     }
     
     importManualNumista(url) {
-        const countryText = document.getElementById('manualCountry').value;
+        const countryCode = document.getElementById('manualCountry').value;
         const yearText = document.getElementById('manualYear').value;
         const imageFront = document.getElementById('manualImageFront').value;
         const imageBack = document.getElementById('manualImageBack').value;
+        
+        if (!countryCode) {
+            alert('Por favor selecciona un país');
+            return;
+        }
         
         // Extraer primer año si es un rango
         let year = yearText;
@@ -1321,8 +1348,8 @@ class CoinCollectionApp {
         const data = {
             title: 'Item de Numista',
             type: document.getElementById('manualType').value,
-            country: this.mapNumistaCountry(countryText),
-            countryCode: this.getCountryCode(this.mapNumistaCountry(countryText)),
+            country: COUNTRIES[countryCode].name,
+            countryCode: countryCode,
             denomination: document.getElementById('manualDenomination').value,
             year: year,
             images: images,
@@ -1460,21 +1487,37 @@ class CoinCollectionApp {
     
     async convertImageToBase64(imageUrl) {
         try {
-            // Usar proxy para evitar CORS
-            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&w=400&h=400&fit=contain`;
+            // Intentar diferentes proxies para imágenes
+            const proxies = [
+                `https://cors-anywhere.herokuapp.com/${imageUrl}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`,
+                imageUrl // Intentar directo como último recurso
+            ];
             
-            const response = await fetch(proxyUrl);
-            const blob = await response.blob();
+            for (const proxyUrl of proxies) {
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = () => resolve(null);
+                            reader.readAsDataURL(blob);
+                        });
+                    }
+                } catch (proxyError) {
+                    console.log('Proxy fallo:', proxyUrl, proxyError.message);
+                    continue;
+                }
+            }
             
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(blob);
-            });
+            // Si todos los proxies fallan, usar la URL directamente
+            return imageUrl;
         } catch (error) {
             console.error('Error convirtiendo imagen:', error);
-            return null;
+            return imageUrl; // Devolver URL original como fallback
         }
     }
 
