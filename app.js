@@ -694,111 +694,442 @@ class CoinCollectionApp {
             countryCode: null,
             denomination: null,
             year: null,
-            type: 'moneda'
+            type: 'moneda',
+            currency: null,
+            issuer: null
         };
         
-        // Detectar país
-        if (text.includes('costa rica')) {
-            info.country = 'Costa Rica';
-            info.countryCode = 'CR';
-        } else if (text.includes('united states') || text.includes('america')) {
-            info.country = 'Estados Unidos';
-            info.countryCode = 'US';
-        } else if (text.includes('mexico')) {
-            info.country = 'México';
-            info.countryCode = 'MX';
+        // Limpiar y normalizar texto
+        const cleanText = this.cleanAndNormalizeText(text);
+        console.log('Texto limpio:', cleanText);
+        
+        // Detectar país con mayor precisión
+        info.country = this.detectCountry(cleanText);
+        if (info.country) {
+            info.countryCode = this.getCountryCode(info.country);
         }
         
-        // Detectar denominación y tipo
-        if (text.includes('mil') && text.includes('colones')) {
-            info.denomination = '1000 colones';
-            info.type = 'billete';
-        } else if (text.includes('cinco colones') || (text.includes('5') && text.includes('colones'))) {
-            info.denomination = '5 colones';
-            info.type = 'billete';
-        } else if (text.includes('1000') && text.includes('colones')) {
-            info.denomination = '1000 colones';
-            info.type = 'billete';
-        } else if (text.includes('colones')) {
-            // Buscar número antes de colones
-            const match = text.match(/(\d+).*colones/);
-            if (match) {
-                info.denomination = `${match[1]} colones`;
-                info.type = 'billete';
-            }
-        } else if (text.includes('dollar')) {
-            info.denomination = 'dollar';
-        } else if (text.includes('peso')) {
-            info.denomination = 'peso';
-        } else if (text.includes('euro')) {
-            info.denomination = 'euro';
-        }
+        // Detectar denominación y moneda
+        const denomInfo = this.detectDenomination(cleanText);
+        info.denomination = denomInfo.denomination;
+        info.currency = denomInfo.currency;
+        info.type = denomInfo.type;
         
-        // Detectar año
-        const yearMatch = text.match(/\b(19|20)\d{2}\b/);
-        if (yearMatch) {
-            info.year = yearMatch[0];
-        }
+        // Detectar año con mejor precisión
+        info.year = this.detectYear(cleanText);
+        
+        // Detectar emisor/banco
+        info.issuer = this.detectIssuer(cleanText);
         
         return info;
+    }
+    
+    cleanAndNormalizeText(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ') // Remover caracteres especiales
+            .replace(/\s+/g, ' ') // Normalizar espacios
+            .trim();
+    }
+    
+    detectCountry(text) {
+        const countryPatterns = {
+            'Costa Rica': ['costa rica', 'costarica', 'banco central de costa rica'],
+            'Estados Unidos': ['united states', 'america', 'usa', 'united states of america', 'federal reserve'],
+            'México': ['mexico', 'estados unidos mexicanos', 'banco de mexico'],
+            'España': ['espana', 'spain', 'banco de espana'],
+            'Francia': ['france', 'republique francaise', 'banque de france'],
+            'Alemania': ['deutschland', 'germany', 'bundesrepublik deutschland'],
+            'Reino Unido': ['united kingdom', 'great britain', 'bank of england'],
+            'Canadá': ['canada', 'bank of canada'],
+            'Australia': ['australia', 'reserve bank of australia'],
+            'Japón': ['japan', 'nippon', 'bank of japan'],
+            'China': ['china', 'peoples republic of china'],
+            'Brasil': ['brasil', 'brazil', 'banco central do brasil'],
+            'Argentina': ['argentina', 'republica argentina', 'banco central'],
+            'Chile': ['chile', 'republica de chile', 'banco central de chile'],
+            'Perú': ['peru', 'republica del peru', 'banco central de reserva'],
+            'Colombia': ['colombia', 'republica de colombia', 'banco de la republica'],
+            'Venezuela': ['venezuela', 'republica bolivariana', 'banco central de venezuela'],
+            'Ecuador': ['ecuador', 'republica del ecuador', 'banco central del ecuador'],
+            'Uruguay': ['uruguay', 'republica oriental del uruguay'],
+            'Paraguay': ['paraguay', 'republica del paraguay']
+        };
+        
+        for (const [country, patterns] of Object.entries(countryPatterns)) {
+            for (const pattern of patterns) {
+                if (text.includes(pattern)) {
+                    console.log(`País detectado: ${country} (patrón: ${pattern})`);
+                    return country;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    getCountryCode(country) {
+        const countryCodes = {
+            'Costa Rica': 'CR',
+            'Estados Unidos': 'US',
+            'México': 'MX',
+            'España': 'ES',
+            'Francia': 'FR',
+            'Alemania': 'DE',
+            'Reino Unido': 'GB',
+            'Canadá': 'CA',
+            'Australia': 'AU',
+            'Japón': 'JP',
+            'China': 'CN',
+            'Brasil': 'BR',
+            'Argentina': 'AR',
+            'Chile': 'CL',
+            'Perú': 'PE',
+            'Colombia': 'CO',
+            'Venezuela': 'VE',
+            'Ecuador': 'EC',
+            'Uruguay': 'UY',
+            'Paraguay': 'PY'
+        };
+        
+        return countryCodes[country] || 'XX';
+    }
+    
+    detectDenomination(text) {
+        const denomPatterns = {
+            // Colones costarricenses
+            'colones': {
+                patterns: [
+                    /(?:mil|1000)\s*colones/,
+                    /(?:quinientos|500)\s*colones/,
+                    /(?:cien|100)\s*colones/,
+                    /(?:cincuenta|50)\s*colones/,
+                    /(?:veinte|20)\s*colones/,
+                    /(?:diez|10)\s*colones/,
+                    /(?:cinco|5)\s*colones/,
+                    /(\d+)\s*colones/
+                ],
+                currency: 'colones',
+                type: 'billete'
+            },
+            // Dólares
+            'dollar': {
+                patterns: [
+                    /(?:one hundred|100)\s*dollar/,
+                    /(?:fifty|50)\s*dollar/,
+                    /(?:twenty|20)\s*dollar/,
+                    /(?:ten|10)\s*dollar/,
+                    /(?:five|5)\s*dollar/,
+                    /(?:one|1)\s*dollar/,
+                    /(\d+)\s*dollar/
+                ],
+                currency: 'dollar',
+                type: 'billete'
+            },
+            // Euros
+            'euro': {
+                patterns: [
+                    /(?:quinientos|500)\s*euro/,
+                    /(?:doscientos|200)\s*euro/,
+                    /(?:cien|100)\s*euro/,
+                    /(?:cincuenta|50)\s*euro/,
+                    /(?:veinte|20)\s*euro/,
+                    /(?:diez|10)\s*euro/,
+                    /(?:cinco|5)\s*euro/,
+                    /(\d+)\s*euro/
+                ],
+                currency: 'euro',
+                type: 'billete'
+            },
+            // Pesos
+            'peso': {
+                patterns: [
+                    /(?:mil|1000)\s*peso/,
+                    /(?:quinientos|500)\s*peso/,
+                    /(?:cien|100)\s*peso/,
+                    /(?:cincuenta|50)\s*peso/,
+                    /(?:veinte|20)\s*peso/,
+                    /(?:diez|10)\s*peso/,
+                    /(\d+)\s*peso/
+                ],
+                currency: 'peso',
+                type: 'billete'
+            }
+        };
+        
+        for (const [currencyName, config] of Object.entries(denomPatterns)) {
+            for (const pattern of config.patterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    let value = match[1] || this.extractNumericValue(match[0]);
+                    console.log(`Denominación detectada: ${value} ${config.currency}`);
+                    return {
+                        denomination: `${value} ${config.currency}`,
+                        currency: config.currency,
+                        type: config.type
+                    };
+                }
+            }
+        }
+        
+        return { denomination: null, currency: null, type: 'moneda' };
+    }
+    
+    extractNumericValue(text) {
+        const numberWords = {
+            'mil': '1000',
+            'quinientos': '500',
+            'cien': '100',
+            'cincuenta': '50',
+            'veinte': '20',
+            'diez': '10',
+            'cinco': '5',
+            'one hundred': '100',
+            'fifty': '50',
+            'twenty': '20',
+            'ten': '10',
+            'five': '5',
+            'one': '1'
+        };
+        
+        for (const [word, number] of Object.entries(numberWords)) {
+            if (text.includes(word)) {
+                return number;
+            }
+        }
+        
+        const numMatch = text.match(/\d+/);
+        return numMatch ? numMatch[0] : null;
+    }
+    
+    detectYear(text) {
+        // Buscar años con mayor precisión
+        const yearPatterns = [
+            /\b(19[0-9]{2})\b/, // 1900-1999
+            /\b(20[0-2][0-9])\b/, // 2000-2029
+            /\b(18[0-9]{2})\b/  // 1800-1899
+        ];
+        
+        for (const pattern of yearPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+                const year = parseInt(match[1]);
+                if (year >= 1800 && year <= 2024) {
+                    console.log(`Año detectado: ${year}`);
+                    return year.toString();
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    detectIssuer(text) {
+        const issuerPatterns = [
+            'banco central',
+            'federal reserve',
+            'bank of england',
+            'banque de france',
+            'banco de espana',
+            'reserve bank',
+            'central bank'
+        ];
+        
+        for (const pattern of issuerPatterns) {
+            if (text.includes(pattern)) {
+                console.log(`Emisor detectado: ${pattern}`);
+                return pattern;
+            }
+        }
+        
+        return null;
     }
     
     async searchNumistaWithParams(coinInfo) {
         const API_KEY = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const results = [];
         
-        // Construir consulta de búsqueda
-        let query = '';
-        if (coinInfo.denomination) query += coinInfo.denomination + ' ';
-        if (coinInfo.country) query += coinInfo.country + ' ';
-        if (coinInfo.year) query += coinInfo.year + ' ';
+        // Intentar múltiples estrategias de búsqueda
+        const searchStrategies = this.buildSearchStrategies(coinInfo);
         
-        query = query.trim();
-        if (!query) return [];
-        
-        console.log('Buscando en Numista:', query);
-        
-        try {
-            const searchUrl = `https://api.numista.com/v3/types?q=${encodeURIComponent(query)}&lang=es&count=10`;
-            console.log('URL de búsqueda:', searchUrl);
+        for (const strategy of searchStrategies) {
+            console.log(`Probando estrategia: ${strategy.name}`);
+            console.log(`Parámetros:`, strategy.params);
             
-            const response = await fetch(searchUrl, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Numista-API-Key': API_KEY
-                }
-            });
-            
-            console.log('Respuesta HTTP:', response.status, response.statusText);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Respuesta de Numista:', data);
+            try {
+                const searchUrl = this.buildNumistaUrl(strategy.params);
+                console.log('URL de búsqueda:', searchUrl);
                 
-                if (data.types && data.types.length > 0) {
-                    data.types.forEach(type => {
-                        results.push({
-                            title: type.title || `${type.value} ${type.currency}`,
-                            country: type.issuer?.name || coinInfo.country || 'Desconocido',
-                            countryCode: type.issuer?.code || coinInfo.countryCode || 'XX',
-                            year: type.min_year || type.max_year || coinInfo.year || 'Desconocido',
-                            type: coinInfo.type,
-                            denomination: `${type.value || ''} ${type.currency || coinInfo.denomination || ''}`.trim(),
-                            description: type.composition || 'Información de Numista',
-                            link: `https://numista.com/catalogue/pieces${type.id}.html`,
-                            confidence: 85
+                const response = await fetch(searchUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Numista-API-Key': API_KEY
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`Resultados para ${strategy.name}:`, data.count || 0);
+                    
+                    if (data.types && data.types.length > 0) {
+                        data.types.forEach(type => {
+                            const confidence = this.calculateSearchConfidence(type, coinInfo, strategy.weight);
+                            results.push({
+                                title: type.title || `${type.value} ${type.currency}`,
+                                country: type.issuer?.name || coinInfo.country || 'Desconocido',
+                                countryCode: type.issuer?.code || coinInfo.countryCode || 'XX',
+                                year: type.min_year || type.max_year || coinInfo.year || 'Desconocido',
+                                type: this.mapNumistaCategory(type.category) || coinInfo.type,
+                                denomination: `${type.value || ''} ${type.currency || coinInfo.denomination || ''}`.trim(),
+                                description: type.composition || type.obverse || 'Información de Numista',
+                                link: `https://numista.com/catalogue/pieces${type.id}.html`,
+                                confidence: confidence,
+                                strategy: strategy.name
+                            });
                         });
-                    });
+                        
+                        // Si encontramos resultados con alta confianza, no necesitamos más estrategias
+                        if (results.some(r => r.confidence > 80)) {
+                            break;
+                        }
+                    }
+                } else {
+                    console.log(`Error ${response.status} para estrategia ${strategy.name}`);
                 }
-            } else {
-                const errorText = await response.text();
-                console.error('Error en Numista API:', response.status, errorText);
+            } catch (error) {
+                console.error(`Error en estrategia ${strategy.name}:`, error);
             }
-        } catch (error) {
-            console.error('Error consultando Numista:', error);
         }
         
-        return results.slice(0, 5);
+        // Eliminar duplicados y ordenar por confianza
+        const uniqueResults = this.removeDuplicateResults(results);
+        return uniqueResults
+            .sort((a, b) => b.confidence - a.confidence)
+            .slice(0, 5);
+    }
+    
+    buildSearchStrategies(coinInfo) {
+        const strategies = [];
+        
+        // Estrategia 1: Búsqueda completa con todos los datos
+        if (coinInfo.country && coinInfo.denomination && coinInfo.year) {
+            strategies.push({
+                name: 'Completa',
+                params: {
+                    q: `${coinInfo.denomination} ${coinInfo.country} ${coinInfo.year}`,
+                    category: coinInfo.type === 'billete' ? 'banknote' : 'coin'
+                },
+                weight: 1.0
+            });
+        }
+        
+        // Estrategia 2: País + denominación
+        if (coinInfo.country && coinInfo.denomination) {
+            strategies.push({
+                name: 'País + Denominación',
+                params: {
+                    q: `${coinInfo.denomination} ${coinInfo.country}`,
+                    category: coinInfo.type === 'billete' ? 'banknote' : 'coin'
+                },
+                weight: 0.9
+            });
+        }
+        
+        // Estrategia 3: Solo denominación + año
+        if (coinInfo.denomination && coinInfo.year) {
+            strategies.push({
+                name: 'Denominación + Año',
+                params: {
+                    q: coinInfo.denomination,
+                    year: coinInfo.year,
+                    category: coinInfo.type === 'billete' ? 'banknote' : 'coin'
+                },
+                weight: 0.8
+            });
+        }
+        
+        // Estrategia 4: Solo país + año
+        if (coinInfo.country && coinInfo.year) {
+            strategies.push({
+                name: 'País + Año',
+                params: {
+                    issuer: coinInfo.countryCode,
+                    year: coinInfo.year,
+                    category: coinInfo.type === 'billete' ? 'banknote' : 'coin'
+                },
+                weight: 0.7
+            });
+        }
+        
+        // Estrategia 5: Solo denominación
+        if (coinInfo.denomination) {
+            strategies.push({
+                name: 'Solo Denominación',
+                params: {
+                    q: coinInfo.denomination,
+                    category: coinInfo.type === 'billete' ? 'banknote' : 'coin'
+                },
+                weight: 0.6
+            });
+        }
+        
+        return strategies;
+    }
+    
+    buildNumistaUrl(params) {
+        const baseUrl = 'https://api.numista.com/v3/types';
+        const urlParams = new URLSearchParams({
+            lang: 'es',
+            count: '10',
+            ...params
+        });
+        
+        return `${baseUrl}?${urlParams.toString()}`;
+    }
+    
+    calculateSearchConfidence(type, coinInfo, strategyWeight) {
+        let confidence = 30 * strategyWeight; // Base por estrategia
+        
+        // Bonus por coincidencias exactas
+        if (coinInfo.country && type.issuer?.name?.toLowerCase().includes(coinInfo.country.toLowerCase())) {
+            confidence += 25;
+        }
+        
+        if (coinInfo.denomination && type.title?.toLowerCase().includes(coinInfo.denomination.toLowerCase())) {
+            confidence += 20;
+        }
+        
+        if (coinInfo.year && (type.min_year <= coinInfo.year && type.max_year >= coinInfo.year)) {
+            confidence += 15;
+        }
+        
+        if (coinInfo.currency && type.currency?.toLowerCase().includes(coinInfo.currency.toLowerCase())) {
+            confidence += 10;
+        }
+        
+        return Math.min(Math.round(confidence), 95);
+    }
+    
+    mapNumistaCategory(category) {
+        const categoryMap = {
+            'banknote': 'billete',
+            'coin': 'moneda',
+            'exonumia': 'token'
+        };
+        
+        return categoryMap[category] || 'moneda';
+    }
+    
+    removeDuplicateResults(results) {
+        const seen = new Set();
+        return results.filter(result => {
+            const key = `${result.title}-${result.country}-${result.year}`;
+            if (seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
     }
     
 
