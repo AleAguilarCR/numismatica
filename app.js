@@ -28,52 +28,55 @@ class CoinCollectionApp {
     }
 
     setupEventListeners() {
-        // Botones principales
-        document.getElementById('addItemBtn').addEventListener('click', () => this.showScreen('add'));
-        document.getElementById('searchImageBtn').addEventListener('click', () => this.searchByImage());
-        document.getElementById('continentsBtn').addEventListener('click', () => this.showContinents());
+        try {
+            // Botones principales
+            document.getElementById('addItemBtn')?.addEventListener('click', () => this.showScreen('add'));
+            document.getElementById('searchImageBtn')?.addEventListener('click', () => this.searchByImage());
+            document.getElementById('continentsBtn')?.addEventListener('click', () => this.showContinents());
 
-        // Botones de navegación
-        document.getElementById('backFromAdd').addEventListener('click', () => this.showScreen('main'));
-        document.getElementById('backFromCountry').addEventListener('click', () => this.showScreen('main'));
-        document.getElementById('backFromContinents').addEventListener('click', () => this.showScreen('main'));
-        document.getElementById('backFromEdit').addEventListener('click', () => this.showScreen('country'));
-        document.getElementById('backFromPhotoEditor').addEventListener('click', () => this.showScreen(this.previousScreen));
-        document.getElementById('backFromImageSearch').addEventListener('click', () => this.showScreen('main'));
-        document.getElementById('backFromNumista').addEventListener('click', () => this.showScreen('add'));
-        
-        // Título como botón home
-        document.getElementById('appTitle').addEventListener('click', () => this.showScreen('main'));
-        
-        // Editor de fotos
-        document.getElementById('cropBtn').addEventListener('click', () => this.cropPhoto());
-        document.getElementById('rotateBtn').addEventListener('click', () => this.rotatePhoto());
-        document.getElementById('savePhotoBtn').addEventListener('click', () => this.saveEditedPhoto());
-        
-        // Búsqueda por imagen
-        document.getElementById('searchImageBtn').addEventListener('click', () => this.showScreen('imageSearch'));
-        document.getElementById('searchPhotoPreview').addEventListener('click', () => this.selectSearchPhoto());
-        document.getElementById('searchPhotoInput').addEventListener('change', (e) => this.handleSearchPhotoSelect(e));
-        document.getElementById('searchBtn').addEventListener('click', () => this.searchByImage());
+            // Botones de navegación
+            document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('backFromCountry')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('backFromEdit')?.addEventListener('click', () => this.showScreen('country'));
+            document.getElementById('backFromPhotoEditor')?.addEventListener('click', () => this.showScreen(this.previousScreen));
+            document.getElementById('backFromImageSearch')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
+            
+            // Título como botón home
+            document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
+            
+            // Editor de fotos
+            document.getElementById('cropBtn')?.addEventListener('click', () => this.cropPhoto());
+            document.getElementById('rotateBtn')?.addEventListener('click', () => this.rotatePhoto());
+            document.getElementById('savePhotoBtn')?.addEventListener('click', () => this.saveEditedPhoto());
+            
+            // Búsqueda por imagen
+            document.getElementById('searchPhotoPreview')?.addEventListener('click', () => this.selectSearchPhoto());
+            document.getElementById('searchPhotoInput')?.addEventListener('change', (e) => this.handleSearchPhotoSelect(e));
+            document.getElementById('searchBtn')?.addEventListener('click', () => this.searchByImage());
 
-        // Formulario agregar
-        document.getElementById('addForm').addEventListener('submit', (e) => this.handleAddItem(e));
-        document.getElementById('photoPreviewFront').addEventListener('click', () => this.selectPhoto('front'));
-        document.getElementById('photoPreviewBack').addEventListener('click', () => this.selectPhoto('back'));
-        document.getElementById('photoInputFront').addEventListener('change', (e) => this.handlePhotoSelect(e, 'front'));
-        document.getElementById('photoInputBack').addEventListener('change', (e) => this.handlePhotoSelect(e, 'back'));
-        
-        // Formulario editar
-        document.getElementById('editForm').addEventListener('submit', (e) => this.handleEditItem(e));
-        document.getElementById('editPhotoPreviewFront').addEventListener('click', () => this.selectPhoto('front', 'edit'));
-        document.getElementById('editPhotoPreviewBack').addEventListener('click', () => this.selectPhoto('back', 'edit'));
-        document.getElementById('editPhotoInputFront').addEventListener('change', (e) => this.handlePhotoSelect(e, 'front', 'edit'));
-        document.getElementById('editPhotoInputBack').addEventListener('change', (e) => this.handlePhotoSelect(e, 'back', 'edit'));
-        document.getElementById('deleteItemBtn').addEventListener('click', () => this.deleteItem());
-        
-        // Numista import
-        document.getElementById('numistaBtnAdd').addEventListener('click', () => this.showScreen('numista'));
-        document.getElementById('parseNumistaBtn').addEventListener('click', () => this.parseNumistaUrl());
+            // Formulario agregar
+            document.getElementById('addForm')?.addEventListener('submit', (e) => this.handleAddItem(e));
+            document.getElementById('photoPreviewFront')?.addEventListener('click', () => this.selectPhoto('front'));
+            document.getElementById('photoPreviewBack')?.addEventListener('click', () => this.selectPhoto('back'));
+            document.getElementById('photoInputFront')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'front'));
+            document.getElementById('photoInputBack')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'back'));
+            
+            // Formulario editar
+            document.getElementById('editForm')?.addEventListener('submit', (e) => this.handleEditItem(e));
+            document.getElementById('editPhotoPreviewFront')?.addEventListener('click', () => this.selectPhoto('front', 'edit'));
+            document.getElementById('editPhotoPreviewBack')?.addEventListener('click', () => this.selectPhoto('back', 'edit'));
+            document.getElementById('editPhotoInputFront')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'front', 'edit'));
+            document.getElementById('editPhotoInputBack')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'back', 'edit'));
+            document.getElementById('deleteItemBtn')?.addEventListener('click', () => this.deleteItem());
+            
+            // Numista import
+            document.getElementById('numistaBtnAdd')?.addEventListener('click', () => this.showScreen('numista'));
+            document.getElementById('parseNumistaBtn')?.addEventListener('click', () => this.parseNumistaUrl());
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+        }
     }
 
     showScreen(screenName) {
@@ -481,18 +484,20 @@ class CoinCollectionApp {
             };
         }
         
-        if (window.db) {
+        // Guardar en localStorage inmediatamente
+        localStorage.setItem('coinCollection', JSON.stringify(this.items));
+        
+        // Intentar actualizar en Firebase solo si el ID es válido
+        if (window.db && typeof this.currentEditingItem.id === 'string' && !this.currentEditingItem.id.match(/^\d+$/)) {
             try {
                 await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
             } catch (error) {
-                console.error('Error updating item:', error);
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                console.error('Error updating item in Firebase:', error);
             }
-        } else {
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
         }
+        
         this.currentEditingItem = null;
-        this.showScreen('country');
+        this.showCountryItems(this.currentCountryCode);
     }
 
     async deleteItem() {
@@ -500,25 +505,25 @@ class CoinCollectionApp {
         
         if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
             const itemId = this.currentEditingItem.id;
-            console.log('Eliminando item con ID:', itemId, 'tipo:', typeof itemId);
+            const countryCode = this.currentEditingItem.countryCode;
             
             // Eliminar de la lista local inmediatamente
             this.items = this.items.filter(i => i.id !== itemId);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            // Solo intentar Firebase si el ID es string válido
+            // Intentar eliminar de Firebase solo si el ID es válido
             if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
                 try {
-                    await window.db.collection('coins').doc(String(itemId)).delete();
-                    console.log('Item eliminado de Firebase');
+                    await window.db.collection('coins').doc(itemId).delete();
                 } catch (error) {
-                    console.error('Error eliminando de Firebase (ignorado):', error.message);
+                    console.error('Error eliminando de Firebase:', error);
                 }
             }
             
             this.currentEditingItem = null;
-            // Renderizar inmediatamente sin esperar Firebase
-            this.renderMainScreen();
+            
+            // Regresar a la lista del país y refrescar
+            this.showCountryItems(countryCode);
         }
     }
 
