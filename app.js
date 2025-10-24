@@ -37,6 +37,7 @@ class CoinCollectionApp {
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromCountry')?.addEventListener('click', () => {
+                this.renderMainScreen();
                 this.showScreen('main');
             });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
