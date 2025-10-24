@@ -138,7 +138,7 @@ class CoinCollectionApp {
         const sortedCountries = Object.keys(countryCount).sort((a, b) => {
             const nameA = COUNTRIES[a]?.name || '';
             const nameB = COUNTRIES[b]?.name || '';
-            return nameA.localeCompare(nameB);
+            return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
         });
         
         sortedCountries.forEach(countryCode => {
@@ -164,10 +164,22 @@ class CoinCollectionApp {
     }
 
     showCountryItems(countryCode) {
+        console.log('showCountryItems llamado con:', countryCode);
         this.currentCountryCode = countryCode;
         const country = COUNTRIES[countryCode];
+        
+        if (!country) {
+            console.error('País no encontrado:', countryCode);
+            return;
+        }
+        
         const countryItems = this.items.filter(item => item.countryCode === countryCode);
+        console.log('Items encontrados:', countryItems.length);
 
+        // Cambiar a la pantalla del país primero
+        this.showScreen('country');
+        
+        // Luego actualizar el contenido
         const countryTitle = document.getElementById('countryTitle');
         if (countryTitle) {
             countryTitle.textContent = country.name;
@@ -195,9 +207,6 @@ class CoinCollectionApp {
             `;
             itemsList.appendChild(itemCard);
         });
-        
-        // Cambiar a la pantalla del país
-        this.showScreen('country');
     }
 
     showContinents() {
