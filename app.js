@@ -529,23 +529,23 @@ class CoinCollectionApp {
             const itemId = this.currentEditingItem.id;
             const countryCode = this.currentEditingItem.countryCode;
             
-            console.log('Eliminando item:', itemId);
-            
-            // Eliminar de la lista local
-            this.items = this.items.filter(i => i.id !== itemId);
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            
-            console.log('Items restantes:', this.items.length);
-            
-            this.currentEditingItem = null;
-            
-            // Regresar a la lista del país y forzar actualización
-            this.showCountryItems(countryCode);
-            
-            // Forzar actualización de la pantalla principal también
-            setTimeout(() => {
-                this.renderMainScreen();
-            }, 100);
+            try {
+                // Eliminar de Firebase si es un ID válido
+                if (window.db && typeof itemId === 'string' && !itemId.match(/^\d+$/)) {
+                    await window.db.collection('coins').doc(itemId).delete();
+                    console.log('Item eliminado de Firebase:', itemId);
+                } else {
+                    // Para IDs numéricos (localStorage), eliminar localmente
+                    this.items = this.items.filter(i => i.id !== itemId);
+                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                }
+                
+                this.currentEditingItem = null;
+                this.showCountryItems(countryCode);
+                
+            } catch (error) {
+                console.error('Error eliminando item:', error);
+            }
         }
     }
 
@@ -584,12 +584,23 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        // Usar solo localStorage
-        item.id = Date.now();
-        this.items.push(item);
-        localStorage.setItem('coinCollection', JSON.stringify(this.items));
-        console.log('Item agregado:', item.id);
-        this.renderMainScreen();
+        if (window.db) {
+            try {
+                const docRef = await window.db.collection('coins').add(item);
+                console.log('Item agregado a Firebase:', docRef.id);
+            } catch (error) {
+                console.error('Error agregando a Firebase:', error);
+                item.id = Date.now();
+                this.items.push(item);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                this.renderMainScreen();
+            }
+        } else {
+            item.id = Date.now();
+            this.items.push(item);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            this.renderMainScreen();
+        }
         
         // Limpiar formulario
         event.target.reset();
@@ -1543,12 +1554,32 @@ class CoinCollectionApp {
     }
 
     async loadData() {
-        console.log('Loading data from localStorage only');
-        const saved = localStorage.getItem('coinCollection');
-        if (saved) {
-            this.items = JSON.parse(saved);
+        if (!window.db) {
+            const saved = localStorage.getItem('coinCollection');
+            if (saved) {
+                this.items = JSON.parse(saved);
+            }
+            return;
         }
-        this.renderMainScreen();
+        
+        try {
+            this.firebaseUnsubscribe = window.db.collection('coins').onSnapshot((querySnapshot) => {
+                this.items = [];
+                querySnapshot.forEach((doc) => {
+                    this.items.push({ id: doc.id, ...doc.data() });
+                });
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                // Solo renderizar si estamos en la pantalla principal
+                if (this.currentScreen === 'main') {
+                    this.renderMainScreen();
+                }
+            });
+        } catch (error) {
+            const saved = localStorage.getItem('coinCollection');
+            if (saved) {
+                this.items = JSON.parse(saved);
+            }
+        }
     }
 }
 
