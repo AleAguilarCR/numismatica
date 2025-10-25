@@ -5,41 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Colección de Monedas</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- <link rel="manifest" href="manifest.json"> -->
     <meta name="theme-color" content="#2196F3">
 </head>
 <body>
     <div class="app">
-        <!-- Header -->
         <header class="header">
             <h1 id="appTitle">🪙 Mi Colección</h1>
         </header>
 
-        <!-- Pantalla Principal -->
         <main class="main-screen" id="mainScreen">
-            <!-- Banderas de países -->
             <section class="countries-grid" id="countriesGrid">
                 <div class="empty-state" id="emptyState">
                     <p>¡Comienza tu colección!</p>
                     <p>Agrega tu primera moneda o billete</p>
                 </div>
             </section>
-
-            <!-- Botones principales -->
             <section class="action-buttons">
-                <button class="btn btn-primary" id="addItemBtn">
-                    ➕ Agregar
-                </button>
-                <button class="btn btn-secondary" id="searchImageBtn">
-                    🔍 Buscar por Imagen
-                </button>
-                <button class="btn btn-secondary" id="continentsBtn">
-                    🌍 Por Continentes
-                </button>
+                <button class="btn btn-primary" id="addItemBtn">➕ Agregar</button>
+                <button class="btn btn-secondary" id="searchImageBtn">🔍 Buscar por Imagen</button>
+                <button class="btn btn-secondary" id="continentsBtn">🌍 Por Continentes</button>
             </section>
         </main>
 
-        <!-- Pantalla Agregar Item -->
         <div class="screen hidden" id="addScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromAdd">←</button>
@@ -62,7 +49,6 @@
                         <input type="file" id="photoInputBack" accept="image/*" hidden>
                     </div>
                 </div>
-                
                 <div class="form-group">
                     <label>Tipo:</label>
                     <select id="itemType" required>
@@ -71,24 +57,20 @@
                         <option value="billete">Billete</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>País:</label>
                     <select id="country" required>
                         <option value="">Seleccionar país...</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Denominación:</label>
                     <input type="text" id="denomination" placeholder="ej: 1 Dollar, 50 Centavos" required>
                 </div>
-
                 <div class="form-group">
                     <label>Año:</label>
                     <input type="number" id="year" min="1800" max="2024" required>
                 </div>
-
                 <div class="form-group">
                     <label>Estado:</label>
                     <select id="condition" required>
@@ -101,28 +83,23 @@
                         <option value="Sin Circular">Sin Circular</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Valor Estimado:</label>
                     <input type="number" id="value" step="0.01" placeholder="0.00">
                 </div>
-
                 <div class="form-group">
                     <label>Notas:</label>
                     <textarea id="notes" placeholder="Información adicional..."></textarea>
                 </div>
-
                 <div class="form-group">
                     <label>Enlace de Catálogo (opcional):</label>
                     <input type="url" id="catalogLink" placeholder="https://ejemplo.com/catalogo/item">
                 </div>
-
                 <button type="submit" class="btn btn-primary btn-full">Guardar</button>
                 <button type="button" class="btn btn-secondary btn-full" id="numistaBtnAdd">📖 Incluir desde Numista</button>
             </form>
         </div>
 
-        <!-- Pantalla Numista -->
         <div class="screen hidden" id="numistaScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromNumista">←</button>
@@ -138,7 +115,6 @@
             </div>
         </div>
 
-        <!-- Pantalla Lista por País -->
         <div class="screen hidden" id="countryScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromCountry">←</button>
@@ -147,7 +123,6 @@
             <div class="items-list" id="itemsList"></div>
         </div>
 
-        <!-- Pantalla Continentes -->
         <div class="screen hidden" id="continentsScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromContinents">←</button>
@@ -156,7 +131,6 @@
             <div class="continents-list" id="continentsList"></div>
         </div>
 
-        <!-- Pantalla Editor de Foto -->
         <div class="screen hidden" id="photoEditorScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromPhotoEditor">←</button>
@@ -172,7 +146,6 @@
             </div>
         </div>
 
-        <!-- Pantalla Buscar por Imagen -->
         <div class="screen hidden" id="imageSearchScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromImageSearch">←</button>
@@ -190,7 +163,6 @@
             </div>
         </div>
 
-        <!-- Pantalla Editar Item -->
         <div class="screen hidden" id="editScreen">
             <header class="screen-header">
                 <button class="back-btn" id="backFromEdit">←</button>
@@ -213,7 +185,6 @@
                         <input type="file" id="editPhotoInputBack" accept="image/*" hidden>
                     </div>
                 </div>
-                
                 <div class="form-group">
                     <label>Tipo:</label>
                     <select id="editItemType" required>
@@ -222,24 +193,20 @@
                         <option value="billete">Billete</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>País:</label>
                     <select id="editCountry" required>
                         <option value="">Seleccionar país...</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Denominación:</label>
                     <input type="text" id="editDenomination" required>
                 </div>
-
                 <div class="form-group">
                     <label>Año:</label>
                     <input type="number" id="editYear" min="1800" max="2024" required>
                 </div>
-
                 <div class="form-group">
                     <label>Estado:</label>
                     <select id="editCondition" required>
@@ -252,22 +219,18 @@
                         <option value="Sin Circular">Sin Circular</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Valor Estimado:</label>
                     <input type="number" id="editValue" step="0.01">
                 </div>
-
                 <div class="form-group">
                     <label>Notas:</label>
                     <textarea id="editNotes"></textarea>
                 </div>
-
                 <div class="form-group">
                     <label>Enlace de Catálogo:</label>
                     <input type="url" id="editCatalogLink">
                 </div>
-
                 <button type="submit" class="btn btn-primary btn-full">Actualizar</button>
                 <button type="button" class="btn btn-danger btn-full" id="deleteItemBtn">Eliminar</button>
             </form>
@@ -278,274 +241,8 @@
     <script src="app.js"></script>
     <script>
         const API_URL = 'https://numismatica-7pat.onrender.com';
-        console.log('Inicializando aplicación...');
         const app = new CoinCollectionApp();
         app.init();
-    </script>
-</body>
-</html>>
-                    <div class="photo-group">
-                        <label>Reverso:</label>
-                        <div class="photo-preview" id="editPhotoPreviewBack">
-                            <span>📷 Foto Reverso</span>
-                        </div>
-                        <input type="file" id="editPhotoInputBack" accept="image/*" hidden>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select id="editItemType" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="moneda">Moneda</option>
-                        <option value="billete">Billete</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>País:</label>
-                    <select id="editCountry" required>
-                        <option value="">Seleccionar país...</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Denominación:</label>
-                    <input type="text" id="editDenomination" placeholder="ej: 1 Dollar, 50 Centavos" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Año:</label>
-                    <input type="number" id="editYear" min="1800" max="2024" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Estado:</label>
-                    <select id="editCondition" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="Pobre">Pobre</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Bueno">Bueno</option>
-                        <option value="Muy Bueno">Muy Bueno</option>
-                        <option value="Excelente">Excelente</option>
-                        <option value="Sin Circular">Sin Circular</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Valor Estimado:</label>
-                    <input type="number" id="editValue" step="0.01" placeholder="0.00">
-                </div>
-
-                <div class="form-group">
-                    <label>Notas:</label>
-                    <textarea id="editNotes" placeholder="Información adicional..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Enlace de Catálogo (opcional):</label>
-                    <input type="url" id="editCatalogLink" placeholder="https://ejemplo.com/catalogo/item">
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-full">Actualizar</button>
-                <button type="button" class="btn btn-secondary btn-full" id="deleteItemBtn">Eliminar Item</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // SQLite backend API
-        window.API_URL = 'https://numismatica-7pat.onrender.com';
-        window.dbReady = true;
-    </script>
-    <script src="countries.js"></script>
-    <script src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof CoinCollectionApp !== 'undefined') {
-                console.log('Inicializando aplicación...');
-                window.app = new CoinCollectionApp();
-            } else {
-                console.error('CoinCollectionApp no está definida');
-            }
-        });
-    </script>
-</body>
-</html>>
-                    <div class="photo-group">
-                        <label>Reverso:</label>
-                        <div class="photo-preview" id="editPhotoPreviewBack">
-                            <span>📷 Foto Reverso</span>
-                        </div>
-                        <input type="file" id="editPhotoInputBack" accept="image/*" hidden>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select id="editItemType" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="moneda">Moneda</option>
-                        <option value="billete">Billete</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>País:</label>
-                    <select id="editCountry" required>
-                        <option value="">Seleccionar país...</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Denominación:</label>
-                    <input type="text" id="editDenomination" placeholder="ej: 1 Dollar, 50 Centavos" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Año:</label>
-                    <input type="number" id="editYear" min="1800" max="2024" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Estado:</label>
-                    <select id="editCondition" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="Pobre">Pobre</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Bueno">Bueno</option>
-                        <option value="Muy Bueno">Muy Bueno</option>
-                        <option value="Excelente">Excelente</option>
-                        <option value="Sin Circular">Sin Circular</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Valor Estimado:</label>
-                    <input type="number" id="editValue" step="0.01" placeholder="0.00">
-                </div>
-
-                <div class="form-group">
-                    <label>Notas:</label>
-                    <textarea id="editNotes" placeholder="Información adicional..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Enlace de Catálogo (opcional):</label>
-                    <input type="url" id="editCatalogLink" placeholder="https://ejemplo.com/catalogo/item">
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-full">Actualizar</button>
-                <button type="button" class="btn btn-secondary btn-full" id="deleteItemBtn">Eliminar Item</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // SQLite backend API
-        window.API_URL = 'https://numismatica-7pat.onrender.com';
-        window.dbReady = true;
-    </script>
-    <script src="countries.js"></script>
-    <script src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof CoinCollectionApp !== 'undefined') {
-                console.log('Inicializando aplicación...');
-                window.app = new CoinCollectionApp();
-            } else {
-                console.error('CoinCollectionApp no está definida');
-            }
-        });
-    </script>
-</body>
-</html>>
-                    <div class="photo-group">
-                        <label>Reverso:</label>
-                        <div class="photo-preview" id="editPhotoPreviewBack">
-                            <span>📷 Foto Reverso</span>
-                        </div>
-                        <input type="file" id="editPhotoInputBack" accept="image/*" hidden>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select id="editItemType" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="moneda">Moneda</option>
-                        <option value="billete">Billete</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>País:</label>
-                    <select id="editCountry" required>
-                        <option value="">Seleccionar país...</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Denominación:</label>
-                    <input type="text" id="editDenomination" placeholder="ej: 1 Dollar, 50 Centavos" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Año:</label>
-                    <input type="number" id="editYear" min="1800" max="2024" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Estado:</label>
-                    <select id="editCondition" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="Pobre">Pobre</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Bueno">Bueno</option>
-                        <option value="Muy Bueno">Muy Bueno</option>
-                        <option value="Excelente">Excelente</option>
-                        <option value="Sin Circular">Sin Circular</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Valor Estimado:</label>
-                    <input type="number" id="editValue" step="0.01" placeholder="0.00">
-                </div>
-
-                <div class="form-group">
-                    <label>Notas:</label>
-                    <textarea id="editNotes" placeholder="Información adicional..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Enlace de Catálogo (opcional):</label>
-                    <input type="url" id="editCatalogLink" placeholder="https://ejemplo.com/catalogo/item">
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-full">Actualizar</button>
-                <button type="button" class="btn btn-secondary btn-full" id="deleteItemBtn">Eliminar Item</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // SQLite backend API
-        window.API_URL = 'https://numismatica-7pat.onrender.com';
-        window.dbReady = true;
-    </script>
-    <script src="countries.js"></script>
-    <script src="app.js"></script>
-    <script>
-        // Asegurar que la app se inicialice después de que el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof CoinCollectionApp !== 'undefined') {
-                console.log('Inicializando aplicación...');
-                window.app = new CoinCollectionApp();
-            } else {
-                console.error('CoinCollectionApp no está definida');
-            }
-        });
     </script>
 </body>
 </html>
