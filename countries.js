@@ -1,5 +1,5 @@
 // Base de datos completa de países para numismática
-const COUNTRIES = {
+window.COUNTRIES = window.COUNTRIES || {
     'AB': { name: 'Abjasia', flag: '🏴', continent: 'Asia' },
     'AF': { name: 'Afganistán', flag: '🇦🇫', continent: 'Asia' },
     'AL': { name: 'Albania', flag: '🇦🇱', continent: 'Europa' },
@@ -88,7 +88,6 @@ const COUNTRIES = {
     'GW': { name: 'Guinea-Bissau', flag: '🇬🇼', continent: 'África' },
     'GY': { name: 'Guyana', flag: '🇬🇾', continent: 'América del Sur' },
     'HT': { name: 'Haití', flag: '🇭🇹', continent: 'América del Norte' },
-    'HN': { name: 'Honduras', flag: '🇭🇳', continent: 'América del Norte' },
     'HK': { name: 'Hong Kong', flag: '🇭🇰', continent: 'Asia' },
     'HU': { name: 'Hungría', flag: '🇭🇺', continent: 'Europa' },
     'IN': { name: 'India', flag: '🇮🇳', continent: 'Asia' },
@@ -211,8 +210,6 @@ const COUNTRIES = {
     'ZM': { name: 'Zambia', flag: '🇿🇲', continent: 'África' },
     'ZW': { name: 'Zimbabue', flag: '🇿🇼', continent: 'África' },
     'EU': { name: 'Unión Europea', flag: '🇪🇺', continent: 'Europa' },
-    
-    // Países y territorios históricos adicionales
     'USSR': { name: 'Unión Soviética', flag: '🏴', continent: 'Europa/Asia (Histórico)' },
     'PRU': { name: 'Prusia', flag: '🏴', continent: 'Europa (Histórico)' },
     'AH': { name: 'Imperio Austro-Húngaro', flag: '🏴', continent: 'Europa (Histórico)' },
