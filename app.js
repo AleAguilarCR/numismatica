@@ -105,10 +105,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
     renderMainScreen() {
         const countriesGrid = document.getElementById('countriesGrid');
-        const emptyState = document.getElementById('emptyState');
 
-        if (!countriesGrid || !emptyState) {
-            console.error('Elementos no encontrados en renderMainScreen');
+        if (!countriesGrid) {
+            console.error('countriesGrid no encontrado en renderMainScreen');
             return;
         }
         
@@ -268,12 +267,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
     selectPhoto(side, mode = 'add') {
         const prefix = mode === 'edit' ? 'edit' : '';
-        const inputId = `${prefix}photoInput${side === 'front' ? 'Front' : 'Back'}`;
+        const suffix = side === 'front' ? 'Front' : 'Back';
+        const inputId = `${prefix}photoInput${suffix}`;
         const input = document.getElementById(inputId);
         if (input) {
             input.click();
         } else {
             console.error('Input no encontrado:', inputId);
+            console.log('Buscando:', inputId, 'Modo:', mode, 'Side:', side);
         }
     }
 
@@ -453,6 +454,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         const photoPreviewFront = document.getElementById('editPhotoPreviewFront');
         const photoPreviewBack = document.getElementById('editPhotoPreviewBack');
+        
+        console.log('Antes de actualizar - Front dataset:', photoPreviewFront?.dataset?.photo);
+        console.log('Antes de actualizar - Back dataset:', photoPreviewBack?.dataset?.photo);
         
         const itemIndex = this.items.findIndex(i => i.id === this.currentEditingItem.id);
         if (itemIndex !== -1) {
@@ -1043,7 +1047,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 if (frontPreview) {
                     frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     frontPreview.dataset.photo = frontUrl;
-                    console.log('Imagen anverso aplicada:', frontUrl);
+                    console.log('Imagen anverso aplicada a elemento:', `${prefix}photoPreviewFront`, 'URL:', frontUrl);
+                    console.log('Dataset.photo establecido:', frontPreview.dataset.photo);
+                } else {
+                    console.error('Elemento no encontrado:', `${prefix}photoPreviewFront`);
                 }
             }
             
@@ -1052,7 +1059,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 if (backPreview) {
                     backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     backPreview.dataset.photo = backUrl;
-                    console.log('Imagen reverso aplicada:', backUrl);
+                    console.log('Imagen reverso aplicada a elemento:', `${prefix}photoPreviewBack`, 'URL:', backUrl);
+                    console.log('Dataset.photo establecido:', backPreview.dataset.photo);
+                } else {
+                    console.error('Elemento no encontrado:', `${prefix}photoPreviewBack`);
                 }
             }
             
