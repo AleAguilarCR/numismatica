@@ -109,8 +109,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         if (!countriesGrid || !emptyState) {
             console.error('Elementos no encontrados en renderMainScreen');
-            // Reintentar después de un breve delay
-            setTimeout(() => this.renderMainScreen(), 100);
             return;
         }
         
@@ -272,7 +270,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
     selectPhoto(side, mode = 'add') {
         const prefix = mode === 'edit' ? 'edit' : '';
-        document.getElementById(`${prefix}photoInput${side === 'front' ? 'Front' : 'Back'}`).click();
+        const inputId = `${prefix}photoInput${side === 'front' ? 'Front' : 'Back'}`;
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.click();
+        } else {
+            console.error('Input no encontrado:', inputId);
+        }
     }
 
     handlePhotoSelect(event, side, mode = 'add') {
@@ -473,6 +477,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             this.items[itemIndex] = updatedItem;
             
             console.log('Item actualizado:', updatedItem);
+            console.log('Imágenes guardadas - Front:', updatedItem.photoFront, 'Back:', updatedItem.photoBack);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
             try {
@@ -486,9 +491,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
         }
         
+        const countryCode = this.currentCountryCode;
         this.currentEditingItem = null;
+        
+        // Navegar y actualizar la vista
         this.showScreen('country');
-        this.showCountryItems(this.currentCountryCode);
+        if (countryCode) {
+            this.showCountryItems(countryCode);
+        }
     }
 
     async deleteItem() {
