@@ -383,15 +383,29 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         if (mode === 'search') {
             const preview = document.getElementById('searchPhotoPreview');
-            preview.innerHTML = `<img src="${editedImageData}" alt="Buscar" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
-            this.searchImageData = editedImageData;
-            document.getElementById('searchBtn').disabled = false;
+            if (preview) {
+                preview.innerHTML = `<img src="${editedImageData}" alt="Buscar" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
+                this.searchImageData = editedImageData;
+                document.getElementById('searchBtn').disabled = false;
+            }
             this.showScreen('imageSearch');
         } else {
-            const prefix = mode === 'edit' ? 'edit' : '';
-            const preview = document.getElementById(`${prefix}photoPreview${side === 'front' ? 'Front' : 'Back'}`);
-            preview.innerHTML = `<img src="${editedImageData}" alt="Preview">`;
-            preview.dataset.photo = editedImageData;
+            let previewId;
+            if (mode === 'edit') {
+                previewId = side === 'front' ? 'editPhotoPreviewFront' : 'editPhotoPreviewBack';
+            } else {
+                previewId = side === 'front' ? 'photoPreviewFront' : 'photoPreviewBack';
+            }
+            
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.innerHTML = `<img src="${editedImageData}" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: 4px;">`;
+                preview.dataset.photo = editedImageData;
+                console.log('Foto guardada en:', previewId, 'Data length:', editedImageData.length);
+            } else {
+                console.error('Preview no encontrado:', previewId);
+            }
+            
             this.showScreen(mode === 'edit' ? 'edit' : 'add');
         }
     }
@@ -1080,6 +1094,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             document.body.removeChild(modal);
             alert('✅ Imágenes aplicadas correctamente');
+            
+            // Scroll al inicio donde están las fotos
+            setTimeout(() => {
+                const photosSection = document.querySelector('.photos-section');
+                if (photosSection) {
+                    photosSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
         });
         
         cancelBtn.addEventListener('click', () => {
