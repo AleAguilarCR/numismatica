@@ -180,7 +180,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const itemCard = document.createElement('div');
             itemCard.className = 'item-card';
             itemCard.innerHTML = `
-                <img src="${item.photoFront || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik00MCA0MEw0MCA0MEw0MCA0MEw0MCA0MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+'}" alt="${item.denomination}" class="item-photo">
+                <img src="${item.photoFront || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik00MCA0MEw0MCA0MEw0MCA0MEw0MCA0MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+'}" alt="${item.denomination}" class="item-photo" style="cursor: pointer;">
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
@@ -193,7 +193,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             `;
             
             const editBtn = itemCard.querySelector('.edit-btn');
+            const itemPhoto = itemCard.querySelector('.item-photo');
+            
             editBtn.addEventListener('click', () => this.editItem(item.id));
+            itemPhoto.addEventListener('click', () => this.editItem(item.id));
             
             itemsList.appendChild(itemCard);
         });
@@ -477,6 +480,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         this.currentEditingItem = null;
+        this.renderMainScreen();
         this.showCountryItems(this.currentCountryCode);
     }
 
@@ -502,6 +506,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 
                 this.currentEditingItem = null;
+                this.renderMainScreen();
                 this.showCountryItems(countryCode);
                 
             } catch (error) {
