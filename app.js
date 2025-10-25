@@ -273,11 +273,15 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             inputId = side === 'front' ? 'photoInputFront' : 'photoInputBack';
         }
         
+        console.log('Buscando input con ID:', inputId);
         const input = document.getElementById(inputId);
         if (input) {
             input.click();
         } else {
             console.error('Input no encontrado:', inputId);
+            // Listar todos los inputs disponibles para debug
+            const allInputs = document.querySelectorAll('input[type="file"]');
+            console.log('Inputs disponibles:', Array.from(allInputs).map(i => i.id));
         }
     }
 
@@ -1047,6 +1051,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             if (frontUrl) {
                 const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
+                console.log('Buscando elemento front con ID:', frontId);
                 const frontPreview = document.getElementById(frontId);
                 if (frontPreview) {
                     frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
@@ -1054,11 +1059,15 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     console.log('Imagen anverso aplicada a elemento:', frontId, 'URL:', frontUrl);
                 } else {
                     console.error('Elemento no encontrado:', frontId);
+                    // Listar elementos disponibles
+                    const allPreviews = document.querySelectorAll('.photo-preview');
+                    console.log('Previews disponibles:', Array.from(allPreviews).map(p => p.id));
                 }
             }
             
             if (backUrl) {
                 const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
+                console.log('Buscando elemento back con ID:', backId);
                 const backPreview = document.getElementById(backId);
                 if (backPreview) {
                     backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
