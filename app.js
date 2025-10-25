@@ -11,8 +11,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.setupEventListeners();
         this.populateCountrySelect();
         await this.loadData();
-        // Asegurar que renderMainScreen se ejecute después de cargar datos
-        setTimeout(() => this.renderMainScreen(), 100);
+        this.renderMainScreen();
     }
 
     setupEventListeners() {
@@ -110,8 +109,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         if (!countriesGrid || !emptyState) {
             console.error('Elementos no encontrados en renderMainScreen');
+            // Reintentar después de un breve delay
+            setTimeout(() => this.renderMainScreen(), 100);
             return;
         }
+        
+        console.log('Renderizando pantalla principal con', this.items.length, 'items');
 
         if (this.items.length === 0) {
             emptyState.style.display = 'block';
@@ -451,7 +454,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         const itemIndex = this.items.findIndex(i => i.id === this.currentEditingItem.id);
         if (itemIndex !== -1) {
-            this.items[itemIndex] = {
+            const updatedItem = {
                 ...this.currentEditingItem,
                 type: document.getElementById('editItemType').value,
                 countryCode: document.getElementById('editCountry').value,
@@ -466,27 +469,26 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 photoBack: photoPreviewBack.dataset.photo || this.currentEditingItem.photoBack || null,
                 dateModified: new Date().toISOString()
             };
-        }
-        
-        console.log('Item actualizado:', this.items[itemIndex]);
-        localStorage.setItem('coinCollection', JSON.stringify(this.items));
-        
-        try {
-            await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.items[itemIndex])
-            });
-        } catch (error) {
-            console.log('API update error');
+            
+            this.items[itemIndex] = updatedItem;
+            
+            console.log('Item actualizado:', updatedItem);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            try {
+                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedItem)
+                });
+            } catch (error) {
+                console.log('API update error');
+            }
         }
         
         this.currentEditingItem = null;
-        // Forzar actualización completa
-        setTimeout(() => {
-            this.renderMainScreen();
-            this.showCountryItems(this.currentCountryCode);
-        }, 100);
+        this.showScreen('country');
+        this.showCountryItems(this.currentCountryCode);
     }
 
     async deleteItem() {
@@ -1034,7 +1036,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (frontUrl) {
                 const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
                 if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:100px;border-radius:4px;">`;
+                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     frontPreview.dataset.photo = frontUrl;
                     console.log('Imagen anverso aplicada:', frontUrl);
                 }
@@ -1043,7 +1045,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (backUrl) {
                 const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
                 if (backPreview) {
-                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:100px;border-radius:4px;">`;
+                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     backPreview.dataset.photo = backUrl;
                     console.log('Imagen reverso aplicada:', backUrl);
                 }
