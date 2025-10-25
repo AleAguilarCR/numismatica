@@ -11,7 +11,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.setupEventListeners();
         this.populateCountrySelect();
         await this.loadData();
-        this.renderMainScreen();
+        // Asegurar que renderMainScreen se ejecute después de cargar datos
+        setTimeout(() => this.renderMainScreen(), 100);
     }
 
     setupEventListeners() {
@@ -461,8 +462,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 value: parseFloat(document.getElementById('editValue').value) || null,
                 notes: document.getElementById('editNotes').value,
                 catalogLink: document.getElementById('editCatalogLink').value,
-                photoFront: photoPreviewFront.dataset.photo || item.photoFront || null,
-                photoBack: photoPreviewBack.dataset.photo || item.photoBack || null,
+                photoFront: photoPreviewFront.dataset.photo || this.currentEditingItem.photoFront || null,
+                photoBack: photoPreviewBack.dataset.photo || this.currentEditingItem.photoBack || null,
                 dateModified: new Date().toISOString()
             };
         }
@@ -876,6 +877,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         console.log('Total items cargados:', this.items.length);
+        
+        // Forzar render después de cargar datos
+        if (this.currentScreen === 'main') {
+            setTimeout(() => this.renderMainScreen(), 50);
+        }
     }
     
     async performImageSearch() {
