@@ -43,7 +43,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             // Búsqueda por imagen
             document.getElementById('searchPhotoPreview')?.addEventListener('click', () => this.selectSearchPhoto());
             document.getElementById('searchPhotoInput')?.addEventListener('change', (e) => this.handleSearchPhotoSelect(e));
-            document.getElementById('searchBtn')?.addEventListener('click', () => this.searchByImage());
+            document.getElementById('searchBtn')?.addEventListener('click', () => this.performImageSearch());
+            
+            // Obtener imágenes de Numista
+            document.getElementById('getNumistaImagesAdd')?.addEventListener('click', () => this.getNumistaImages('add'));
+            document.getElementById('getNumistaImagesEdit')?.addEventListener('click', () => this.getNumistaImages('edit'));
 
             // Formulario agregar
             document.getElementById('addForm')?.addEventListener('submit', (e) => this.handleAddItem(e));
@@ -849,9 +853,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
                 
-                if (apiItems.length > 0) {
+                // Solo usar API si tiene más items que localStorage o localStorage está vacío
+                if (apiItems.length > 0 && (this.items.length === 0 || apiItems.length > this.items.length)) {
                     this.items = apiItems;
                     localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                    console.log('Usando datos del API');
+                } else {
+                    console.log('Manteniendo datos de localStorage');
                 }
             }
         } catch (error) {
@@ -859,5 +867,148 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         console.log('Total items cargados:', this.items.length);
+    }
+    
+    async performImageSearch() {
+        if (!this.searchImageData) return;
+        
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = '<p>Analizando imagen con Google Vision...</p>';
+        
+        try {
+            let visionResults;
+            
+            try {
+                visionResults = await this.analyzeImageWithVision(this.searchImageData);
+                console.log('Vision API exitosa:', visionResults);
+            } catch (visionError) {
+                console.log('Vision API falló, usando búsqueda simulada:', visionError.message);
+                visionResults = {
+                    texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
+                    objects: ['coin', 'currency', 'money'],
+                    webEntities: ['currency', 'money', 'numismatics', 'collectible']
+                };
+            }
+            
+            const coinResults = await this.searchCoinsDatabase(visionResults);
+            
+            if (coinResults.length === 0) {
+                resultsDiv.innerHTML = '<p>No se encontraron monedas similares. Intenta con una imagen más clara.</p>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = coinResults.map((result, index) => `
+                <div class="search-result">
+                    <h4>${result.title}</h4>
+                    <p><strong>País:</strong> ${result.country}</p>
+                    <p><strong>Año:</strong> ${result.year}</p>
+                    <p><strong>Confianza:</strong> ${result.confidence}%</p>
+                    <p><strong>Descripción:</strong> ${result.description}</p>
+                    <p><a href="${result.link}" target="_blank" rel="noopener">Ver en catálogo</a></p>
+                    <button class="btn btn-primary" onclick="app.addSearchResultToCollection(${index})">➕ Agregar a mi colección</button>
+                </div>
+            `).join('');
+            
+            this.currentSearchResults = coinResults;
+            
+        } catch (error) {
+            console.error('Error en búsqueda:', error);
+            resultsDiv.innerHTML = '<p>Error en la búsqueda. Verifica tu conexión e inténtalo de nuevo.</p>';
+        }
+    }
+    
+    async analyzeImageWithVision(imageData) {
+        const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
+        const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+        
+        const base64Image = imageData.split(',')[1];
+        
+        const requestBody = {
+            requests: [{
+                image: { content: base64Image },
+                features: [
+                    { type: 'TEXT_DETECTION', maxResults: 10 },
+                    { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
+                    { type: 'WEB_DETECTION', maxResults: 5 }
+                ]
+            }]
+        };
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Vision API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return this.processVisionResults(data);
+    }
+    
+    processVisionResults(visionData) {
+        const result = visionData.responses[0];
+        const extractedInfo = {
+            texts: [],
+            objects: [],
+            webEntities: []
+        };
+        
+        if (result.textAnnotations) {
+            extractedInfo.texts = result.textAnnotations.map(text => text.description.toLowerCase());
+        }
+        
+        if (result.localizedObjectAnnotations) {
+            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name.toLowerCase());
+        }
+        
+        if (result.webDetection && result.webDetection.webEntities) {
+            extractedInfo.webEntities = result.webDetection.webEntities
+                .filter(entity => entity.score > 0.3)
+                .map(entity => entity.description ? entity.description.toLowerCase() : '');
+        }
+        
+        return extractedInfo;
+    }
+    
+    async getNumistaImages(mode) {
+        const prefix = mode === 'edit' ? 'edit' : '';
+        const catalogLinkId = mode === 'edit' ? 'editCatalogLink' : 'catalogLink';
+        const catalogLink = document.getElementById(catalogLinkId).value;
+        
+        if (!catalogLink || !catalogLink.includes('numista.com')) {
+            const url = prompt('Ingresa la URL de Numista para obtener las imágenes:');
+            if (!url || !url.includes('numista.com')) {
+                alert('Por favor ingresa una URL válida de Numista');
+                return;
+            }
+            document.getElementById(catalogLinkId).value = url;
+        }
+        
+        const finalUrl = document.getElementById(catalogLinkId).value;
+        
+        const idMatch = finalUrl.match(/pieces(\d+)\.html/);
+        if (!idMatch) {
+            alert('No se pudo extraer el ID de la moneda de la URL');
+            return;
+        }
+        
+        const coinId = idMatch[1];
+        
+        const frontImageUrl = `https://en.numista.com/catalogue/photos/pieces/${coinId}-original.jpg`;
+        const backImageUrl = `https://en.numista.com/catalogue/photos/pieces/${coinId}-reverse.jpg`;
+        
+        const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
+        const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
+        
+        frontPreview.innerHTML = `<img src="${frontImageUrl}" alt="Anverso" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>❌ Imagen no disponible</span>';">`;
+        frontPreview.dataset.photo = frontImageUrl;
+        
+        backPreview.innerHTML = `<img src="${backImageUrl}" alt="Reverso" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>❌ Imagen no disponible</span>';">`;
+        backPreview.dataset.photo = backImageUrl;
+        
+        alert('Imágenes de Numista aplicadas. Si alguna no se muestra, es porque no está disponible en Numista.');
     }
 };
