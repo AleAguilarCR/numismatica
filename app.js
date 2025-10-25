@@ -175,7 +175,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         itemsList.innerHTML = '';
 
-        countryItems.forEach(item => {
+        console.log('Mostrando items del país:', countryItems.length, 'items');
+        
+        countryItems.forEach((item, index) => {
+            console.log(`Creando item ${index + 1}:`, item.denomination);
+            
             const itemCard = document.createElement('div');
             itemCard.className = 'item-card';
             itemCard.innerHTML = `
@@ -194,11 +198,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const editBtn = itemCard.querySelector('.edit-btn');
             const itemPhoto = itemCard.querySelector('.item-photo-crisp');
             
+            console.log('Edit button encontrado:', !!editBtn);
+            console.log('Item photo encontrado:', !!itemPhoto);
+            
             if (editBtn) {
                 editBtn.addEventListener('click', () => this.editItem(item.id));
+            } else {
+                console.error('Botón editar no encontrado para item:', item.denomination);
             }
+            
             if (itemPhoto) {
                 itemPhoto.addEventListener('click', () => this.editItem(item.id));
+            } else {
+                console.error('Foto del item no encontrada para:', item.denomination);
             }
             
             itemsList.appendChild(itemCard);
