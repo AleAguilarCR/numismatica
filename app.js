@@ -979,35 +979,81 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     getNumistaImages(mode) {
-        const frontUrl = prompt('URL de la imagen del ANVERSO:\n\n(Deja vacío si no quieres cambiar esta imagen)');
-        if (frontUrl === null) return; // Usuario canceló
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
         
-        const backUrl = prompt('URL de la imagen del REVERSO:\n\n(Deja vacío si no quieres cambiar esta imagen)');
-        if (backUrl === null) return; // Usuario canceló
+        modal.innerHTML = `
+            <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                <h3 style="margin:0 0 1.5rem 0;text-align:center;color:#333;">Obtener Imágenes de Numista</h3>
+                
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Anverso:</label>
+                    <input type="url" id="modalFrontUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
+                </div>
+                
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Reverso:</label>
+                    <input type="url" id="modalBackUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
+                </div>
+                
+                <div style="display:flex;gap:1rem;">
+                    <button id="modalApply" style="flex:1;padding:0.75rem;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Aplicar</button>
+                    <button id="modalCancel" style="flex:1;padding:0.75rem;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Cancelar</button>
+                </div>
+            </div>
+        `;
         
-        if (!frontUrl && !backUrl) {
-            alert('No se ingresaron URLs de imágenes');
-            return;
-        }
+        document.body.appendChild(modal);
         
-        const prefix = mode === 'edit' ? 'edit' : '';
+        const frontInput = modal.querySelector('#modalFrontUrl');
+        const backInput = modal.querySelector('#modalBackUrl');
+        const applyBtn = modal.querySelector('#modalApply');
+        const cancelBtn = modal.querySelector('#modalCancel');
         
-        if (frontUrl) {
-            const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
-            if (frontPreview) {
-                frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:100px;">`;
-                frontPreview.dataset.photo = frontUrl;
+        applyBtn.addEventListener('click', () => {
+            const frontUrl = frontInput.value.trim();
+            const backUrl = backInput.value.trim();
+            
+            if (!frontUrl && !backUrl) {
+                alert('Por favor ingresa al menos una URL de imagen');
+                return;
             }
-        }
-        
-        if (backUrl) {
-            const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
-            if (backPreview) {
-                backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:100px;">`;
-                backPreview.dataset.photo = backUrl;
+            
+            const prefix = mode === 'edit' ? 'edit' : '';
+            
+            if (frontUrl) {
+                const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
+                if (frontPreview) {
+                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:100px;border-radius:4px;">`;
+                    frontPreview.dataset.photo = frontUrl;
+                    console.log('Imagen anverso aplicada:', frontUrl);
+                }
             }
-        }
+            
+            if (backUrl) {
+                const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
+                if (backPreview) {
+                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:100px;border-radius:4px;">`;
+                    backPreview.dataset.photo = backUrl;
+                    console.log('Imagen reverso aplicada:', backUrl);
+                }
+            }
+            
+            document.body.removeChild(modal);
+            alert('✅ Imágenes aplicadas correctamente');
+        });
         
-        alert('✅ Imágenes aplicadas correctamente');
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+        
+        // Focus en el primer campo
+        setTimeout(() => frontInput.focus(), 100);
     }
 };
