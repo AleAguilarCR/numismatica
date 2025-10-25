@@ -232,6 +232,85 @@
 
                 <div class="form-group">
                     <label>Denominación:</label>
+                    <input type="text" id="editDenomination" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Año:</label>
+                    <input type="number" id="editYear" min="1800" max="2024" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <select id="editCondition" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Pobre">Pobre</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Bueno">Bueno</option>
+                        <option value="Muy Bueno">Muy Bueno</option>
+                        <option value="Excelente">Excelente</option>
+                        <option value="Sin Circular">Sin Circular</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Valor Estimado:</label>
+                    <input type="number" id="editValue" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Notas:</label>
+                    <textarea id="editNotes"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Enlace de Catálogo:</label>
+                    <input type="url" id="editCatalogLink">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Actualizar</button>
+                <button type="button" class="btn btn-danger btn-full" id="deleteItemBtn">Eliminar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="countries.js"></script>
+    <script src="app.js"></script>
+    <script>
+        const API_URL = 'https://numismatica-7pat.onrender.com';
+        console.log('Inicializando aplicación...');
+        const app = new CoinCollectionApp();
+        app.init();
+    </script>
+</body>
+</html>>
+                    <div class="photo-group">
+                        <label>Reverso:</label>
+                        <div class="photo-preview" id="editPhotoPreviewBack">
+                            <span>📷 Foto Reverso</span>
+                        </div>
+                        <input type="file" id="editPhotoInputBack" accept="image/*" hidden>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="editItemType" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="moneda">Moneda</option>
+                        <option value="billete">Billete</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>País:</label>
+                    <select id="editCountry" required>
+                        <option value="">Seleccionar país...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Denominación:</label>
                     <input type="text" id="editDenomination" placeholder="ej: 1 Dollar, 50 Centavos" required>
                 </div>
 
