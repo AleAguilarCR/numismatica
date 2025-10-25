@@ -245,6 +245,18 @@ body {
     background: #f0f0f0;
 }
 
+.item-photo-crisp {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f0f0f0;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    filter: none;
+}
+
 .item-info {
     flex: 1;
 }
