@@ -828,20 +828,35 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
 
     async loadData() {
-        try {
-            const response = await fetch(`${window.API_URL}/coins`);
-            if (response.ok) {
-                this.items = await response.json();
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                return;
-            }
-        } catch (error) {
-            console.log('API error, using localStorage');
-        }
+        console.log('Cargando datos...');
         
         const saved = localStorage.getItem('coinCollection');
         if (saved) {
-            this.items = JSON.parse(saved);
+            try {
+                this.items = JSON.parse(saved);
+                console.log('Datos cargados desde localStorage:', this.items.length, 'items');
+                console.log('Primer item:', this.items[0]);
+            } catch (error) {
+                console.error('Error parsing localStorage:', error);
+                this.items = [];
+            }
         }
+        
+        try {
+            const response = await fetch(`${window.API_URL}/coins`);
+            if (response.ok) {
+                const apiItems = await response.json();
+                console.log('Datos del API:', apiItems.length, 'items');
+                
+                if (apiItems.length > 0) {
+                    this.items = apiItems;
+                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                }
+            }
+        } catch (error) {
+            console.log('API error, usando localStorage:', error.message);
+        }
+        
+        console.log('Total items cargados:', this.items.length);
     }
 };
