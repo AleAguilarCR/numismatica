@@ -19,7 +19,11 @@ class CoinCollectionApp {
     }
     
     async waitForFirebase() {
-        // Firebase deshabilitado
+        let attempts = 0;
+        while (!window.firebaseReady && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
     }
 
     setupEventListeners() {
@@ -497,11 +501,9 @@ class CoinCollectionApp {
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
         if (window.db && typeof this.currentEditingItem.id === 'string') {
-            try {
-                await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
-            } catch (error) {
-                console.error('Error updating Firebase:', error);
-            }
+            await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
+        } else {
+            this.renderMainScreen();
         }
         
         this.currentEditingItem = null;
@@ -521,10 +523,10 @@ class CoinCollectionApp {
                 } else {
                     this.items = this.items.filter(i => i.id !== itemId);
                     localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                    this.renderMainScreen();
                 }
                 
                 this.currentEditingItem = null;
+                this.renderMainScreen();
                 this.showCountryItems(countryCode);
                 
             } catch (error) {
@@ -566,10 +568,15 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        this.items.push(item);
-        localStorage.setItem('coinCollection', JSON.stringify(this.items));
+        if (window.db) {
+            await window.db.collection('coins').add(item);
+        } else {
+            item.id = Date.now();
+            this.items.push(item);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            this.renderMainScreen();
+        }
         
-        // Limpiar formulario
         event.target.reset();
         document.getElementById('photoPreviewFront').innerHTML = '<span>📷 Foto Anverso</span>';
         document.getElementById('photoPreviewBack').innerHTML = '<span>📷 Foto Reverso</span>';
@@ -1534,7 +1541,7 @@ class CoinCollectionApp {
                     this.items.push({ id: doc.id, ...doc.data() });
                 });
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                if (this.currentScreen === 'main') this.renderMainScreen();
+                this.renderMainScreen();
             });
         } catch (error) {
             const saved = localStorage.getItem('coinCollection');
