@@ -179,11 +179,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const itemCard = document.createElement('div');
             itemCard.className = 'item-card';
             itemCard.innerHTML = `
-                <img src="${item.photoFront || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik00MCA0MEw0MCA0MEw0MCA0MEw0MCA0MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+'}" 
-                     alt="${item.denomination}" 
-                     class="item-photo-crisp" 
-                     onload="this.style.cssText='cursor: pointer; width: 80px !important; height: 80px !important; object-fit: cover !important; border-radius: 8px !important; background: #f0f0f0 !important; image-rendering: pixelated !important; image-rendering: -moz-crisp-edges !important; image-rendering: crisp-edges !important; filter: none !important;';"
-                     style="cursor: pointer; width: 80px !important; height: 80px !important; object-fit: cover !important; border-radius: 8px !important; background: #f0f0f0 !important; image-rendering: pixelated !important; image-rendering: -moz-crisp-edges !important; image-rendering: crisp-edges !important; filter: none !important;">
+                <img src="${item.photoFront || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik00MCA0MEw0MCA0MEw0MCA0MEw0MCA0MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+'}" alt="${item.denomination}" class="item-photo-crisp" style="cursor: pointer;">
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
