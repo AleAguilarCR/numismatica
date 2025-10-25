@@ -974,69 +974,35 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     getNumistaImages(mode) {
+        const frontUrl = prompt('URL de la imagen del ANVERSO:\n\n(Deja vacío si no quieres cambiar esta imagen)');
+        if (frontUrl === null) return; // Usuario canceló
+        
+        const backUrl = prompt('URL de la imagen del REVERSO:\n\n(Deja vacío si no quieres cambiar esta imagen)');
+        if (backUrl === null) return; // Usuario canceló
+        
+        if (!frontUrl && !backUrl) {
+            alert('No se ingresaron URLs de imágenes');
+            return;
+        }
+        
         const prefix = mode === 'edit' ? 'edit' : '';
         
-        // Crear modal con campos para URLs
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;';
-        
-        modal.innerHTML = `
-            <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;">
-                <h3>Obtener Imágenes de Numista</h3>
-                <div style="margin:1rem 0;">
-                    <label>URL Imagen Anverso:</label>
-                    <input type="url" id="frontImageUrl" placeholder="https://..." style="width:100%;padding:0.5rem;margin:0.5rem 0;border:1px solid #ddd;border-radius:4px;">
-                </div>
-                <div style="margin:1rem 0;">
-                    <label>URL Imagen Reverso:</label>
-                    <input type="url" id="backImageUrl" placeholder="https://..." style="width:100%;padding:0.5rem;margin:0.5rem 0;border:1px solid #ddd;border-radius:4px;">
-                </div>
-                <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                    <button id="applyImages" style="flex:1;padding:0.75rem;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;">Aplicar</button>
-                    <button id="cancelImages" style="flex:1;padding:0.75rem;background:#ccc;color:black;border:none;border-radius:4px;cursor:pointer;">Cancelar</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Event listeners
-        modal.querySelector('#applyImages').addEventListener('click', () => {
-            const frontUrl = modal.querySelector('#frontImageUrl').value;
-            const backUrl = modal.querySelector('#backImageUrl').value;
-            
-            if (frontUrl || backUrl) {
-                const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
-                const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
-                
-                if (frontUrl && frontPreview) {
-                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:100px;">`;
-                    frontPreview.dataset.photo = frontUrl;
-                }
-                
-                if (backUrl && backPreview) {
-                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:100px;">`;
-                    backPreview.dataset.photo = backUrl;
-                }
-                
-                alert('✅ Imágenes aplicadas correctamente');
-            } else {
-                alert('Por favor ingresa al menos una URL de imagen');
-                return;
+        if (frontUrl) {
+            const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
+            if (frontPreview) {
+                frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:100px;">`;
+                frontPreview.dataset.photo = frontUrl;
             }
-            
-            document.body.removeChild(modal);
-        });
+        }
         
-        modal.querySelector('#cancelImages').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-        
-        // Cerrar al hacer clic fuera del modal
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
+        if (backUrl) {
+            const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
+            if (backPreview) {
+                backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:100px;">`;
+                backPreview.dataset.photo = backUrl;
             }
-        });
+        }
+        
+        alert('✅ Imágenes aplicadas correctamente');
     }
 };
