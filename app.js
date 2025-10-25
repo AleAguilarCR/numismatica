@@ -976,39 +976,49 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     async getNumistaImages(mode) {
         const prefix = mode === 'edit' ? 'edit' : '';
         const catalogLinkId = mode === 'edit' ? 'editCatalogLink' : 'catalogLink';
-        const catalogLink = document.getElementById(catalogLinkId).value;
+        let catalogLink = document.getElementById(catalogLinkId)?.value || '';
         
         if (!catalogLink || !catalogLink.includes('numista.com')) {
-            const url = prompt('Ingresa la URL de Numista para obtener las imágenes:');
-            if (!url || !url.includes('numista.com')) {
+            catalogLink = prompt('Ingresa la URL de Numista para obtener las imágenes:\n\nEjemplo: https://en.numista.com/catalogue/pieces12345.html');
+            if (!catalogLink || !catalogLink.includes('numista.com')) {
                 alert('Por favor ingresa una URL válida de Numista');
                 return;
             }
-            document.getElementById(catalogLinkId).value = url;
+            if (document.getElementById(catalogLinkId)) {
+                document.getElementById(catalogLinkId).value = catalogLink;
+            }
         }
         
-        const finalUrl = document.getElementById(catalogLinkId).value;
-        
-        const idMatch = finalUrl.match(/pieces(\d+)\.html/);
+        const idMatch = catalogLink.match(/pieces(\d+)\.html/);
         if (!idMatch) {
-            alert('No se pudo extraer el ID de la moneda de la URL');
+            alert('No se pudo extraer el ID de la moneda de la URL.\n\nAsegúrate de que la URL tenga el formato:\nhttps://en.numista.com/catalogue/pieces12345.html');
             return;
         }
         
         const coinId = idMatch[1];
+        console.log('ID de moneda extraído:', coinId);
         
         const frontImageUrl = `https://en.numista.com/catalogue/photos/pieces/${coinId}-original.jpg`;
         const backImageUrl = `https://en.numista.com/catalogue/photos/pieces/${coinId}-reverse.jpg`;
         
+        console.log('URLs de imágenes:', frontImageUrl, backImageUrl);
+        
         const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
         const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
         
-        frontPreview.innerHTML = `<img src="${frontImageUrl}" alt="Anverso" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>❌ Imagen no disponible</span>';">`;
+        if (!frontPreview || !backPreview) {
+            alert('Error: No se encontraron los elementos de vista previa de fotos');
+            return;
+        }
+        
+        // Aplicar imagen del anverso
+        frontPreview.innerHTML = `<img src="${frontImageUrl}" alt="Anverso" style="max-width: 100%; max-height: 100px;" onerror="this.parentElement.innerHTML='<span style=color:red>❌ Anverso no disponible</span>';">`;
         frontPreview.dataset.photo = frontImageUrl;
         
-        backPreview.innerHTML = `<img src="${backImageUrl}" alt="Reverso" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>❌ Imagen no disponible</span>';">`;
+        // Aplicar imagen del reverso
+        backPreview.innerHTML = `<img src="${backImageUrl}" alt="Reverso" style="max-width: 100%; max-height: 100px;" onerror="this.parentElement.innerHTML='<span style=color:red>❌ Reverso no disponible</span>';">`;
         backPreview.dataset.photo = backImageUrl;
         
-        alert('Imágenes de Numista aplicadas. Si alguna no se muestra, es porque no está disponible en Numista.');
+        alert('✅ Imágenes de Numista aplicadas.\n\nSi alguna imagen no se carga, es porque no está disponible en Numista para esta moneda.');
     }
 };
