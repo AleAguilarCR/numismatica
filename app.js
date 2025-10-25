@@ -178,8 +178,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         countryItems.forEach(item => {
             const itemCard = document.createElement('div');
             itemCard.className = 'item-card';
+            
             itemCard.innerHTML = `
-                <img src="${item.photoFront || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik00MCA0MEw0MCA0MEw0MCA0MEw0MCA0MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+'}" alt="${item.denomination}" class="item-photo-crisp" style="cursor: pointer;">
+                <canvas class="item-photo-canvas" width="80" height="80" style="cursor: pointer; border-radius: 4px; background: #f0f0f0;"></canvas>
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
@@ -191,14 +192,33 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 <button class="btn btn-secondary edit-btn">Editar</button>
             `;
             
+            const canvas = itemCard.querySelector('.item-photo-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (item.photoFront) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, 80, 80);
+                };
+                img.src = item.photoFront;
+            } else {
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, 80, 80);
+                ctx.fillStyle = '#ccc';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('📷', 40, 50);
+            }
+            
             const editBtn = itemCard.querySelector('.edit-btn');
-            const itemPhoto = itemCard.querySelector('.item-photo-crisp');
+            const itemCanvas = itemCard.querySelector('.item-photo-canvas');
             
             if (editBtn) {
                 editBtn.addEventListener('click', () => this.editItem(item.id));
             }
-            if (itemPhoto) {
-                itemPhoto.addEventListener('click', () => this.editItem(item.id));
+            if (itemCanvas) {
+                itemCanvas.addEventListener('click', () => this.editItem(item.id));
             }
             
             itemsList.appendChild(itemCard);
