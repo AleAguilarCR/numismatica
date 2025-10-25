@@ -192,10 +192,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             `;
             
             const editBtn = itemCard.querySelector('.edit-btn');
-            const itemPhoto = itemCard.querySelector('.item-photo');
+            const itemPhoto = itemCard.querySelector('.item-photo-crisp');
             
-            editBtn.addEventListener('click', () => this.editItem(item.id));
-            itemPhoto.addEventListener('click', () => this.editItem(item.id));
+            if (editBtn) {
+                editBtn.addEventListener('click', () => this.editItem(item.id));
+            }
+            if (itemPhoto) {
+                itemPhoto.addEventListener('click', () => this.editItem(item.id));
+            }
             
             itemsList.appendChild(itemCard);
         });
