@@ -266,15 +266,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
 
     selectPhoto(side, mode = 'add') {
-        const prefix = mode === 'edit' ? 'edit' : '';
-        const suffix = side === 'front' ? 'Front' : 'Back';
-        const inputId = `${prefix}photoInput${suffix}`;
+        let inputId;
+        if (mode === 'edit') {
+            inputId = side === 'front' ? 'editPhotoInputFront' : 'editPhotoInputBack';
+        } else {
+            inputId = side === 'front' ? 'photoInputFront' : 'photoInputBack';
+        }
+        
         const input = document.getElementById(inputId);
         if (input) {
             input.click();
         } else {
             console.error('Input no encontrado:', inputId);
-            console.log('Buscando:', inputId, 'Modo:', mode, 'Side:', side);
         }
     }
 
@@ -1043,26 +1046,26 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const prefix = mode === 'edit' ? 'edit' : '';
             
             if (frontUrl) {
-                const frontPreview = document.getElementById(`${prefix}photoPreviewFront`);
+                const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
+                const frontPreview = document.getElementById(frontId);
                 if (frontPreview) {
                     frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     frontPreview.dataset.photo = frontUrl;
-                    console.log('Imagen anverso aplicada a elemento:', `${prefix}photoPreviewFront`, 'URL:', frontUrl);
-                    console.log('Dataset.photo establecido:', frontPreview.dataset.photo);
+                    console.log('Imagen anverso aplicada a elemento:', frontId, 'URL:', frontUrl);
                 } else {
-                    console.error('Elemento no encontrado:', `${prefix}photoPreviewFront`);
+                    console.error('Elemento no encontrado:', frontId);
                 }
             }
             
             if (backUrl) {
-                const backPreview = document.getElementById(`${prefix}photoPreviewBack`);
+                const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
+                const backPreview = document.getElementById(backId);
                 if (backPreview) {
                     backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     backPreview.dataset.photo = backUrl;
-                    console.log('Imagen reverso aplicada a elemento:', `${prefix}photoPreviewBack`, 'URL:', backUrl);
-                    console.log('Dataset.photo establecido:', backPreview.dataset.photo);
+                    console.log('Imagen reverso aplicada a elemento:', backId, 'URL:', backUrl);
                 } else {
-                    console.error('Elemento no encontrado:', `${prefix}photoPreviewBack`);
+                    console.error('Elemento no encontrado:', backId);
                 }
             }
             
