@@ -115,11 +115,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         console.log('Renderizando pantalla principal con', this.items.length, 'items');
 
         if (this.items.length === 0) {
-            emptyState.style.display = 'block';
+            countriesGrid.innerHTML = '<div class="empty-state"><p>¡Comienza tu colección!</p><p>Agrega tu primera moneda o billete</p></div>';
             return;
         }
-
-        emptyState.style.display = 'none';
 
         const countryCount = {};
         this.items.forEach(item => {
@@ -890,10 +888,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Total items cargados:', this.items.length);
         
-        // Forzar render después de cargar datos
-        if (this.currentScreen === 'main') {
-            setTimeout(() => this.renderMainScreen(), 50);
-        }
+        // Los datos ya están cargados, no necesitamos render adicional
     }
     
     async performImageSearch() {
