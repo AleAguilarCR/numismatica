@@ -1,3 +1,4 @@
+/* Reset y base */
 * {
     margin: 0;
     padding: 0;
@@ -11,7 +12,7 @@ body {
 }
 
 .app {
-    max-width: 400px;
+    max-width: 480px;
     margin: 0 auto;
     background: white;
     min-height: 100vh;
@@ -21,154 +22,109 @@ body {
 .header {
     background: #2196F3;
     color: white;
-    padding: 20px;
+    padding: 1rem;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .header h1 {
     font-size: 1.5rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.header h1:hover {
-    opacity: 0.8;
 }
 
 /* Pantallas */
 .screen {
-    padding: 20px;
+    padding: 1rem;
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
+.main-screen {
+    padding: 1rem;
+}
+
+/* Screen headers */
 .screen-header {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
-    background: #2196F3;
-    color: white;
-    margin: -20px -20px 20px -20px;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
 }
 
 .back-btn {
     background: none;
     border: none;
-    color: white;
     font-size: 1.5rem;
-    margin-right: 15px;
+    margin-right: 1rem;
     cursor: pointer;
+    color: #2196F3;
 }
 
-/* Pantalla Principal */
-.main-screen {
-    padding: 20px;
-}
-
+/* Países grid */
 .countries-grid {
-    min-height: 200px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f9f9f9;
-    border-radius: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
 }
 
 .country-flag {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 4px 8px;
-    border-radius: 12px;
-    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 90px;
-    max-height: 70px;
-    border: 2px solid transparent;
+    transition: transform 0.2s;
 }
 
 .country-flag:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border-color: #2196F3;
+    transform: translateY(-2px);
 }
 
-.country-flag .flag-emoji {
-    font-size: 2.5rem;
-    line-height: 1;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.flag-emoji {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
 }
 
-.country-flag .country-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #333;
-    text-align: center;
-    line-height: 1.2;
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.country-name {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
 }
 
-.country-flag .count {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: linear-gradient(45deg, #ff4444, #ff6666);
+.count {
+    background: #2196F3;
     color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(255,68,68,0.3);
-    border: 2px solid white;
+    border-radius: 12px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    display: inline-block;
 }
 
+/* Empty state */
 .empty-state {
     text-align: center;
+    padding: 3rem 1rem;
     color: #666;
-    width: 100%;
-    padding: 40px 20px;
-}
-
-.empty-state p {
-    margin-bottom: 10px;
 }
 
 /* Botones */
 .action-buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
 }
 
 .btn {
-    padding: 15px 20px;
+    padding: 1rem;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 1rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s;
 }
 
 .btn-primary {
@@ -193,83 +149,29 @@ body {
     width: 100%;
 }
 
-/* Formulario */
+/* Formularios */
 .add-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.photos-section {
-    display: flex;
-    gap: 15px;
-    justify-content: space-between;
-}
-
-.photo-group {
-    flex: 1;
-    text-align: center;
-}
-
-.photo-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #555;
-}
-
-.photo-preview {
-    width: 100%;
-    height: 150px;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: #f9f9f9;
-    transition: all 0.2s;
-}
-
-.photo-preview:hover {
-    border-color: #2196F3;
-    background: #f0f8ff;
-}
-
-.photo-preview img {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 8px;
-}
-
-@media (max-width: 480px) {
-    .photos-section {
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    .photo-preview {
-        height: 120px;
-    }
+    gap: 1rem;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .form-group label {
-    font-weight: 600;
-    color: #555;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 12px;
+    padding: 0.75rem;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 1rem;
 }
 
@@ -278,27 +180,62 @@ body {
     min-height: 80px;
 }
 
-/* Lista de items */
+/* Photos */
+.photos-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.photo-group {
+    text-align: center;
+}
+
+.photo-preview {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 2rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-preview:hover {
+    border-color: #2196F3;
+}
+
+.photo-preview img {
+    max-width: 100%;
+    max-height: 100px;
+    border-radius: 4px;
+}
+
+/* Items list */
 .items-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
 }
 
 .item-card {
     background: white;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     display: flex;
-    gap: 15px;
+    gap: 1rem;
+    align-items: center;
 }
 
 .item-photo {
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
+    width: 60px;
+    height: 60px;
     object-fit: cover;
+    border-radius: 4px;
     background: #f0f0f0;
 }
 
@@ -307,165 +244,115 @@ body {
 }
 
 .item-info h3 {
-    margin-bottom: 5px;
-    color: #333;
+    margin-bottom: 0.5rem;
+    color: #2196F3;
 }
 
 .item-info p {
-    color: #666;
     font-size: 0.9rem;
-    margin-bottom: 3px;
+    margin-bottom: 0.25rem;
+    color: #666;
 }
 
 .edit-btn {
-    margin-top: 10px;
-    padding: 8px 16px;
-    font-size: 0.8rem;
-    align-self: flex-start;
+    padding: 0.5rem 1rem;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-/* Editor de fotos */
+/* Continents */
+.continent-section {
+    margin-bottom: 2rem;
+}
+
+.continent-section h3 {
+    margin-bottom: 1rem;
+    color: #2196F3;
+    border-bottom: 2px solid #2196F3;
+    padding-bottom: 0.5rem;
+}
+
+.continent-countries {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+/* Photo editor */
 .photo-editor {
-    padding: 20px;
     text-align: center;
 }
 
 .editor-controls {
-    margin-top: 20px;
+    margin-top: 1rem;
     display: flex;
-    gap: 10px;
+    gap: 1rem;
     justify-content: center;
-    flex-wrap: wrap;
 }
 
-/* Búsqueda por imagen */
-.image-search {
-    padding: 20px;
-}
-
-.search-upload {
-    margin-bottom: 20px;
-    text-align: center;
-}
-
+/* Search results */
 .search-results {
-    margin-top: 20px;
+    margin-top: 1rem;
 }
 
 .search-result {
     background: white;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    text-align: left;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .search-result h4 {
-    margin-bottom: 10px;
     color: #2196F3;
+    margin-bottom: 0.5rem;
 }
 
 .search-result p {
-    margin-bottom: 5px;
+    margin-bottom: 0.5rem;
     font-size: 0.9rem;
-    color: #666;
 }
 
-.search-result a {
-    color: #2196F3;
-    text-decoration: none;
-}
-
-.search-result a:hover {
-    text-decoration: underline;
-}
-
-.search-result .btn {
-    margin-top: 10px;
-    width: 100%;
-}
-
-/* Continentes */
-.continents-list {
+/* Numista import */
+.numista-import {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.continent-section {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.continent-section h3 {
-    margin-bottom: 15px;
-    color: #2196F3;
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 10px;
-}
-
-.continent-countries {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* Numista Import */
-.numista-import {
-    padding: 20px;
+    gap: 1rem;
 }
 
 .numista-preview {
-    margin-top: 20px;
-    padding: 15px;
+    margin-top: 1rem;
+}
+
+.manual-numista-form {
     background: #f9f9f9;
-    border-radius: 10px;
+    padding: 1rem;
+    border-radius: 8px;
 }
 
-.numista-info h3 {
-    color: #2196F3;
-    margin-bottom: 10px;
+.manual-numista-form p {
+    margin-bottom: 1rem;
 }
 
-.numista-info p {
-    margin-bottom: 8px;
+.manual-numista-form small {
     color: #666;
-}
-
-.numista-images {
-    margin: 15px 0;
-    text-align: center;
-}
-
-.numista-images img {
-    border: 1px solid #ddd;
+    font-size: 0.8rem;
 }
 
 /* Responsive */
 @media (max-width: 480px) {
-    .app {
-        max-width: 100%;
+    .photos-section {
+        grid-template-columns: 1fr;
     }
     
     .countries-grid {
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
     
-    .country-flag {
-        min-width: 80px;
-        padding: 8px;
-    }
-    
-    .country-flag .flag-emoji {
-        font-size: 1.8rem;
-        height: 25px;
-    }
-    
-    .country-flag .country-name {
-        font-size: 0.65rem;
-        max-width: 65px;
+    .continent-countries {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
 }
