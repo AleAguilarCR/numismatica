@@ -246,14 +246,12 @@ body {
 }
 
 .item-photo-crisp {
-    width: 80px !important;
-    height: 80px !important;
+    width: 100px !important;
+    height: 100px !important;
     object-fit: cover !important;
     border-radius: 8px !important;
     background: #f0f0f0 !important;
-    image-rendering: pixelated !important;
-    image-rendering: -moz-crisp-edges !important;
-    image-rendering: crisp-edges !important;
+    image-rendering: auto !important;
     filter: none !important;
     transform: none !important;
     -webkit-filter: none !important;
@@ -262,6 +260,7 @@ body {
     -webkit-backface-visibility: hidden !important;
     will-change: auto !important;
     transition: none !important;
+    image-orientation: from-image !important;
 }
 
 .item-info {
