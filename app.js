@@ -461,12 +461,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 value: parseFloat(document.getElementById('editValue').value) || null,
                 notes: document.getElementById('editNotes').value,
                 catalogLink: document.getElementById('editCatalogLink').value,
-                photoFront: photoPreviewFront.dataset.photo || null,
-                photoBack: photoPreviewBack.dataset.photo || null,
+                photoFront: photoPreviewFront.dataset.photo || item.photoFront || null,
+                photoBack: photoPreviewBack.dataset.photo || item.photoBack || null,
                 dateModified: new Date().toISOString()
             };
         }
         
+        console.log('Item actualizado:', this.items[itemIndex]);
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
         try {
@@ -480,8 +481,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         this.currentEditingItem = null;
-        this.renderMainScreen();
-        this.showCountryItems(this.currentCountryCode);
+        // Forzar actualización completa
+        setTimeout(() => {
+            this.renderMainScreen();
+            this.showCountryItems(this.currentCountryCode);
+        }, 100);
     }
 
     async deleteItem() {
