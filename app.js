@@ -500,10 +500,14 @@ class CoinCollectionApp {
         
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
-        if (window.db && typeof this.currentEditingItem.id === 'string') {
-            await window.db.collection('coins').doc(this.currentEditingItem.id).update(this.items[itemIndex]);
-        } else {
-            this.renderMainScreen();
+        try {
+            await fetch(`${window.API_URL}/coins/${this.currentEditingItem.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.items[itemIndex])
+            });
+        } catch (error) {
+            console.log('API update error');
         }
         
         this.currentEditingItem = null;
@@ -518,15 +522,20 @@ class CoinCollectionApp {
             const countryCode = this.currentEditingItem.countryCode;
             
             try {
-                if (window.db && typeof itemId === 'string') {
-                    await window.db.collection('coins').doc(itemId).delete();
-                } else {
-                    this.items = this.items.filter(i => i.id !== itemId);
-                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                if (typeof itemId === 'number') {
+                    try {
+                        await fetch(`${window.API_URL}/coins/${itemId}`, {
+                            method: 'DELETE'
+                        });
+                    } catch (error) {
+                        console.log('API delete error');
+                    }
                 }
                 
+                this.items = this.items.filter(i => i.id !== itemId);
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                
                 this.currentEditingItem = null;
-                this.renderMainScreen();
                 this.showCountryItems(countryCode);
                 
             } catch (error) {
@@ -568,14 +577,24 @@ class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        if (window.db) {
-            await window.db.collection('coins').add(item);
-        } else {
-            item.id = Date.now();
+        try {
+            const response = await fetch(`${window.API_URL}/coins`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            
+            if (response.ok) {
+                const newItem = await response.json();
+                this.items.push(newItem);
+            } else {
+                this.items.push(item);
+            }
+        } catch (error) {
             this.items.push(item);
-            localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            this.renderMainScreen();
         }
+        
+        localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
         event.target.reset();
         document.getElementById('photoPreviewFront').innerHTML = '<span>📷 Foto Anverso</span>';
@@ -1528,24 +1547,20 @@ class CoinCollectionApp {
     }
 
     async loadData() {
-        if (!window.db) {
-            const saved = localStorage.getItem('coinCollection');
-            if (saved) this.items = JSON.parse(saved);
-            return;
+        try {
+            const response = await fetch(`${window.API_URL}/coins`);
+            if (response.ok) {
+                this.items = await response.json();
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                return;
+            }
+        } catch (error) {
+            console.log('API error, using localStorage');
         }
         
-        try {
-            window.db.collection('coins').onSnapshot((snapshot) => {
-                this.items = [];
-                snapshot.forEach(doc => {
-                    this.items.push({ id: doc.id, ...doc.data() });
-                });
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                this.renderMainScreen();
-            });
-        } catch (error) {
-            const saved = localStorage.getItem('coinCollection');
-            if (saved) this.items = JSON.parse(saved);
+        const saved = localStorage.getItem('coinCollection');
+        if (saved) {
+            this.items = JSON.parse(saved);
         }
     }
 }
