@@ -256,6 +256,12 @@ body {
     image-rendering: crisp-edges !important;
     filter: none !important;
     transform: none !important;
+    -webkit-filter: none !important;
+    -webkit-transform: none !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    will-change: auto !important;
+    transition: none !important;
 }
 
 .item-info {
