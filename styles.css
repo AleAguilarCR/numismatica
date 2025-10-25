@@ -246,21 +246,13 @@ body {
 }
 
 .item-photo-crisp {
-    width: 100px !important;
-    height: 100px !important;
+    width: 80px !important;
+    height: 80px !important;
     object-fit: cover !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     background: #f0f0f0 !important;
-    image-rendering: auto !important;
-    filter: none !important;
-    transform: none !important;
-    -webkit-filter: none !important;
-    -webkit-transform: none !important;
-    backface-visibility: hidden !important;
-    -webkit-backface-visibility: hidden !important;
-    will-change: auto !important;
-    transition: none !important;
-    image-orientation: from-image !important;
+    max-width: 100% !important;
+    max-height: 150px !important;
 }
 
 .item-info {
