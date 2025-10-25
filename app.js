@@ -463,7 +463,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
         try {
-            await fetch(`${window.API_URL}/coins/${this.currentEditingItem.id}`, {
+            await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.items[itemIndex])
@@ -486,7 +486,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             try {
                 if (typeof itemId === 'number') {
                     try {
-                        await fetch(`${window.API_URL}/coins/${itemId}`, {
+                        await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${itemId}`, {
                             method: 'DELETE'
                         });
                     } catch (error) {
@@ -540,7 +540,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         };
 
         try {
-            const response = await fetch(`${window.API_URL}/coins`, {
+            const response = await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(item)
@@ -843,7 +843,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         try {
-            const response = await fetch(`${window.API_URL}/coins`);
+            const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
+            const response = await fetch(`${API_URL}/coins`);
             if (response.ok) {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
