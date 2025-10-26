@@ -833,7 +833,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
         
         try {
-            const response = await fetch(`https://api.numista.com/api/v3/users/${userId}/collection`, {
+            const response = await fetch(`https://api.numista.com/api/v2/users/${userId}/collection`, {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
@@ -885,7 +885,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
         try {
-            const response = await fetch(`https://api.numista.com/api/v3/pieces/${pieceId}`, {
+            const response = await fetch(`https://api.numista.com/api/v2/pieces/${pieceId}`, {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
