@@ -213,16 +213,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (editBtn) {
                 editBtn.addEventListener('click', () => this.editItem(item.id));
             }
-            if (itemPhoto) {
+            if (itemPhoto && item.photoFront && item.photoFront.trim() !== '') {
                 itemPhoto.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Click en imagen, photoFront:', item.photoFront);
-                    if (item.photoFront && item.photoFront.trim() !== '') {
-                        this.showImageZoom(item.id, 'front');
-                    } else {
-                        this.editItem(item.id);
-                    }
+                    console.log('Click en imagen existente, mostrando zoom');
+                    this.showImageZoom(item.id, 'front');
                 });
             }
             if (itemPlaceholder) {
