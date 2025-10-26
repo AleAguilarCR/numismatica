@@ -48,6 +48,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             // Obtener imágenes de Numista
             document.getElementById('getNumistaImagesAdd')?.addEventListener('click', () => this.getNumistaImages('add'));
             document.getElementById('getNumistaImagesEdit')?.addEventListener('click', () => this.getNumistaImages('edit'));
+            
+            // Zoom de imagen
+            document.getElementById('backFromImageZoom')?.addEventListener('click', () => this.showScreen('edit'));
+            document.getElementById('changeImageBtn')?.addEventListener('click', () => this.changeCurrentImage());
+            document.getElementById('deleteImageBtn')?.addEventListener('click', () => this.deleteCurrentImage());
 
             // Formulario agregar
             document.getElementById('addForm')?.addEventListener('submit', (e) => this.handleAddItem(e));
@@ -180,7 +185,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             itemCard.className = 'item-card';
             
             itemCard.innerHTML = `
-                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}">
+                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}" data-item-id="${item.id}" data-side="front">
                 <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: ${item.photoFront ? 'none' : 'flex'}; align-items: center; justify-content: center; cursor: pointer;">📷</div>
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
@@ -1104,5 +1109,150 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         // Focus en el primer campo
         setTimeout(() => frontInput.focus(), 100);
+    }
+    
+    showImageZoom(itemId, side) {
+        const item = this.items.find(i => i.id === itemId);
+        if (!item) return;
+        
+        this.currentZoomItem = { item, side };
+        
+        const imageUrl = side === 'front' ? item.photoFront : item.photoBack;
+        const title = side === 'front' ? 'Anverso' : 'Reverso';
+        
+        document.getElementById('zoomImage').src = imageUrl;
+        document.getElementById('imageZoomTitle').textContent = `${title} - ${item.denomination}`;
+        
+        this.showScreen('imageZoom');
+    }
+    
+    changeCurrentImage() {
+        if (!this.currentZoomItem) return;
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+        
+        modal.innerHTML = `
+            <div style="background:white;padding:2rem;border-radius:8px;max-width:300px;width:90%;">
+                <h3 style="margin:0 0 1.5rem 0;text-align:center;">Cambiar Imagen</h3>
+                <button class="btn btn-primary btn-full" id="uploadImageBtn" style="margin-bottom:1rem;">📁 Subir Imagen</button>
+                <button class="btn btn-secondary btn-full" id="numistaImageBtn" style="margin-bottom:1rem;">🌐 Desde Numista</button>
+                <button class="btn btn-secondary btn-full" id="cancelChangeBtn">Cancelar</button>
+                <input type="file" id="hiddenImageInput" accept="image/*" hidden>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#uploadImageBtn').addEventListener('click', () => {
+            modal.querySelector('#hiddenImageInput').click();
+        });
+        
+        modal.querySelector('#hiddenImageInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.updateCurrentImage(event.target.result);
+                    document.body.removeChild(modal);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        modal.querySelector('#numistaImageBtn').addEventListener('click', () => {
+            document.body.removeChild(modal);
+            this.getNumistaImageForZoom();
+        });
+        
+        modal.querySelector('#cancelChangeBtn').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    getNumistaImageForZoom() {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+        
+        modal.innerHTML = `
+            <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;">
+                <h3 style="margin:0 0 1.5rem 0;text-align:center;">URL de Numista</h3>
+                <input type="url" id="numistaImageUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;margin-bottom:1rem;">
+                <div style="display:flex;gap:1rem;">
+                    <button id="applyNumistaImage" class="btn btn-primary" style="flex:1;">Aplicar</button>
+                    <button id="cancelNumistaImage" class="btn btn-secondary" style="flex:1;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#applyNumistaImage').addEventListener('click', () => {
+            const url = modal.querySelector('#numistaImageUrl').value.trim();
+            if (url) {
+                this.updateCurrentImage(url);
+            }
+            document.body.removeChild(modal);
+        });
+        
+        modal.querySelector('#cancelNumistaImage').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    updateCurrentImage(newImageUrl) {
+        if (!this.currentZoomItem) return;
+        
+        const { item, side } = this.currentZoomItem;
+        const itemIndex = this.items.findIndex(i => i.id === item.id);
+        
+        if (itemIndex !== -1) {
+            if (side === 'front') {
+                this.items[itemIndex].photoFront = newImageUrl;
+            } else {
+                this.items[itemIndex].photoBack = newImageUrl;
+            }
+            
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            // Actualizar imagen en zoom
+            document.getElementById('zoomImage').src = newImageUrl;
+            
+            // Sincronizar con API
+            fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.items[itemIndex])
+            }).catch(() => {});
+        }
+    }
+    
+    deleteCurrentImage() {
+        if (!this.currentZoomItem) return;
+        
+        if (confirm('¿Estás seguro de que quieres borrar esta imagen?')) {
+            const { item, side } = this.currentZoomItem;
+            const itemIndex = this.items.findIndex(i => i.id === item.id);
+            
+            if (itemIndex !== -1) {
+                if (side === 'front') {
+                    this.items[itemIndex].photoFront = null;
+                } else {
+                    this.items[itemIndex].photoBack = null;
+                }
+                
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                
+                // Sincronizar con API
+                fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.items[itemIndex])
+                }).catch(() => {});
+                
+                // Volver a la pantalla de edición
+                this.editItem(item.id);
+            }
+        }
     }
 };
