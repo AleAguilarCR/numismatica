@@ -359,6 +359,27 @@ body {
     font-size: 0.8rem;
 }
 
+/* Image zoom */
+.image-zoom {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.zoom-image-container {
+    text-align: center;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.zoom-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
     .photos-section {

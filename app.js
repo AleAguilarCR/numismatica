@@ -49,10 +49,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('getNumistaImagesAdd')?.addEventListener('click', () => this.getNumistaImages('add'));
             document.getElementById('getNumistaImagesEdit')?.addEventListener('click', () => this.getNumistaImages('edit'));
             
-            // Zoom de imagen
-            document.getElementById('backFromImageZoom')?.addEventListener('click', () => this.showScreen('edit'));
-            document.getElementById('changeImageBtn')?.addEventListener('click', () => this.changeCurrentImage());
-            document.getElementById('deleteImageBtn')?.addEventListener('click', () => this.deleteCurrentImage());
+            // Zoom de imagen - configurar después de que el DOM esté listo
+            setTimeout(() => {
+                const backBtn = document.getElementById('backFromImageZoom');
+                const changeBtn = document.getElementById('changeImageBtn');
+                const deleteBtn = document.getElementById('deleteImageBtn');
+                
+                if (backBtn) backBtn.addEventListener('click', () => this.showScreen('edit'));
+                if (changeBtn) changeBtn.addEventListener('click', () => this.changeCurrentImage());
+                if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentImage());
+            }, 100);
 
             // Formulario agregar
             document.getElementById('addForm')?.addEventListener('submit', (e) => this.handleAddItem(e));
