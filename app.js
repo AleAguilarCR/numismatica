@@ -55,7 +55,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const changeBtn = document.getElementById('changeImageBtn');
                 const deleteBtn = document.getElementById('deleteImageBtn');
                 
-                if (backBtn) backBtn.addEventListener('click', () => this.showScreen('edit'));
+                if (backBtn) backBtn.addEventListener('click', () => {
+                    if (this.currentZoomItem && this.currentZoomItem.item) {
+                        this.editItem(this.currentZoomItem.item.id);
+                    } else {
+                        this.showScreen('country');
+                    }
+                });
                 if (changeBtn) changeBtn.addEventListener('click', () => this.changeCurrentImage());
                 if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentImage());
             }, 100);
@@ -215,13 +221,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             if (itemPhoto) {
                 itemPhoto.addEventListener('click', () => this.editItem(item.id));
-                if (item.photoFront && item.photoFront.trim() !== '') {
-                    itemPhoto.addEventListener('dblclick', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.showImageZoom(item.id, 'front');
-                    });
-                }
             }
             if (itemPlaceholder) {
                 itemPlaceholder.addEventListener('click', () => this.editItem(item.id));
@@ -482,15 +481,23 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const backPreview = document.getElementById('editPhotoPreviewBack');
         
         if (item.photoFront) {
-            frontPreview.innerHTML = `<img src="${item.photoFront}" alt="Anverso">`;
+            frontPreview.innerHTML = `<img src="${item.photoFront}" alt="Anverso" style="cursor: pointer;">`;
             frontPreview.dataset.photo = item.photoFront;
+            frontPreview.querySelector('img').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showImageZoom(item.id, 'front');
+            });
         } else {
             frontPreview.innerHTML = '<span>📷 Foto Anverso</span>';
         }
         
         if (item.photoBack) {
-            backPreview.innerHTML = `<img src="${item.photoBack}" alt="Reverso">`;
+            backPreview.innerHTML = `<img src="${item.photoBack}" alt="Reverso" style="cursor: pointer;">`;
             backPreview.dataset.photo = item.photoBack;
+            backPreview.querySelector('img').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showImageZoom(item.id, 'back');
+            });
         } else {
             backPreview.innerHTML = '<span>📷 Foto Reverso</span>';
         }
