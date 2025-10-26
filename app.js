@@ -180,8 +180,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             itemCard.className = 'item-card';
             
             itemCard.innerHTML = `
-                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}">
-                <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; ${item.photoFront ? 'display: none;' : ''}">📷</div>
+                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: ${item.photoFront ? 'none' : 'flex'}; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: #666; text-align: center;">${item.photoFront && item.photoFront.includes('numista.com') ? 'Numista' : '📷'}</div>
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
@@ -873,22 +873,21 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         if (notes) notes.value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
         
         if (data.images && data.images.length > 0) {
-            // Descargar y convertir imágenes a base64
             if (data.images[0]) {
-                const frontBase64 = await this.downloadImageAsBase64(data.images[0]);
                 const frontPreview = document.getElementById('photoPreviewFront');
-                if (frontPreview && frontBase64) {
-                    frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    frontPreview.dataset.photo = frontBase64;
+                if (frontPreview) {
+                    frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    frontPreview.dataset.photo = data.images[0];
                 }
             }
             
             if (data.images.length > 1 && data.images[1]) {
-                const backBase64 = await this.downloadImageAsBase64(data.images[1]);
                 const backPreview = document.getElementById('photoPreviewBack');
-                if (backPreview && backBase64) {
-                    backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    backPreview.dataset.photo = backBase64;
+                if (backPreview) {
+                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    backPreview.dataset.photo = data.images[1];
                 }
             }
         }
@@ -1126,7 +1125,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const applyBtn = modal.querySelector('#modalApply');
         const cancelBtn = modal.querySelector('#modalCancel');
         
-        applyBtn.addEventListener('click', async () => {
+        applyBtn.addEventListener('click', () => {
             const frontUrl = frontInput.value.trim();
             const backUrl = backInput.value.trim();
             
@@ -1135,50 +1134,28 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 return;
             }
             
-            applyBtn.textContent = 'Descargando...';
-            applyBtn.disabled = true;
-            
-            try {
-                if (frontUrl) {
-                    const frontBase64 = await this.downloadImageAsBase64(frontUrl);
-                    const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
-                    const frontPreview = document.getElementById(frontId);
-                    if (frontPreview) {
-                        if (frontBase64) {
-                            frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                            frontPreview.dataset.photo = frontBase64;
-                            console.log('Imagen anverso aplicada correctamente');
-                        } else {
-                            console.error('No se pudo descargar la imagen del anverso');
-                        }
-                    }
+            if (frontUrl) {
+                const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
+                const frontPreview = document.getElementById(frontId);
+                if (frontPreview) {
+                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    frontPreview.dataset.photo = frontUrl;
                 }
-                
-                if (backUrl) {
-                    const backBase64 = await this.downloadImageAsBase64(backUrl);
-                    const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
-                    const backPreview = document.getElementById(backId);
-                    if (backPreview) {
-                        if (backBase64) {
-                            backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                            backPreview.dataset.photo = backBase64;
-                            console.log('Imagen reverso aplicada correctamente');
-                        } else {
-                            console.error('No se pudo descargar la imagen del reverso');
-                        }
-                    }
-                }
-                
-                document.body.removeChild(modal);
-                alert('✅ Imágenes descargadas y aplicadas correctamente');
-                
-            } catch (error) {
-                console.error('Error descargando imágenes:', error);
-                alert('❌ Error descargando imágenes. Verifica las URLs.');
-            } finally {
-                applyBtn.textContent = 'Aplicar';
-                applyBtn.disabled = false;
             }
+            
+            if (backUrl) {
+                const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
+                const backPreview = document.getElementById(backId);
+                if (backPreview) {
+                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    backPreview.dataset.photo = backUrl;
+                }
+            }
+            
+            document.body.removeChild(modal);
+            alert('✅ Imágenes aplicadas correctamente');
         });
         
         cancelBtn.addEventListener('click', () => {
