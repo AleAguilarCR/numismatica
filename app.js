@@ -180,8 +180,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             itemCard.className = 'item-card';
             
             itemCard.innerHTML = `
-                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: ${item.photoFront ? 'none' : 'flex'}; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: #666; text-align: center;">${item.photoFront && item.photoFront.includes('numista.com') ? 'Numista' : '📷'}</div>
+                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}">
+                <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: ${item.photoFront ? 'none' : 'flex'}; align-items: center; justify-content: center; cursor: pointer;">📷</div>
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
@@ -876,8 +876,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (data.images[0]) {
                 const frontPreview = document.getElementById('photoPreviewFront');
                 if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     frontPreview.dataset.photo = data.images[0];
                 }
             }
@@ -885,8 +884,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (data.images.length > 1 && data.images[1]) {
                 const backPreview = document.getElementById('photoPreviewBack');
                 if (backPreview) {
-                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     backPreview.dataset.photo = data.images[1];
                 }
             }
@@ -1040,58 +1038,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         return extractedInfo;
     }
     
-    async downloadImageAsBase64(imageUrl) {
-        try {
-            console.log('Descargando imagen:', imageUrl);
-            
-            // Usar proxy público como alternativa
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-            console.log('URL del proxy público:', proxyUrl);
-            
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-            
-            const response = await fetch(proxyUrl, {
-                signal: controller.signal,
-                mode: 'cors'
-            });
-            
-            clearTimeout(timeoutId);
-            console.log('Respuesta del proxy:', response.status, response.statusText);
-            
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            
-            const blob = await response.blob();
-            console.log('Blob obtenido, tamaño:', blob.size, 'tipo:', blob.type);
-            
-            if (blob.size === 0) {
-                throw new Error('Imagen vacía recibida');
-            }
-            
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    console.log('Imagen convertida a base64, longitud:', reader.result.length);
-                    resolve(reader.result);
-                };
-                reader.onerror = (error) => {
-                    console.error('Error leyendo blob:', error);
-                    reject(error);
-                };
-                reader.readAsDataURL(blob);
-            });
-        } catch (error) {
-            console.error('Error completo en downloadImageAsBase64:', error);
-            if (error.name === 'AbortError') {
-                alert('Timeout descargando imagen. Intenta de nuevo.');
-            } else {
-                alert(`Error descargando imagen: ${error.message}`);
-            }
-            return null;
-        }
-    }
+
     
     getNumistaImages(mode) {
         const modal = document.createElement('div');
@@ -1138,8 +1085,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
                 const frontPreview = document.getElementById(frontId);
                 if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     frontPreview.dataset.photo = frontUrl;
                 }
             }
@@ -1148,8 +1094,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
                 const backPreview = document.getElementById(backId);
                 if (backPreview) {
-                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div style="display:none;width:100%;height:150px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">Imagen de Numista</div>`;
+                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
                     backPreview.dataset.photo = backUrl;
                 }
             }
