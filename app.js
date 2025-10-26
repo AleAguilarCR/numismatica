@@ -133,6 +133,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         console.log('Renderizando pantalla principal con', this.items.length, 'items');
+        console.log('Items completos:', this.items);
 
         if (this.items.length === 0) {
             countriesGrid.innerHTML = '<div class="empty-state"><p>¡Comienza tu colección!</p><p>Agrega tu primera moneda o billete</p></div>';
@@ -141,8 +142,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         const countryCount = {};
         this.items.forEach(item => {
+            console.log('Procesando item:', item.denomination, 'País:', item.countryCode, item.country);
             countryCount[item.countryCode] = (countryCount[item.countryCode] || 0) + 1;
         });
+        
+        console.log('Conteo de países:', countryCount);
 
         countriesGrid.innerHTML = '';
         const sortedCountries = Object.keys(countryCount).sort((a, b) => {
@@ -153,23 +157,26 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         sortedCountries.forEach(countryCode => {
             const country = window.COUNTRIES[countryCode];
-            if (country) {
-                const flagElement = document.createElement('div');
-                flagElement.className = 'country-flag';
-                flagElement.innerHTML = `
-                    <div class="flag-emoji">
-                        <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" 
-                             alt="${country.name}" 
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                             style="width: 40px; height: auto; border-radius: 4px;">
-                        <span style="display: none; font-size: 2.5rem;">${country.flag}</span>
-                    </div>
-                    <div class="country-name">${country.name}</div>
-                    <div class="count">${countryCount[countryCode]}</div>
-                `;
-                flagElement.addEventListener('click', () => this.showCountryItems(countryCode));
-                countriesGrid.appendChild(flagElement);
-            }
+            const countryName = country?.name || `País ${countryCode}`;
+            const countryFlag = country?.flag || '🏴';
+            
+            console.log('Renderizando país:', countryCode, countryName, countryCount[countryCode]);
+            
+            const flagElement = document.createElement('div');
+            flagElement.className = 'country-flag';
+            flagElement.innerHTML = `
+                <div class="flag-emoji">
+                    <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" 
+                         alt="${countryName}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                         style="width: 40px; height: auto; border-radius: 4px;">
+                    <span style="display: none; font-size: 2.5rem;">${countryFlag}</span>
+                </div>
+                <div class="country-name">${countryName}</div>
+                <div class="count">${countryCount[countryCode]}</div>
+            `;
+            flagElement.addEventListener('click', () => this.showCountryItems(countryCode));
+            countriesGrid.appendChild(flagElement);
         });
     }
 
@@ -956,6 +963,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
             const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
             
+            console.log('Debug Suiza:', {
+                issuerCode: pieceData.issuer?.code,
+                mappedCode: countryCode,
+                countryName: countryName,
+                existsInCountries: !!window.COUNTRIES[countryCode]
+            });
+            
             const item = {
                 id: existingItem ? existingItem.id : Date.now(),
                 type: pieceData.category === 'banknote' ? 'billete' : 'moneda',
@@ -993,6 +1007,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            // Mostrar mensaje de éxito
+            const action = existingItem ? 'reemplazado' : 'importado';
+            alert(`✅ Item ${action} correctamente: ${item.denomination}`);
+            
+            // Actualizar pantalla principal
+            this.renderMainScreen();
             
             return { success: true, action: existingItem ? 'replaced' : 'added' };
             
