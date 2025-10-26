@@ -904,7 +904,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             try {
                 this.items = JSON.parse(saved);
                 console.log('Datos cargados desde localStorage:', this.items.length, 'items');
-                console.log('Primer item:', this.items[0]);
             } catch (error) {
                 console.error('Error parsing localStorage:', error);
                 this.items = [];
@@ -918,7 +917,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
                 
-                // Solo usar API si tiene más items que localStorage o localStorage está vacío
                 if (apiItems.length > 0 && (this.items.length === 0 || apiItems.length > this.items.length)) {
                     this.items = apiItems;
                     localStorage.setItem('coinCollection', JSON.stringify(this.items));
@@ -933,7 +931,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Total items cargados:', this.items.length);
         
-        // Los datos ya están cargados, no necesitamos render adicional
+        // Renderizar pantalla principal después de cargar datos
+        if (this.currentScreen === 'main') {
+            this.renderMainScreen();
+        }
     }
     
     async performImageSearch() {
@@ -1046,7 +1047,17 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const proxyUrl = `${window.API_URL || 'https://numismatica-7pat.onrender.com'}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
             console.log('URL del proxy:', proxyUrl);
             
-            const response = await fetch(proxyUrl);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+            
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'image/*'
+                }
+            });
+            
+            clearTimeout(timeoutId);
             console.log('Respuesta del proxy:', response.status, response.statusText);
             
             if (!response.ok) {
@@ -1055,6 +1066,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             const blob = await response.blob();
             console.log('Blob obtenido, tamaño:', blob.size, 'tipo:', blob.type);
+            
+            if (blob.size === 0) {
+                throw new Error('Imagen vacía recibida');
+            }
             
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1070,7 +1085,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             });
         } catch (error) {
             console.error('Error completo en downloadImageAsBase64:', error);
-            alert(`Error descargando imagen: ${error.message}`);
+            if (error.name === 'AbortError') {
+                alert('Timeout descargando imagen. Intenta de nuevo.');
+            } else {
+                alert(`Error descargando imagen: ${error.message}`);
+            }
             return null;
         }
     }
