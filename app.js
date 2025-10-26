@@ -180,7 +180,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             itemCard.className = 'item-card';
             
             itemCard.innerHTML = `
-                <canvas class="item-photo-canvas" width="80" height="80" style="cursor: pointer; border-radius: 4px; background: #f0f0f0;"></canvas>
+                <img class="item-photo" src="${item.photoFront || ''}" alt="Foto" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; background: #f0f0f0; cursor: pointer; ${!item.photoFront ? 'display: none;' : ''}">
+                <div class="item-photo-placeholder" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; ${item.photoFront ? 'display: none;' : ''}">📷</div>
                 <div class="item-info">
                     <h3>${item.denomination}</h3>
                     <p><strong>Tipo:</strong> ${item.type}</p>
@@ -192,58 +193,20 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 <button class="btn btn-secondary edit-btn">Editar</button>
             `;
             
-            const canvas = itemCard.querySelector('.item-photo-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Limpiar canvas
-            ctx.clearRect(0, 0, 80, 80);
-            
-            if (item.photoFront) {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = () => {
-                    try {
-                        // Dibujar imagen con mejor calidad
-                        ctx.imageSmoothingEnabled = false;
-                        ctx.drawImage(img, 0, 0, 80, 80);
-                    } catch (error) {
-                        console.error('Error dibujando imagen:', error);
-                        // Fallback a placeholder
-                        ctx.fillStyle = '#f0f0f0';
-                        ctx.fillRect(0, 0, 80, 80);
-                        ctx.fillStyle = '#666';
-                        ctx.font = '20px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('📷', 40, 45);
-                    }
-                };
-                img.onerror = () => {
-                    // Error cargando imagen
-                    ctx.fillStyle = '#f0f0f0';
-                    ctx.fillRect(0, 0, 80, 80);
-                    ctx.fillStyle = '#999';
-                    ctx.font = '16px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('❌', 40, 45);
-                };
-                img.src = item.photoFront;
-            } else {
-                ctx.fillStyle = '#f0f0f0';
-                ctx.fillRect(0, 0, 80, 80);
-                ctx.fillStyle = '#ccc';
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('📷', 40, 50);
-            }
+
             
             const editBtn = itemCard.querySelector('.edit-btn');
-            const itemCanvas = itemCard.querySelector('.item-photo-canvas');
+            const itemPhoto = itemCard.querySelector('.item-photo');
+            const itemPlaceholder = itemCard.querySelector('.item-photo-placeholder');
             
             if (editBtn) {
                 editBtn.addEventListener('click', () => this.editItem(item.id));
             }
-            if (itemCanvas) {
-                itemCanvas.addEventListener('click', () => this.editItem(item.id));
+            if (itemPhoto) {
+                itemPhoto.addEventListener('click', () => this.editItem(item.id));
+            }
+            if (itemPlaceholder) {
+                itemPlaceholder.addEventListener('click', () => this.editItem(item.id));
             }
             
             itemsList.appendChild(itemCard);
