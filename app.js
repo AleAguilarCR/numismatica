@@ -134,7 +134,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         console.log('Renderizando pantalla principal con', this.items.length, 'items');
-        console.log('Items completos:', this.items);
 
         if (this.items.length === 0) {
             countriesGrid.innerHTML = '<div class="empty-state"><p>¡Comienza tu colección!</p><p>Agrega tu primera moneda o billete</p></div>';
@@ -143,11 +142,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         const countryCount = {};
         this.items.forEach(item => {
-            console.log('Procesando item:', item.denomination, 'País:', item.countryCode, item.country);
             countryCount[item.countryCode] = (countryCount[item.countryCode] || 0) + 1;
         });
-        
-        console.log('Conteo de países:', countryCount);
 
         countriesGrid.innerHTML = '';
         const sortedCountries = Object.keys(countryCount).sort((a, b) => {
@@ -161,7 +157,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const countryName = country?.name || `País ${countryCode}`;
             const countryFlag = country?.flag || '🏴';
             
-            console.log('Renderizando país:', countryCode, countryName, countryCount[countryCode]);
+
             
             const flagElement = document.createElement('div');
             flagElement.className = 'country-flag';
@@ -177,10 +173,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 <div class="country-name">${countryName}</div>
                 <div class="count">${countryCount[countryCode]}</div>
             `;
-            flagElement.addEventListener('click', () => {
-                console.log('Haciendo click en país:', countryCode);
-                this.showCountryItems(countryCode);
-            });
+            flagElement.addEventListener('click', () => this.showCountryItems(countryCode));
             countriesGrid.appendChild(flagElement);
         });
     }
@@ -190,10 +183,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const country = window.COUNTRIES[countryCode];
         const countryName = country?.name || `País ${countryCode}`;
         
-        console.log('Mostrando items del país:', countryCode, countryName);
-        
         const countryItems = this.items.filter(item => item.countryCode === countryCode);
-        console.log('Items encontrados:', countryItems.length);
 
         this.showScreen('country');
         
@@ -977,13 +967,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             // Corregir items existentes con código XX
             this.fixExistingXXItems(pieceData.issuer?.name, countryCode);
             
-            console.log('Debug Suiza:', {
-                issuerCode: pieceData.issuer?.code,
-                issuerName: pieceData.issuer?.name,
-                mappedCode: countryCode,
-                countryName: window.COUNTRIES[countryCode]?.name,
-                existsInCountries: !!window.COUNTRIES[countryCode]
-            });
+
             
             const item = {
                 id: existingItem ? existingItem.id : Date.now(),
@@ -1206,7 +1190,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const resultsDiv = document.getElementById('numistaCollectionResults');
         
-        resultsDiv.innerHTML = '<p>Obteniendo países de Numista...</p>';
+        resultsDiv.innerHTML = '<p>Analizando países de Numista...</p>';
         
         try {
             const response = await fetch('https://api.numista.com/v3/issuers?lang=es', {
@@ -1221,31 +1205,97 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             
             const data = await response.json();
+            
+            // Analizar diferencias
+            const numistaCountries = new Map();
             const newCountries = {};
-            let added = 0;
+            const existingCountries = [];
+            const invalidCodes = [];
             
             data.issuers.forEach(issuer => {
                 const code = issuer.code?.toUpperCase();
-                if (code && code.length === 2 && !window.COUNTRIES[code]) {
+                const name = issuer.name;
+                
+                if (!code || code.length !== 2) {
+                    invalidCodes.push({ code: code || 'N/A', name });
+                    return;
+                }
+                
+                numistaCountries.set(code, name);
+                
+                if (window.COUNTRIES[code]) {
+                    existingCountries.push({ code, numista: name, local: window.COUNTRIES[code].name });
+                } else {
                     newCountries[code] = {
-                        name: issuer.name,
+                        name: name,
                         flag: this.getCountryFlag(code),
                         continent: 'Desconocido'
                     };
-                    added++;
                 }
             });
             
-            Object.assign(window.COUNTRIES, newCountries);
+            // Países en base local pero no en Numista
+            const localOnly = Object.keys(window.COUNTRIES).filter(code => 
+                code.length === 2 && !numistaCountries.has(code)
+            );
             
+            // Agregar nuevos países
+            Object.assign(window.COUNTRIES, newCountries);
             this.populateCountrySelect();
             this.populateEditCountrySelect();
             
+            // Mostrar reporte detallado
             resultsDiv.innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <h3>✅ Países Importados</h3>
-                    <p>Se agregaron <strong>${added}</strong> nuevos países desde Numista</p>
-                    <p>Total de países disponibles: <strong>${Object.keys(window.COUNTRIES).length}</strong></p>
+                <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                    <h3>📊 Reporte de Países</h3>
+                    
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                        <h4>✅ Nuevos países agregados (${Object.keys(newCountries).length})</h4>
+                        ${Object.keys(newCountries).length > 0 ? 
+                            Object.entries(newCountries).map(([code, country]) => 
+                                `<div><strong>${code}:</strong> ${country.name}</div>`
+                            ).join('') : 
+                            '<div>Ningún país nuevo</div>'
+                        }
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f0f8ff; border-radius: 4px;">
+                        <h4>🔄 Países existentes (${existingCountries.length})</h4>
+                        <div style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                            ${existingCountries.slice(0, 10).map(country => 
+                                `<div><strong>${country.code}:</strong> ${country.local} ${country.numista !== country.local ? `(Numista: ${country.numista})` : ''}</div>`
+                            ).join('')}
+                            ${existingCountries.length > 10 ? `<div><em>... y ${existingCountries.length - 10} más</em></div>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                        <h4>⚠️ Solo en base local (${localOnly.length})</h4>
+                        <div style="max-height: 100px; overflow-y: auto; font-size: 0.9em;">
+                            ${localOnly.slice(0, 10).map(code => 
+                                `<div><strong>${code}:</strong> ${window.COUNTRIES[code].name}</div>`
+                            ).join('')}
+                            ${localOnly.length > 10 ? `<div><em>... y ${localOnly.length - 10} más</em></div>` : ''}
+                        </div>
+                    </div>
+                    
+                    ${invalidCodes.length > 0 ? `
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #f8d7da; border-radius: 4px;">
+                            <h4>❌ Códigos inválidos (${invalidCodes.length})</h4>
+                            <div style="max-height: 100px; overflow-y: auto; font-size: 0.9em;">
+                                ${invalidCodes.slice(0, 5).map(item => 
+                                    `<div><strong>${item.code}:</strong> ${item.name}</div>`
+                                ).join('')}
+                                ${invalidCodes.length > 5 ? `<div><em>... y ${invalidCodes.length - 5} más</em></div>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                        <strong>Total Numista:</strong> ${numistaCountries.size} | 
+                        <strong>Total Local:</strong> ${Object.keys(window.COUNTRIES).length} | 
+                        <strong>Agregados:</strong> ${Object.keys(newCountries).length}
+                    </div>
                 </div>
             `;
             
@@ -1254,7 +1304,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             resultsDiv.innerHTML = `
                 <div style="text-align: center; padding: 2rem;">
                     <h3>❌ Error</h3>
-                    <p>No se pudieron importar los países de Numista</p>
+                    <p>No se pudieron obtener los países de Numista</p>
                     <p><small>Error: ${error.message}</small></p>
                 </div>
             `;
