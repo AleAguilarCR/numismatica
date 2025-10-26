@@ -35,6 +35,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', () => this.fetchNumistaCollection());
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.importCountriesFromNumista());
+            document.getElementById('fixSwitzerlandBtn')?.addEventListener('click', () => this.fixSwitzerlandItems());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -973,6 +974,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 countryCode = 'CH';
             }
             
+            // Corregir items existentes con código XX
+            this.fixExistingXXItems(pieceData.issuer?.name, countryCode);
+            
             console.log('Debug Suiza:', {
                 issuerCode: pieceData.issuer?.code,
                 issuerName: pieceData.issuer?.name,
@@ -1297,6 +1301,60 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'YE': '🇾🇪', 'YT': '🇾🇹', 'ZA': '🇿🇦', 'ZM': '🇿🇲', 'ZW': '🇿🇼'
         };
         return flags[countryCode] || '🏴';
+    }
+    
+    fixExistingXXItems(issuerName, correctCode) {
+        if (!issuerName || correctCode === 'XX') return;
+        
+        // Buscar items con código XX que coincidan con el emisor
+        const xxItems = this.items.filter(item => 
+            item.countryCode === 'XX' && 
+            item.country && 
+            item.country.toLowerCase().includes(issuerName.toLowerCase().substring(0, 5))
+        );
+        
+        if (xxItems.length > 0) {
+            console.log(`Corrigiendo ${xxItems.length} items de XX a ${correctCode}`);
+            
+            xxItems.forEach(item => {
+                item.countryCode = correctCode;
+                item.country = window.COUNTRIES[correctCode]?.name || item.country;
+            });
+            
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            this.renderMainScreen();
+        }
+    }
+    
+    // Función manual para corregir Suiza
+    fixSwitzerlandItems() {
+        const xxItems = this.items.filter(item => 
+            item.countryCode === 'XX' || 
+            (item.country && (item.country.toLowerCase().includes('suiza') || item.country.toLowerCase().includes('switzerland')))
+        );
+        
+        if (xxItems.length > 0) {
+            xxItems.forEach(item => {
+                item.countryCode = 'CH';
+                item.country = 'Suiza';
+            });
+            
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            // Actualizar en backend
+            xxItems.forEach(item => {
+                fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).catch(() => {});
+            });
+            
+            this.renderMainScreen();
+            alert(`✅ Corregidos ${xxItems.length} items de Suiza`);
+        } else {
+            alert('No se encontraron items de Suiza para corregir');
+        }
     }
 
     getNumistaImages(mode) {
