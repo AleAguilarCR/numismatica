@@ -830,12 +830,31 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const userId = '529122';
         const resultsDiv = document.getElementById('numistaCollectionResults');
         
-        resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
+        resultsDiv.innerHTML = '<p>Obteniendo token de acceso...</p>';
         
         try {
-            const response = await fetch(`https://api.numista.com/api/v2/users/${userId}/collection`, {
+            // Primero obtener el token OAuth
+            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token?grant_type=client_credentials&scope=view_collection', {
                 headers: {
                     'Numista-API-Key': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!tokenResponse.ok) {
+                throw new Error(`Error obteniendo token ${tokenResponse.status}: ${tokenResponse.statusText}`);
+            }
+            
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+            
+            resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
+            
+            // Ahora obtener la colección usando el token
+            const response = await fetch(`https://api.numista.com/v3/users/${userId}/collected_items`, {
+                headers: {
+                    'Numista-API-Key': apiKey,
+                    'Authorization': `Bearer ${accessToken}`,
                     'Accept': 'application/json'
                 }
             });
@@ -856,25 +875,25 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     displayNumistaCollection(collectionData) {
         const resultsDiv = document.getElementById('numistaCollectionResults');
         
-        if (!collectionData.collection || collectionData.collection.length === 0) {
+        if (!collectionData.items || collectionData.items.length === 0) {
             resultsDiv.innerHTML = '<p>No se encontraron items en tu colección de Numista</p>';
             return;
         }
         
-        const items = collectionData.collection.slice(0, 10);
+        const items = collectionData.items.slice(0, 10);
         
         resultsDiv.innerHTML = `
-            <h3>Colección de Numista (${collectionData.collection.length} items)</h3>
+            <h3>Colección de Numista (${collectionData.item_count} items)</h3>
             <p>Mostrando los primeros 10 items:</p>
             <div class="numista-items">
                 ${items.map(item => `
                     <div class="numista-item" style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
-                        <h4>${item.piece?.title || 'Título no disponible'}</h4>
-                        <p><strong>País:</strong> ${item.piece?.issuer?.name || 'Desconocido'}</p>
-                        <p><strong>Años:</strong> ${item.piece?.min_year || ''}-${item.piece?.max_year || ''}</p>
-                        <p><strong>Valor:</strong> ${item.piece?.value || 'N/A'}</p>
+                        <h4>${item.type?.title || 'Título no disponible'}</h4>
+                        <p><strong>País:</strong> ${item.type?.issuer?.name || 'Desconocido'}</p>
+                        <p><strong>Categoría:</strong> ${item.type?.category || 'N/A'}</p>
                         <p><strong>Cantidad:</strong> ${item.quantity || 1}</p>
-                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.piece?.id}')">Importar</button>
+                        <p><strong>Estado:</strong> ${item.grade || 'N/A'}</p>
+                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.type?.id}')">Importar</button>
                     </div>
                 `).join('')}
             </div>
@@ -885,7 +904,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
         try {
-            const response = await fetch(`https://api.numista.com/api/v2/pieces/${pieceId}`, {
+            const response = await fetch(`https://api.numista.com/v3/types/${pieceId}`, {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
@@ -900,10 +919,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             const item = {
                 id: Date.now(),
-                type: pieceData.type === 'banknote' ? 'billete' : 'moneda',
+                type: pieceData.category === 'banknote' ? 'billete' : 'moneda',
                 countryCode: this.mapNumistaCountry(pieceData.issuer?.code),
                 country: pieceData.issuer?.name || 'Desconocido',
-                denomination: pieceData.value || pieceData.title,
+                denomination: pieceData.value?.text || pieceData.title,
                 year: pieceData.min_year || new Date().getFullYear(),
                 condition: 'Bueno',
                 value: null,
