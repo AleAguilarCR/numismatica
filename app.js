@@ -20,6 +20,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('addItemBtn')?.addEventListener('click', () => this.showScreen('add'));
             document.getElementById('searchImageBtn')?.addEventListener('click', () => this.searchByImage());
             document.getElementById('continentsBtn')?.addEventListener('click', () => this.showContinents());
+            document.getElementById('importNumistaBtn')?.addEventListener('click', () => this.showScreen('numistaImport'));
 
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
@@ -31,6 +32,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromPhotoEditor')?.addEventListener('click', () => this.showScreen(this.previousScreen));
             document.getElementById('backFromImageSearch')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
+            document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
+            document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', () => this.fetchNumistaCollection());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -1279,4 +1282,130 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
         }
     }
+    
+    async fetchNumistaCollection() {
+        const apiKey = document.getElementById('numistaApiKey').value.trim();
+        const userId = document.getElementById('numistaUserId').value.trim();
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        
+        if (!apiKey || !userId) {
+            alert('Por favor ingresa tu API Key y User ID de Numista');
+            return;
+        }
+        
+        resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
+        
+        try {
+            const response = await fetch(`https://api.numista.com/api/v3/users/${userId}/collection`, {
+                headers: {
+                    'Numista-API-Key': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            this.displayNumistaCollection(data);
+            
+        } catch (error) {
+            console.error('Error fetching Numista collection:', error);
+            resultsDiv.innerHTML = `<p>Error: ${error.message}</p><p>Verifica tu API Key y User ID</p>`;
+        }
+    }
 };
+    
+    displayNumistaCollection(collectionData) {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        
+        if (!collectionData.collection || collectionData.collection.length === 0) {
+            resultsDiv.innerHTML = '<p>No se encontraron items en tu colección de Numista</p>';
+            return;
+        }
+        
+        const items = collectionData.collection.slice(0, 10);
+        
+        resultsDiv.innerHTML = `
+            <h3>Colección de Numista (${collectionData.collection.length} items)</h3>
+            <p>Mostrando los primeros 10 items:</p>
+            <div class="numista-items">
+                ${items.map(item => `
+                    <div class="numista-item" style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                        <h4>${item.piece?.title || 'Título no disponible'}</h4>
+                        <p><strong>País:</strong> ${item.piece?.issuer?.name || 'Desconocido'}</p>
+                        <p><strong>Años:</strong> ${item.piece?.min_year || ''}-${item.piece?.max_year || ''}</p>
+                        <p><strong>Valor:</strong> ${item.piece?.value || 'N/A'}</p>
+                        <p><strong>Cantidad:</strong> ${item.quantity || 1}</p>
+                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.piece?.id}')">Importar</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    async importNumistaItem(pieceId) {
+        const apiKey = document.getElementById('numistaApiKey').value.trim();
+        
+        try {
+            const response = await fetch(`https://api.numista.com/api/v3/pieces/${pieceId}`, {
+                headers: {
+                    'Numista-API-Key': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}`);
+            }
+            
+            const pieceData = await response.json();
+            
+            const item = {
+                id: Date.now(),
+                type: pieceData.type === 'banknote' ? 'billete' : 'moneda',
+                countryCode: this.mapNumistaCountry(pieceData.issuer?.code),
+                country: pieceData.issuer?.name || 'Desconocido',
+                denomination: pieceData.value || pieceData.title,
+                year: pieceData.min_year || new Date().getFullYear(),
+                condition: 'Bueno',
+                value: null,
+                notes: `Importado de Numista: ${pieceData.title}`,
+                catalogLink: `https://en.numista.com/catalogue/pieces${pieceId}.html`,
+                photoFront: pieceData.obverse?.picture || null,
+                photoBack: pieceData.reverse?.picture || null,
+                dateAdded: new Date().toISOString()
+            };
+            
+            this.items.push(item);
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            
+            fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            }).catch(() => {});
+            
+            alert('✅ Item importado correctamente');
+            this.renderMainScreen();
+            
+        } catch (error) {
+            console.error('Error importing item:', error);
+            alert('Error al importar el item');
+        }
+    }
+    
+    mapNumistaCountry(numistaCode) {
+        const mapping = {
+            'united-states': 'US',
+            'costa-rica': 'CR',
+            'mexico': 'MX',
+            'canada': 'CA',
+            'spain': 'ES',
+            'france': 'FR',
+            'germany': 'DE',
+            'united-kingdom': 'GB'
+        };
+        return mapping[numistaCode] || 'XX';
+    }
