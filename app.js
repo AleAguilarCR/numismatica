@@ -1044,17 +1044,17 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     async downloadImageAsBase64(imageUrl) {
         try {
             console.log('Descargando imagen:', imageUrl);
-            const proxyUrl = `${window.API_URL || 'https://numismatica-7pat.onrender.com'}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-            console.log('URL del proxy:', proxyUrl);
+            
+            // Usar proxy público como alternativa
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+            console.log('URL del proxy público:', proxyUrl);
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
             
             const response = await fetch(proxyUrl, {
                 signal: controller.signal,
-                headers: {
-                    'Accept': 'image/*'
-                }
+                mode: 'cors'
             });
             
             clearTimeout(timeoutId);
