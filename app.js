@@ -1108,7 +1108,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         let year = yearText;
-        const yearMatch = yearText.match(/(\\d{4})/);
+        const yearMatch = yearText.match(/(\d{4})/);
         if (yearMatch) {
             year = yearMatch[1];
         }
