@@ -851,7 +851,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
             
             // Ahora obtener la colección usando el token
-            const response = await fetch(`https://api.numista.com/v3/users/${userId}/collected_items`, {
+            const response = await fetch(`https://api.numista.com/v3/users/${userId}/collected_items?lang=es`, {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Authorization': `Bearer ${accessToken}`,
@@ -880,11 +880,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             return;
         }
         
+        this.numistaItems = collectionData.items;
         const items = collectionData.items.slice(0, 10);
         
         resultsDiv.innerHTML = `
             <h3>Colección de Numista (${collectionData.item_count} items)</h3>
             <p>Mostrando los primeros 10 items:</p>
+            <button class="btn btn-success btn-full" onclick="app.importAllNumistaItems()" style="margin-bottom: 1rem;">📥 Importar Todos</button>
             <div class="numista-items">
                 ${items.map(item => `
                     <div class="numista-item" style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
@@ -893,18 +895,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                         <p><strong>Categoría:</strong> ${item.type?.category || 'N/A'}</p>
                         <p><strong>Cantidad:</strong> ${item.quantity || 1}</p>
                         <p><strong>Estado:</strong> ${item.grade || 'N/A'}</p>
-                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.type?.id}')">Importar</button>
+                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.type?.id}', ${item.quantity}, '${item.grade || 'Bueno'}')">Importar</button>
                     </div>
                 `).join('')}
             </div>
         `;
     }
     
-    async importNumistaItem(pieceId) {
+    async importNumistaItem(pieceId, quantity = 1, grade = 'Bueno') {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
         try {
-            const response = await fetch(`https://api.numista.com/v3/types/${pieceId}`, {
+            const response = await fetch(`https://api.numista.com/v3/types/${pieceId}?lang=es`, {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
@@ -917,6 +919,20 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             const pieceData = await response.json();
             
+            // Verificar si ya existe
+            const existingItem = this.items.find(item => 
+                item.notes && item.notes.includes(`Numista ID: ${pieceId}`)
+            );
+            
+            if (existingItem) {
+                const action = await this.handleDuplicateItem(pieceData.title);
+                if (action === 'ignore') {
+                    return { success: true, action: 'ignored' };
+                } else if (action === 'cancel') {
+                    return { success: false, action: 'cancelled' };
+                }
+            }
+            
             const item = {
                 id: Date.now(),
                 type: pieceData.category === 'banknote' ? 'billete' : 'moneda',
@@ -924,31 +940,127 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 country: pieceData.issuer?.name || 'Desconocido',
                 denomination: pieceData.value?.text || pieceData.title,
                 year: pieceData.min_year || new Date().getFullYear(),
-                condition: 'Bueno',
+                condition: grade,
                 value: null,
-                notes: `Importado de Numista: ${pieceData.title}`,
+                notes: `Importado de Numista: ${pieceData.title} (Numista ID: ${pieceId})`,
                 catalogLink: `https://en.numista.com/catalogue/pieces${pieceId}.html`,
                 photoFront: pieceData.obverse?.picture || null,
                 photoBack: pieceData.reverse?.picture || null,
                 dateAdded: new Date().toISOString()
             };
             
-            this.items.push(item);
+            if (existingItem) {
+                const index = this.items.findIndex(i => i.id === existingItem.id);
+                this.items[index] = { ...item, id: existingItem.id };
+            } else {
+                this.items.push(item);
+            }
+            
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
             fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-                method: 'POST',
+                method: existingItem ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
+                body: JSON.stringify(existingItem ? { ...item, id: existingItem.id } : item)
             }).catch(() => {});
             
-            alert('✅ Item importado correctamente');
-            this.renderMainScreen();
+            return { success: true, action: existingItem ? 'replaced' : 'added' };
             
         } catch (error) {
             console.error('Error importing item:', error);
-            alert('Error al importar el item');
+            return { success: false, error: error.message };
         }
+    }
+    
+    async handleDuplicateItem(title) {
+        if (this.duplicateAction) {
+            return this.duplicateAction;
+        }
+        
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+            
+            modal.innerHTML = `
+                <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;">
+                    <h3 style="margin:0 0 1rem 0;">Item Duplicado</h3>
+                    <p>El item "${title}" ya existe en tu colección.</p>
+                    <p>¿Qué deseas hacer?</p>
+                    <div style="margin:1rem 0;">
+                        <label style="display:block;margin-bottom:0.5rem;">
+                            <input type="checkbox" id="applyToAll" style="margin-right:0.5rem;">
+                            Hacer lo mismo para otros items repetidos
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:1rem;">
+                        <button id="replaceBtn" class="btn btn-primary" style="flex:1;">Reemplazar</button>
+                        <button id="ignoreBtn" class="btn btn-secondary" style="flex:1;">Ignorar</button>
+                        <button id="cancelBtn" class="btn btn-danger" style="flex:1;">Cancelar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const applyToAll = modal.querySelector('#applyToAll');
+            
+            modal.querySelector('#replaceBtn').addEventListener('click', () => {
+                if (applyToAll.checked) this.duplicateAction = 'replace';
+                document.body.removeChild(modal);
+                resolve('replace');
+            });
+            
+            modal.querySelector('#ignoreBtn').addEventListener('click', () => {
+                if (applyToAll.checked) this.duplicateAction = 'ignore';
+                document.body.removeChild(modal);
+                resolve('ignore');
+            });
+            
+            modal.querySelector('#cancelBtn').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve('cancel');
+            });
+        });
+    }
+    
+    async importAllNumistaItems() {
+        if (!this.numistaItems || this.numistaItems.length === 0) {
+            alert('No hay items para importar');
+            return;
+        }
+        
+        this.duplicateAction = null;
+        let imported = 0;
+        let replaced = 0;
+        let ignored = 0;
+        let errors = 0;
+        
+        const progressDiv = document.getElementById('numistaCollectionResults');
+        
+        for (let i = 0; i < this.numistaItems.length; i++) {
+            const item = this.numistaItems[i];
+            progressDiv.innerHTML = `<p>Importando ${i + 1} de ${this.numistaItems.length}...</p>`;
+            
+            const result = await this.importNumistaItem(
+                item.type?.id,
+                item.quantity,
+                item.grade || 'Bueno'
+            );
+            
+            if (result.success) {
+                if (result.action === 'added') imported++;
+                else if (result.action === 'replaced') replaced++;
+                else if (result.action === 'ignored') ignored++;
+            } else {
+                if (result.action === 'cancelled') break;
+                errors++;
+            }
+        }
+        
+        this.renderMainScreen();
+        alert(`Importación completada:\n- Importados: ${imported}\n- Reemplazados: ${replaced}\n- Ignorados: ${ignored}\n- Errores: ${errors}`);
+        
+        this.duplicateAction = null;
     }
     
     mapNumistaCountry(numistaCode) {
@@ -960,7 +1072,44 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'spain': 'ES',
             'france': 'FR',
             'germany': 'DE',
-            'united-kingdom': 'GB'
+            'united-kingdom': 'GB',
+            'argentina': 'AR',
+            'brazil': 'BR',
+            'chile': 'CL',
+            'colombia': 'CO',
+            'peru': 'PE',
+            'venezuela': 'VE',
+            'ecuador': 'EC',
+            'bolivia': 'BO',
+            'uruguay': 'UY',
+            'paraguay': 'PY',
+            'panama': 'PA',
+            'guatemala': 'GT',
+            'honduras': 'HN',
+            'nicaragua': 'NI',
+            'el-salvador': 'SV',
+            'cuba': 'CU',
+            'dominican-republic': 'DO',
+            'puerto-rico': 'PR',
+            'italy': 'IT',
+            'portugal': 'PT',
+            'netherlands': 'NL',
+            'belgium': 'BE',
+            'switzerland': 'CH',
+            'austria': 'AT',
+            'poland': 'PL',
+            'russia': 'RU',
+            'china': 'CN',
+            'japan': 'JP',
+            'south-korea': 'KR',
+            'india': 'IN',
+            'australia': 'AU',
+            'new-zealand': 'NZ',
+            'south-africa': 'ZA',
+            'egypt': 'EG',
+            'morocco': 'MA',
+            'tunisia': 'TN',
+            'algeria': 'DZ'
         };
         return mapping[numistaCode] || 'XX';
     }
