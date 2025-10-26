@@ -1035,6 +1035,24 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         return extractedInfo;
     }
     
+    async downloadImageAsBase64(imageUrl) {
+        try {
+            const response = await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+            if (!response.ok) throw new Error('Error descargando imagen');
+            
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('Error en downloadImageAsBase64:', error);
+            return null;
+        }
+    }
+    
     getNumistaImages(mode) {
         const modal = document.createElement('div');
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
@@ -1067,7 +1085,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const applyBtn = modal.querySelector('#modalApply');
         const cancelBtn = modal.querySelector('#modalCancel');
         
-        applyBtn.addEventListener('click', () => {
+        applyBtn.addEventListener('click', async () => {
             const frontUrl = frontInput.value.trim();
             const backUrl = backInput.value.trim();
             
@@ -1076,47 +1094,40 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 return;
             }
             
-            const prefix = mode === 'edit' ? 'edit' : '';
+            applyBtn.textContent = 'Descargando...';
+            applyBtn.disabled = true;
             
-            if (frontUrl) {
-                const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
-                console.log('Buscando elemento front con ID:', frontId);
-                const frontPreview = document.getElementById(frontId);
-                if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    frontPreview.dataset.photo = frontUrl;
-                    console.log('Imagen anverso aplicada a elemento:', frontId, 'URL:', frontUrl);
-                } else {
-                    console.error('Elemento no encontrado:', frontId);
-                    // Listar elementos disponibles
-                    const allPreviews = document.querySelectorAll('.photo-preview');
-                    console.log('Previews disponibles:', Array.from(allPreviews).map(p => p.id));
+            try {
+                if (frontUrl) {
+                    const frontBase64 = await this.downloadImageAsBase64(frontUrl);
+                    const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
+                    const frontPreview = document.getElementById(frontId);
+                    if (frontPreview && frontBase64) {
+                        frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                        frontPreview.dataset.photo = frontBase64;
+                    }
                 }
+                
+                if (backUrl) {
+                    const backBase64 = await this.downloadImageAsBase64(backUrl);
+                    const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
+                    const backPreview = document.getElementById(backId);
+                    if (backPreview && backBase64) {
+                        backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                        backPreview.dataset.photo = backBase64;
+                    }
+                }
+                
+                document.body.removeChild(modal);
+                alert('✅ Imágenes descargadas y aplicadas correctamente');
+                
+            } catch (error) {
+                console.error('Error descargando imágenes:', error);
+                alert('❌ Error descargando imágenes. Verifica las URLs.');
+            } finally {
+                applyBtn.textContent = 'Aplicar';
+                applyBtn.disabled = false;
             }
-            
-            if (backUrl) {
-                const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
-                console.log('Buscando elemento back con ID:', backId);
-                const backPreview = document.getElementById(backId);
-                if (backPreview) {
-                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    backPreview.dataset.photo = backUrl;
-                    console.log('Imagen reverso aplicada a elemento:', backId, 'URL:', backUrl);
-                } else {
-                    console.error('Elemento no encontrado:', backId);
-                }
-            }
-            
-            document.body.removeChild(modal);
-            alert('✅ Imágenes aplicadas correctamente');
-            
-            // Scroll al inicio donde están las fotos
-            setTimeout(() => {
-                const photosSection = document.querySelector('.photos-section');
-                if (photosSection) {
-                    photosSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 100);
         });
         
         cancelBtn.addEventListener('click', () => {

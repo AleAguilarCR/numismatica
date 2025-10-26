@@ -1,7 +1,9 @@
 import sqlite3
 import json
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 import uvicorn
 
 app = FastAPI()
@@ -89,6 +91,21 @@ async def update_coin(coin_id: int, request: Request):
     conn.commit()
     conn.close()
     return {"id": coin_id, **coin}
+
+@app.get("/proxy-image")
+async def proxy_image(url: str):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=30.0)
+            if response.status_code == 200:
+                return Response(
+                    content=response.content,
+                    media_type=response.headers.get("content-type", "image/jpeg")
+                )
+            else:
+                raise HTTPException(status_code=404, detail="Image not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error downloading image: {str(e)}")
 
 if __name__ == "__main__":
     import os
