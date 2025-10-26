@@ -195,11 +195,36 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const canvas = itemCard.querySelector('.item-photo-canvas');
             const ctx = canvas.getContext('2d');
             
+            // Limpiar canvas
+            ctx.clearRect(0, 0, 80, 80);
+            
             if (item.photoFront) {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
                 img.onload = () => {
-                    ctx.drawImage(img, 0, 0, 80, 80);
+                    try {
+                        // Dibujar imagen con mejor calidad
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(img, 0, 0, 80, 80);
+                    } catch (error) {
+                        console.error('Error dibujando imagen:', error);
+                        // Fallback a placeholder
+                        ctx.fillStyle = '#f0f0f0';
+                        ctx.fillRect(0, 0, 80, 80);
+                        ctx.fillStyle = '#666';
+                        ctx.font = '20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('📷', 40, 45);
+                    }
+                };
+                img.onerror = () => {
+                    // Error cargando imagen
+                    ctx.fillStyle = '#f0f0f0';
+                    ctx.fillRect(0, 0, 80, 80);
+                    ctx.fillStyle = '#999';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('❌', 40, 45);
                 };
                 img.src = item.photoFront;
             } else {
