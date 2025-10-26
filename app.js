@@ -213,8 +213,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 <button class="btn btn-secondary edit-btn">Editar</button>
             `;
             
-
-            
             const editBtn = itemCard.querySelector('.edit-btn');
             const itemPhoto = itemCard.querySelector('.item-photo');
             const itemPlaceholder = itemCard.querySelector('.item-photo-placeholder');
@@ -311,7 +309,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             input.click();
         } else {
             console.error('Input no encontrado:', inputId);
-            // Listar todos los inputs disponibles para debug
             const allInputs = document.querySelectorAll('input[type="file"]');
             console.log('Inputs disponibles:', Array.from(allInputs).map(i => i.id));
         }
@@ -520,9 +517,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const photoPreviewFront = document.getElementById('editPhotoPreviewFront');
         const photoPreviewBack = document.getElementById('editPhotoPreviewBack');
         
-        console.log('Antes de actualizar - Front dataset:', photoPreviewFront?.dataset?.photo);
-        console.log('Antes de actualizar - Back dataset:', photoPreviewBack?.dataset?.photo);
-        
         const itemIndex = this.items.findIndex(i => i.id === this.currentEditingItem.id);
         if (itemIndex !== -1) {
             const updatedItem = {
@@ -542,12 +536,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             };
             
             this.items[itemIndex] = updatedItem;
-            
-            console.log('Item actualizado:', updatedItem);
-            console.log('Imágenes guardadas - Front:', updatedItem.photoFront, 'Back:', updatedItem.photoBack);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            // Intentar actualizar en API en segundo plano
             fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -558,10 +548,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const countryCode = this.currentCountryCode;
         this.currentEditingItem = null;
         
-        // Mostrar mensaje de éxito
         alert('✅ Item actualizado correctamente');
         
-        // Navegar y actualizar la vista
         this.showScreen('country');
         if (countryCode) {
             this.showCountryItems(countryCode);
@@ -634,7 +622,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         this.items.push(item);
         
-        // Intentar guardar en API en segundo plano
         fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -654,264 +641,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
 
     async searchByImage() {
-        if (!this.searchImageData) return;
-        
-        const resultsDiv = document.getElementById('searchResults');
-        resultsDiv.innerHTML = '<p>Analizando imagen...</p>';
-        
-        try {
-            const visionResults = {
-                texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
-                objects: ['coin', 'currency', 'money'],
-                webEntities: ['currency', 'money', 'numismatics', 'collectible']
-            };
-            
-            const coinResults = await this.searchCoinsDatabase(visionResults);
-            
-            if (coinResults.length === 0) {
-                resultsDiv.innerHTML = '<p>No se encontraron monedas similares. Intenta con una imagen más clara.</p>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = coinResults.map((result, index) => `
-                <div class="search-result">
-                    <h4>${result.title}</h4>
-                    <p><strong>País:</strong> ${result.country}</p>
-                    <p><strong>Año:</strong> ${result.year}</p>
-                    <p><strong>Confianza:</strong> ${result.confidence}%</p>
-                    <p><strong>Descripción:</strong> ${result.description}</p>
-                    <p><a href="${result.link}" target="_blank" rel="noopener">Ver en catálogo</a></p>
-                    <button class="btn btn-primary" onclick="app.addSearchResultToCollection(${index})">➕ Agregar a mi colección</button>
-                </div>
-            `).join('');
-            
-            this.currentSearchResults = coinResults;
-            
-        } catch (error) {
-            console.error('Error en búsqueda:', error);
-            resultsDiv.innerHTML = '<p>Error en la búsqueda. Verifica tu conexión e inténtalo de nuevo.</p>';
-        }
-    }
-
-    async searchCoinsDatabase(visionResults) {
-        const allTexts = [...visionResults.texts, ...visionResults.objects, ...visionResults.webEntities]
-            .join(' ').toLowerCase();
-        
-        const results = [];
-        
-        let country = 'Desconocido';
-        let countryCode = 'XX';
-        if (allTexts.includes('costa rica')) {
-            country = 'Costa Rica';
-            countryCode = 'CR';
-        } else if (allTexts.includes('united states') || allTexts.includes('america')) {
-            country = 'Estados Unidos';
-            countryCode = 'US';
-        } else if (allTexts.includes('mexico')) {
-            country = 'México';
-            countryCode = 'MX';
-        }
-        
-        let denomination = 'Valor desconocido';
-        let type = 'moneda';
-        if (allTexts.includes('cinco colones') || allTexts.includes('5')) {
-            denomination = '5 Colones';
-            type = 'billete';
-        } else if (allTexts.includes('dollar')) {
-            denomination = 'Dollar';
-        } else if (allTexts.includes('peso')) {
-            denomination = 'Peso';
-        }
-        
-        const yearMatch = allTexts.match(/\b(19|20)\d{2}\b/);
-        const year = yearMatch ? yearMatch[0] : 'Desconocido';
-        
-        results.push({
-            title: `${denomination} - ${country}`,
-            country: country,
-            countryCode: countryCode,
-            year: year,
-            type: type,
-            denomination: denomination,
-            description: `${type === 'billete' ? 'Billete' : 'Moneda'} identificada automáticamente`,
-            link: `https://numista.com/catalogue/index.php?mode=simplifie&p=1&r=${encodeURIComponent(country)}&e=y&d=${encodeURIComponent(denomination)}&ca=3&no=${year !== 'Desconocido' ? year : ''}`,
-            confidence: 75
-        });
-        
-        return results;
-    }
-    
-    addSearchResultToCollection(resultIndex) {
-        const result = this.currentSearchResults[resultIndex];
-        if (!result) return;
-        
-        document.getElementById('itemType').value = result.type;
-        document.getElementById('country').value = result.countryCode;
-        document.getElementById('denomination').value = result.denomination;
-        document.getElementById('year').value = result.year;
-        document.getElementById('condition').value = 'Bueno';
-        document.getElementById('catalogLink').value = result.link;
-        document.getElementById('notes').value = `Agregado desde búsqueda por imagen: ${result.description}`;
-        
-        if (this.searchImageData) {
-            const preview = document.getElementById('photoPreviewFront');
-            preview.innerHTML = `<img src="${this.searchImageData}" alt="Preview">`;
-            preview.dataset.photo = this.searchImageData;
-        }
-        
-        this.showScreen('add');
-    }
-    
-    parseNumistaUrl() {
-        const url = document.getElementById('numistaUrl').value;
-        if (!url || !url.includes('numista.com')) {
-            alert('Por favor ingresa una URL válida de Numista');
-            return;
-        }
-        
-        this.showManualNumistaForm(url);
-    }
-    
-    showManualNumistaForm(url) {
-        const preview = document.getElementById('numistaPreview');
-        preview.innerHTML = `
-            <div class="manual-numista-form">
-                <p><strong>Ingresa la información de Numista:</strong></p>
-                <p><small>Copia los datos de la página de Numista y pégalos aquí</small></p>
-                
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select id="manualType">
-                        <option value="moneda">Moneda</option>
-                        <option value="billete">Billete</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Emisor/País:</label>
-                    <select id="manualCountry">
-                        <option value="">Seleccionar país...</option>
-                    </select>
-                    <small>Selecciona el país emisor</small>
-                </div>
-                
-                <div class="form-group">
-                    <label>Valor/Denominación:</label>
-                    <input type="text" id="manualDenomination" placeholder="ej: 5 colones (5 CRC)">
-                    <small>Copia el campo "Valor" de Numista</small>
-                </div>
-                
-                <div class="form-group">
-                    <label>Años:</label>
-                    <input type="text" id="manualYear" placeholder="ej: 1968 o 1968-1992">
-                    <small>Copia el campo "Años" de Numista</small>
-                </div>
-                
-                <div class="form-group">
-                    <label>URL de Imagen Anverso (opcional):</label>
-                    <input type="url" id="manualImageFront" placeholder="https://...">
-                </div>
-                
-                <div class="form-group">
-                    <label>URL de Imagen Reverso (opcional):</label>
-                    <input type="url" id="manualImageBack" placeholder="https://...">
-                </div>
-                
-                <button class="btn btn-primary btn-full" onclick="app.importManualNumista('${url}')">Importar a Colección</button>
-            </div>
-        `;
-        
-        this.populateManualCountrySelect();
-    }
-    
-    populateManualCountrySelect() {
-        const select = document.getElementById('manualCountry');
-        if (!select) return;
-        
-        Object.keys(window.COUNTRIES).forEach(code => {
-            const option = document.createElement('option');
-            option.value = code;
-            option.textContent = `${window.COUNTRIES[code].flag} ${window.COUNTRIES[code].name}`;
-            select.appendChild(option);
-        });
-    }
-    
-    async importManualNumista(url) {
-        const countryCode = document.getElementById('manualCountry').value;
-        const yearText = document.getElementById('manualYear').value;
-        const imageFront = document.getElementById('manualImageFront').value;
-        const imageBack = document.getElementById('manualImageBack').value;
-        
-        if (!countryCode) {
-            alert('Por favor selecciona un país');
-            return;
-        }
-        
-        let year = yearText;
-        const yearMatch = yearText.match(/(\d{4})/);
-        if (yearMatch) {
-            year = yearMatch[1];
-        }
-        
-        const images = [];
-        if (imageFront) images.push(imageFront);
-        if (imageBack) images.push(imageBack);
-        
-        const data = {
-            title: 'Item de Numista',
-            type: document.getElementById('manualType').value,
-            country: window.COUNTRIES[countryCode].name,
-            countryCode: countryCode,
-            denomination: document.getElementById('manualDenomination').value,
-            year: year,
-            images: images,
-            catalogLink: url
-        };
-        
-        this.currentNumistaData = data;
-        await this.importFromNumista();
-    }
-    
-    async importFromNumista() {
-        if (!this.currentNumistaData) return;
-        
-        const data = this.currentNumistaData;
-        
-        const itemType = document.getElementById('itemType');
-        const country = document.getElementById('country');
-        const denomination = document.getElementById('denomination');
-        const year = document.getElementById('year');
-        const catalogLink = document.getElementById('catalogLink');
-        const notes = document.getElementById('notes');
-        
-        if (itemType) itemType.value = data.type || 'moneda';
-        if (country && data.countryCode && data.countryCode !== 'XX') {
-            country.value = data.countryCode;
-        }
-        if (denomination) denomination.value = data.denomination || '';
-        if (year) year.value = data.year || '';
-        if (catalogLink) catalogLink.value = data.catalogLink || '';
-        if (notes) notes.value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
-        
-        if (data.images && data.images.length > 0) {
-            if (data.images[0]) {
-                const frontPreview = document.getElementById('photoPreviewFront');
-                if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    frontPreview.dataset.photo = data.images[0];
-                }
-            }
-            
-            if (data.images.length > 1 && data.images[1]) {
-                const backPreview = document.getElementById('photoPreviewBack');
-                if (backPreview) {
-                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    backPreview.dataset.photo = data.images[1];
-                }
-            }
-        }
-        
-        this.showScreen('add');
+        this.showScreen('imageSearch');
     }
 
     async loadData() {
@@ -949,195 +679,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Total items cargados:', this.items.length);
         
-        // Renderizar pantalla principal después de cargar datos
         if (this.currentScreen === 'main') {
             this.renderMainScreen();
         }
     }
-    
-    async performImageSearch() {
-        if (!this.searchImageData) return;
-        
-        const resultsDiv = document.getElementById('searchResults');
-        resultsDiv.innerHTML = '<p>Analizando imagen con Google Vision...</p>';
-        
-        try {
-            let visionResults;
-            
-            try {
-                visionResults = await this.analyzeImageWithVision(this.searchImageData);
-                console.log('Vision API exitosa:', visionResults);
-            } catch (visionError) {
-                console.log('Vision API falló, usando búsqueda simulada:', visionError.message);
-                visionResults = {
-                    texts: ['coin', 'dollar', 'liberty', 'united states', 'quarter', 'euro', 'peso', 'cent'],
-                    objects: ['coin', 'currency', 'money'],
-                    webEntities: ['currency', 'money', 'numismatics', 'collectible']
-                };
-            }
-            
-            const coinResults = await this.searchCoinsDatabase(visionResults);
-            
-            if (coinResults.length === 0) {
-                resultsDiv.innerHTML = '<p>No se encontraron monedas similares. Intenta con una imagen más clara.</p>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = coinResults.map((result, index) => `
-                <div class="search-result">
-                    <h4>${result.title}</h4>
-                    <p><strong>País:</strong> ${result.country}</p>
-                    <p><strong>Año:</strong> ${result.year}</p>
-                    <p><strong>Confianza:</strong> ${result.confidence}%</p>
-                    <p><strong>Descripción:</strong> ${result.description}</p>
-                    <p><a href="${result.link}" target="_blank" rel="noopener">Ver en catálogo</a></p>
-                    <button class="btn btn-primary" onclick="app.addSearchResultToCollection(${index})">➕ Agregar a mi colección</button>
-                </div>
-            `).join('');
-            
-            this.currentSearchResults = coinResults;
-            
-        } catch (error) {
-            console.error('Error en búsqueda:', error);
-            resultsDiv.innerHTML = '<p>Error en la búsqueda. Verifica tu conexión e inténtalo de nuevo.</p>';
-        }
-    }
-    
-    async analyzeImageWithVision(imageData) {
-        const API_KEY = 'AIzaSyBn9U_VRidIFe2jwG9BGYNgxZtuTZvAROw';
-        const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
-        
-        const base64Image = imageData.split(',')[1];
-        
-        const requestBody = {
-            requests: [{
-                image: { content: base64Image },
-                features: [
-                    { type: 'TEXT_DETECTION', maxResults: 10 },
-                    { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
-                    { type: 'WEB_DETECTION', maxResults: 5 }
-                ]
-            }]
-        };
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Vision API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return this.processVisionResults(data);
-    }
-    
-    processVisionResults(visionData) {
-        const result = visionData.responses[0];
-        const extractedInfo = {
-            texts: [],
-            objects: [],
-            webEntities: []
-        };
-        
-        if (result.textAnnotations) {
-            extractedInfo.texts = result.textAnnotations.map(text => text.description.toLowerCase());
-        }
-        
-        if (result.localizedObjectAnnotations) {
-            extractedInfo.objects = result.localizedObjectAnnotations.map(obj => obj.name.toLowerCase());
-        }
-        
-        if (result.webDetection && result.webDetection.webEntities) {
-            extractedInfo.webEntities = result.webDetection.webEntities
-                .filter(entity => entity.score > 0.3)
-                .map(entity => entity.description ? entity.description.toLowerCase() : '');
-        }
-        
-        return extractedInfo;
-    }
-    
 
-    
-    getNumistaImages(mode) {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
-        
-        modal.innerHTML = `
-            <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-                <h3 style="margin:0 0 1.5rem 0;text-align:center;color:#333;">Obtener Imágenes de Numista</h3>
-                
-                <div style="margin-bottom:1rem;">
-                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Anverso:</label>
-                    <input type="url" id="modalFrontUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
-                </div>
-                
-                <div style="margin-bottom:1.5rem;">
-                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Reverso:</label>
-                    <input type="url" id="modalBackUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
-                </div>
-                
-                <div style="display:flex;gap:1rem;">
-                    <button id="modalApply" style="flex:1;padding:0.75rem;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Aplicar</button>
-                    <button id="modalCancel" style="flex:1;padding:0.75rem;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Cancelar</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        const frontInput = modal.querySelector('#modalFrontUrl');
-        const backInput = modal.querySelector('#modalBackUrl');
-        const applyBtn = modal.querySelector('#modalApply');
-        const cancelBtn = modal.querySelector('#modalCancel');
-        
-        applyBtn.addEventListener('click', () => {
-            const frontUrl = frontInput.value.trim();
-            const backUrl = backInput.value.trim();
-            
-            if (!frontUrl && !backUrl) {
-                alert('Por favor ingresa al menos una URL de imagen');
-                return;
-            }
-            
-            if (frontUrl) {
-                const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
-                const frontPreview = document.getElementById(frontId);
-                if (frontPreview) {
-                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    frontPreview.dataset.photo = frontUrl;
-                }
-            }
-            
-            if (backUrl) {
-                const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
-                const backPreview = document.getElementById(backId);
-                if (backPreview) {
-                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                    backPreview.dataset.photo = backUrl;
-                }
-            }
-            
-            document.body.removeChild(modal);
-            alert('✅ Imágenes aplicadas correctamente');
-        });
-        
-        cancelBtn.addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
-            }
-        });
-        
-        // Focus en el primer campo
-        setTimeout(() => frontInput.focus(), 100);
-    }
-    
     showImageZoom(itemId, side) {
         const item = this.items.find(i => i.id === itemId);
         if (!item) return;
@@ -1242,10 +788,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            // Actualizar imagen en zoom
             document.getElementById('zoomImage').src = newImageUrl;
             
-            // Sincronizar con API
             fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -1270,14 +814,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 
-                // Sincronizar con API
                 fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.items[itemIndex])
                 }).catch(() => {});
                 
-                // Volver a la pantalla de edición
                 this.editItem(item.id);
             }
         }
@@ -1307,7 +849,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
         } catch (error) {
             console.error('Error fetching Numista collection:', error);
-            resultsDiv.innerHTML = `<p>Error: ${error.message}</p><p>Verifica tu API Key y User ID</p>`;
+            resultsDiv.innerHTML = `<p>Error: ${error.message}</p><p>Verifica la conexión con Numista</p>`;
         }
     }
     
@@ -1402,5 +944,233 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'united-kingdom': 'GB'
         };
         return mapping[numistaCode] || 'XX';
+    }
+
+    getNumistaImages(mode) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+        
+        modal.innerHTML = `
+            <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                <h3 style="margin:0 0 1.5rem 0;text-align:center;color:#333;">Obtener Imágenes de Numista</h3>
+                
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Anverso:</label>
+                    <input type="url" id="modalFrontUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
+                </div>
+                
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block;margin-bottom:0.5rem;font-weight:bold;color:#555;">URL Imagen Reverso:</label>
+                    <input type="url" id="modalBackUrl" placeholder="https://..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:4px;font-size:14px;">
+                </div>
+                
+                <div style="display:flex;gap:1rem;">
+                    <button id="modalApply" style="flex:1;padding:0.75rem;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Aplicar</button>
+                    <button id="modalCancel" style="flex:1;padding:0.75rem;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const frontInput = modal.querySelector('#modalFrontUrl');
+        const backInput = modal.querySelector('#modalBackUrl');
+        const applyBtn = modal.querySelector('#modalApply');
+        const cancelBtn = modal.querySelector('#modalCancel');
+        
+        applyBtn.addEventListener('click', () => {
+            const frontUrl = frontInput.value.trim();
+            const backUrl = backInput.value.trim();
+            
+            if (!frontUrl && !backUrl) {
+                alert('Por favor ingresa al menos una URL de imagen');
+                return;
+            }
+            
+            if (frontUrl) {
+                const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
+                const frontPreview = document.getElementById(frontId);
+                if (frontPreview) {
+                    frontPreview.innerHTML = `<img src="${frontUrl}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    frontPreview.dataset.photo = frontUrl;
+                }
+            }
+            
+            if (backUrl) {
+                const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
+                const backPreview = document.getElementById(backId);
+                if (backPreview) {
+                    backPreview.innerHTML = `<img src="${backUrl}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    backPreview.dataset.photo = backUrl;
+                }
+            }
+            
+            document.body.removeChild(modal);
+            alert('✅ Imágenes aplicadas correctamente');
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+        
+        setTimeout(() => frontInput.focus(), 100);
+    }
+
+    parseNumistaUrl() {
+        const url = document.getElementById('numistaUrl').value;
+        if (!url || !url.includes('numista.com')) {
+            alert('Por favor ingresa una URL válida de Numista');
+            return;
+        }
+        
+        this.showManualNumistaForm(url);
+    }
+    
+    showManualNumistaForm(url) {
+        const preview = document.getElementById('numistaPreview');
+        preview.innerHTML = `
+            <div class="manual-numista-form">
+                <p><strong>Ingresa la información de Numista:</strong></p>
+                <p><small>Copia los datos de la página de Numista y pégalos aquí</small></p>
+                
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="manualType">
+                        <option value="moneda">Moneda</option>
+                        <option value="billete">Billete</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Emisor/País:</label>
+                    <select id="manualCountry">
+                        <option value="">Seleccionar país...</option>
+                    </select>
+                    <small>Selecciona el país emisor</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Valor/Denominación:</label>
+                    <input type="text" id="manualDenomination" placeholder="ej: 5 colones (5 CRC)">
+                    <small>Copia el campo "Valor" de Numista</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Años:</label>
+                    <input type="text" id="manualYear" placeholder="ej: 1968 o 1968-1992">
+                    <small>Copia el campo "Años" de Numista</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>URL de Imagen Anverso (opcional):</label>
+                    <input type="url" id="manualImageFront" placeholder="https://...">
+                </div>
+                
+                <div class="form-group">
+                    <label>URL de Imagen Reverso (opcional):</label>
+                    <input type="url" id="manualImageBack" placeholder="https://...">
+                </div>
+                
+                <button class="btn btn-primary btn-full" onclick="app.importManualNumista('${url}')">Importar a Colección</button>
+            </div>
+        `;
+        
+        this.populateManualCountrySelect();
+    }
+    
+    populateManualCountrySelect() {
+        const select = document.getElementById('manualCountry');
+        if (!select) return;
+        
+        Object.keys(window.COUNTRIES).forEach(code => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = `${window.COUNTRIES[code].flag} ${window.COUNTRIES[code].name}`;
+            select.appendChild(option);
+        });
+    }
+    
+    async importManualNumista(url) {
+        const countryCode = document.getElementById('manualCountry').value;
+        const yearText = document.getElementById('manualYear').value;
+        const imageFront = document.getElementById('manualImageFront').value;
+        const imageBack = document.getElementById('manualImageBack').value;
+        
+        if (!countryCode) {
+            alert('Por favor selecciona un país');
+            return;
+        }
+        
+        let year = yearText;
+        const yearMatch = yearText.match(/(\\d{4})/);
+        if (yearMatch) {
+            year = yearMatch[1];
+        }
+        
+        const images = [];
+        if (imageFront) images.push(imageFront);
+        if (imageBack) images.push(imageBack);
+        
+        const data = {
+            title: 'Item de Numista',
+            type: document.getElementById('manualType').value,
+            country: window.COUNTRIES[countryCode].name,
+            countryCode: countryCode,
+            denomination: document.getElementById('manualDenomination').value,
+            year: year,
+            images: images,
+            catalogLink: url
+        };
+        
+        this.currentNumistaData = data;
+        await this.importFromNumista();
+    }
+    
+    async importFromNumista() {
+        if (!this.currentNumistaData) return;
+        
+        const data = this.currentNumistaData;
+        
+        const itemType = document.getElementById('itemType');
+        const country = document.getElementById('country');
+        const denomination = document.getElementById('denomination');
+        const year = document.getElementById('year');
+        const catalogLink = document.getElementById('catalogLink');
+        const notes = document.getElementById('notes');
+        
+        if (itemType) itemType.value = data.type || 'moneda';
+        if (country && data.countryCode && data.countryCode !== 'XX') {
+            country.value = data.countryCode;
+        }
+        if (denomination) denomination.value = data.denomination || '';
+        if (year) year.value = data.year || '';
+        if (catalogLink) catalogLink.value = data.catalogLink || '';
+        if (notes) notes.value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
+        
+        if (data.images && data.images.length > 0) {
+            if (data.images[0]) {
+                const frontPreview = document.getElementById('photoPreviewFront');
+                if (frontPreview) {
+                    frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    frontPreview.dataset.photo = data.images[0];
+                }
+            }
+            
+            if (data.images.length > 1 && data.images[1]) {
+                const backPreview = document.getElementById('photoPreviewBack');
+                if (backPreview) {
+                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    backPreview.dataset.photo = data.images[1];
+                }
+            }
+        }
+        
+        this.showScreen('add');
     }
 };
