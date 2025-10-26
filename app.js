@@ -483,23 +483,27 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         if (item.photoFront) {
             frontPreview.innerHTML = `<img src="${item.photoFront}" alt="Anverso" style="cursor: pointer;">`;
             frontPreview.dataset.photo = item.photoFront;
-            frontPreview.querySelector('img').addEventListener('click', (e) => {
+            frontPreview.onclick = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 this.showImageZoom(item.id, 'front');
-            });
+            };
         } else {
             frontPreview.innerHTML = '<span>📷 Foto Anverso</span>';
+            frontPreview.onclick = () => this.selectPhoto('front', 'edit');
         }
         
         if (item.photoBack) {
             backPreview.innerHTML = `<img src="${item.photoBack}" alt="Reverso" style="cursor: pointer;">`;
             backPreview.dataset.photo = item.photoBack;
-            backPreview.querySelector('img').addEventListener('click', (e) => {
+            backPreview.onclick = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 this.showImageZoom(item.id, 'back');
-            });
+            };
         } else {
             backPreview.innerHTML = '<span>📷 Foto Reverso</span>';
+            backPreview.onclick = () => this.selectPhoto('back', 'edit');
         }
         
         this.showScreen('edit');
