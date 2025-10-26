@@ -834,11 +834,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         try {
             // Primero obtener el token OAuth
-            const tokenResponse = await fetch('https://api.numista.com/oauth_token?grant_type=client_credentials&scope=view_collection', {
+            const tokenResponse = await fetch('https://api.numista.com/oauth_token', {
+                method: 'POST',
                 headers: {
                     'Numista-API-Key': apiKey,
+                    'Content-Type': 'application/x-www-form-urlencoded',
                     'Accept': 'application/json'
-                }
+                },
+                body: 'grant_type=client_credentials&scope=view_collection'
             });
             
             if (!tokenResponse.ok) {
