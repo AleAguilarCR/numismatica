@@ -1284,14 +1284,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     async fetchNumistaCollection() {
-        const apiKey = document.getElementById('numistaApiKey').value.trim();
-        const userId = document.getElementById('numistaUserId').value.trim();
+        const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
+        const userId = '529122';
         const resultsDiv = document.getElementById('numistaCollectionResults');
-        
-        if (!apiKey || !userId) {
-            alert('Por favor ingresa tu API Key y User ID de Numista');
-            return;
-        }
         
         resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
         
@@ -1315,7 +1310,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             resultsDiv.innerHTML = `<p>Error: ${error.message}</p><p>Verifica tu API Key y User ID</p>`;
         }
     }
-};
     
     displayNumistaCollection(collectionData) {
         const resultsDiv = document.getElementById('numistaCollectionResults');
@@ -1346,7 +1340,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     async importNumistaItem(pieceId) {
-        const apiKey = document.getElementById('numistaApiKey').value.trim();
+        const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
         try {
             const response = await fetch(`https://api.numista.com/api/v3/pieces/${pieceId}`, {
@@ -1409,3 +1403,4 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         };
         return mapping[numistaCode] || 'XX';
     }
+};
