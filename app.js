@@ -952,11 +952,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
+            const countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
+            const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
+            
             const item = {
-                id: Date.now(),
+                id: existingItem ? existingItem.id : Date.now(),
                 type: pieceData.category === 'banknote' ? 'billete' : 'moneda',
-                countryCode: this.mapNumistaCountry(pieceData.issuer?.code),
-                country: pieceData.issuer?.name || 'Desconocido',
+                countryCode: countryCode,
+                country: countryName,
                 denomination: pieceData.value?.text || pieceData.title,
                 year: pieceData.min_year || new Date().getFullYear(),
                 condition: grade,
@@ -965,23 +968,30 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 catalogLink: `https://en.numista.com/catalogue/pieces${pieceId}.html`,
                 photoFront: pieceData.obverse?.picture || null,
                 photoBack: pieceData.reverse?.picture || null,
-                dateAdded: new Date().toISOString()
+                dateAdded: existingItem ? existingItem.dateAdded : new Date().toISOString(),
+                dateModified: existingItem ? new Date().toISOString() : undefined
             };
             
             if (existingItem) {
                 const index = this.items.findIndex(i => i.id === existingItem.id);
-                this.items[index] = { ...item, id: existingItem.id };
+                this.items[index] = item;
+                
+                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${existingItem.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).catch(() => {});
             } else {
                 this.items.push(item);
+                
+                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).catch(() => {});
             }
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            
-            fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-                method: existingItem ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(existingItem ? { ...item, id: existingItem.id } : item)
-            }).catch(() => {});
             
             return { success: true, action: existingItem ? 'replaced' : 'added' };
             
@@ -1076,13 +1086,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
         }
         
+        // Actualizar la pantalla principal
+        await this.loadData();
         this.renderMainScreen();
+        
         alert(`Importación completada:\n- Importados: ${imported}\n- Reemplazados: ${replaced}\n- Ignorados: ${ignored}\n- Errores: ${errors}`);
         
         this.duplicateAction = null;
     }
     
     mapNumistaCountry(numistaCode) {
+        if (!numistaCode) return 'XX';
+        
         const mapping = {
             'united-states': 'US',
             'costa-rica': 'CR',
@@ -1115,6 +1130,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'netherlands': 'NL',
             'belgium': 'BE',
             'switzerland': 'CH',
+            'suiza': 'CH',
             'austria': 'AT',
             'poland': 'PL',
             'russia': 'RU',
@@ -1130,7 +1146,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'tunisia': 'TN',
             'algeria': 'DZ'
         };
-        return mapping[numistaCode] || 'XX';
+        
+        const code = numistaCode.toLowerCase();
+        return mapping[code] || 'XX';
     }
 
     getNumistaImages(mode) {
