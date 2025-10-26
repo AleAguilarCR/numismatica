@@ -480,7 +480,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.showScreen('edit');
     }
 
-    async handleEditItem(event) {
+    handleEditItem(event) {
         event.preventDefault();
         
         if (!this.currentEditingItem) return;
@@ -515,15 +515,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             console.log('Imágenes guardadas - Front:', updatedItem.photoFront, 'Back:', updatedItem.photoBack);
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            try {
-                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedItem)
-                });
-            } catch (error) {
-                console.log('API update error');
-            }
+            // Intentar actualizar en API en segundo plano
+            fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedItem)
+            }).catch(() => {});
         }
         
         const countryCode = this.currentCountryCode;
@@ -581,7 +578,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
     }
 
-    async handleAddItem(event) {
+    handleAddItem(event) {
         event.preventDefault();
         
         const photoPreviewFront = document.getElementById('photoPreviewFront');
@@ -603,22 +600,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             dateAdded: new Date().toISOString()
         };
 
-        try {
-            const response = await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            });
-            
-            if (response.ok) {
-                const newItem = await response.json();
-                this.items.push(newItem);
-            } else {
-                this.items.push(item);
-            }
-        } catch (error) {
-            this.items.push(item);
-        }
+        this.items.push(item);
+        
+        // Intentar guardar en API en segundo plano
+        fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        }).catch(() => {});
         
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
