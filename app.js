@@ -815,7 +815,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
     }
     
-    importManualNumista(url) {
+    async importManualNumista(url) {
         const countryCode = document.getElementById('manualCountry').value;
         const yearText = document.getElementById('manualYear').value;
         const imageFront = document.getElementById('manualImageFront').value;
@@ -848,10 +848,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         };
         
         this.currentNumistaData = data;
-        this.importFromNumista();
+        await this.importFromNumista();
     }
     
-    importFromNumista() {
+    async importFromNumista() {
         if (!this.currentNumistaData) return;
         
         const data = this.currentNumistaData;
@@ -873,17 +873,22 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         if (notes) notes.value = `Importado desde Numista: ${data.title || 'Item de Numista'}`;
         
         if (data.images && data.images.length > 0) {
-            const frontPreview = document.getElementById('photoPreviewFront');
-            if (frontPreview && data.images[0]) {
-                frontPreview.innerHTML = `<img src="${data.images[0]}" alt="Anverso" onerror="this.style.display='none'">`;
-                frontPreview.dataset.photo = data.images[0];
+            // Descargar y convertir imágenes a base64
+            if (data.images[0]) {
+                const frontBase64 = await this.downloadImageAsBase64(data.images[0]);
+                const frontPreview = document.getElementById('photoPreviewFront');
+                if (frontPreview && frontBase64) {
+                    frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    frontPreview.dataset.photo = frontBase64;
+                }
             }
             
-            if (data.images.length > 1) {
+            if (data.images.length > 1 && data.images[1]) {
+                const backBase64 = await this.downloadImageAsBase64(data.images[1]);
                 const backPreview = document.getElementById('photoPreviewBack');
-                if (backPreview && data.images[1]) {
-                    backPreview.innerHTML = `<img src="${data.images[1]}" alt="Reverso" onerror="this.style.display='none'">`;
-                    backPreview.dataset.photo = data.images[1];
+                if (backPreview && backBase64) {
+                    backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                    backPreview.dataset.photo = backBase64;
                 }
             }
         }
@@ -1037,18 +1042,35 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     
     async downloadImageAsBase64(imageUrl) {
         try {
-            const response = await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/proxy-image?url=${encodeURIComponent(imageUrl)}`);
-            if (!response.ok) throw new Error('Error descargando imagen');
+            console.log('Descargando imagen:', imageUrl);
+            const proxyUrl = `${window.API_URL || 'https://numismatica-7pat.onrender.com'}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+            console.log('URL del proxy:', proxyUrl);
+            
+            const response = await fetch(proxyUrl);
+            console.log('Respuesta del proxy:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
             
             const blob = await response.blob();
+            console.log('Blob obtenido, tamaño:', blob.size, 'tipo:', blob.type);
+            
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
+                reader.onload = () => {
+                    console.log('Imagen convertida a base64, longitud:', reader.result.length);
+                    resolve(reader.result);
+                };
+                reader.onerror = (error) => {
+                    console.error('Error leyendo blob:', error);
+                    reject(error);
+                };
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('Error en downloadImageAsBase64:', error);
+            console.error('Error completo en downloadImageAsBase64:', error);
+            alert(`Error descargando imagen: ${error.message}`);
             return null;
         }
     }
@@ -1102,9 +1124,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     const frontBase64 = await this.downloadImageAsBase64(frontUrl);
                     const frontId = mode === 'edit' ? 'editPhotoPreviewFront' : 'photoPreviewFront';
                     const frontPreview = document.getElementById(frontId);
-                    if (frontPreview && frontBase64) {
-                        frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                        frontPreview.dataset.photo = frontBase64;
+                    if (frontPreview) {
+                        if (frontBase64) {
+                            frontPreview.innerHTML = `<img src="${frontBase64}" alt="Anverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                            frontPreview.dataset.photo = frontBase64;
+                            console.log('Imagen anverso aplicada correctamente');
+                        } else {
+                            console.error('No se pudo descargar la imagen del anverso');
+                        }
                     }
                 }
                 
@@ -1112,9 +1139,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     const backBase64 = await this.downloadImageAsBase64(backUrl);
                     const backId = mode === 'edit' ? 'editPhotoPreviewBack' : 'photoPreviewBack';
                     const backPreview = document.getElementById(backId);
-                    if (backPreview && backBase64) {
-                        backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
-                        backPreview.dataset.photo = backBase64;
+                    if (backPreview) {
+                        if (backBase64) {
+                            backPreview.innerHTML = `<img src="${backBase64}" alt="Reverso" style="max-width:100%;max-height:150px;border-radius:4px;object-fit:cover;">`;
+                            backPreview.dataset.photo = backBase64;
+                            console.log('Imagen reverso aplicada correctamente');
+                        } else {
+                            console.error('No se pudo descargar la imagen del reverso');
+                        }
                     }
                 }
                 
