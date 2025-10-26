@@ -833,9 +833,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         resultsDiv.innerHTML = '<p>Obteniendo token de acceso...</p>';
         
         try {
-            // Primero obtener el token OAuth
-            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token', {
-                method: 'GET',
+            // Obtener token OAuth usando query parameters
+            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token?grant_type=client_credentials&scope=view_collection', {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
@@ -851,7 +850,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
             
-            // Ahora obtener la colección usando el token
+            // Obtener la colección usando el token
             const response = await fetch(`https://api.numista.com/v3/users/${userId}/collected_items?lang=es`, {
                 headers: {
                     'Numista-API-Key': apiKey,
@@ -869,7 +868,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
         } catch (error) {
             console.error('Error fetching Numista collection:', error);
-            resultsDiv.innerHTML = `<p>Error: ${error.message}</p><p>Verifica la conexión con Numista</p>`;
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h3>Error de Autenticación</h3>
+                    <p>No se pudo acceder a la colección de Numista.</p>
+                    <p><small>Error: ${error.message}</small></p>
+                    <br>
+                    <p>Puedes importar items individuales usando:</p>
+                    <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item Manualmente</button>
+                </div>
+            `;
         }
     }
     
@@ -896,7 +904,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                         <p><strong>Categoría:</strong> ${item.type?.category || 'N/A'}</p>
                         <p><strong>Cantidad:</strong> ${item.quantity || 1}</p>
                         <p><strong>Estado:</strong> ${item.grade || 'N/A'}</p>
-                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.type?.id}', ${item.quantity}, '${item.grade || 'Bueno'}')">Importar</button>
+                        <button class="btn btn-primary" onclick="app.importNumistaItem('${item.type?.id}', ${item.quantity || 1}, '${item.grade || 'Bueno'}')">Importar</button>
                     </div>
                 `).join('')}
             </div>
