@@ -954,8 +954,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
-            const countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
-            const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
+            let countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
             
             // Mapeo especial para Suiza
             if (pieceData.issuer?.name?.toLowerCase().includes('suiza') || 
@@ -963,6 +962,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 pieceData.issuer?.code === 'switzerland') {
                 countryCode = 'CH';
             }
+            
+            // Si el país no existe, agregarlo automáticamente
+            if (!window.COUNTRIES[countryCode] && countryCode !== 'XX') {
+                window.COUNTRIES[countryCode] = {
+                    name: pieceData.issuer?.name || `País ${countryCode}`,
+                    flag: this.getCountryFlag(countryCode),
+                    continent: 'Desconocido'
+                };
+                this.populateCountrySelect();
+                this.populateEditCountrySelect();
+            }
+            
+            const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
             
             // Corregir items existentes con código XX
             this.fixExistingXXItems(pieceData.issuer?.name, countryCode);
@@ -1020,13 +1032,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
-            
-            // Mostrar mensaje de éxito
-            const action = existingItem ? 'reemplazado' : 'importado';
-            alert(`✅ Item ${action} correctamente: ${item.denomination}`);
-            
-            // Actualizar pantalla principal
-            this.renderMainScreen();
             
             return { success: true, action: existingItem ? 'replaced' : 'added' };
             
@@ -1103,7 +1108,21 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         for (let i = 0; i < this.numistaItems.length; i++) {
             const item = this.numistaItems[i];
-            progressDiv.innerHTML = `<p>Importando ${i + 1} de ${this.numistaItems.length}...</p>`;
+            const progress = Math.round(((i + 1) / this.numistaItems.length) * 100);
+            
+            progressDiv.innerHTML = `
+                <div style="text-align: center; padding: 1rem;">
+                    <h3>Importando Colección</h3>
+                    <div style="background: #f0f0f0; border-radius: 10px; padding: 3px; margin: 1rem 0;">
+                        <div style="background: #2196F3; height: 20px; border-radius: 8px; width: ${progress}%; transition: width 0.3s;"></div>
+                    </div>
+                    <p><strong>${i + 1}</strong> de <strong>${this.numistaItems.length}</strong> items (${progress}%)</p>
+                    <div style="font-size: 0.9em; color: #666;">
+                        ✅ Importados: ${imported} | 🔄 Reemplazados: ${replaced} | ⏭️ Ignorados: ${ignored} | ❌ Errores: ${errors}
+                    </div>
+                    <p style="font-size: 0.8em; margin-top: 1rem;">Procesando: ${item.type?.title || 'Item desconocido'}</p>
+                </div>
+            `;
             
             const result = await this.importNumistaItem(
                 item.type?.id,
