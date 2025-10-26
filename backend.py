@@ -95,15 +95,27 @@ async def update_coin(coin_id: int, request: Request):
 @app.get("/proxy-image")
 async def proxy_image(url: str):
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, timeout=30.0)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(url, headers=headers, timeout=30.0)
             if response.status_code == 200:
+                content_type = response.headers.get("content-type", "image/jpeg")
                 return Response(
                     content=response.content,
-                    media_type=response.headers.get("content-type", "image/jpeg")
+                    media_type=content_type,
+                    headers={"Access-Control-Allow-Origin": "*"}
                 )
             else:
-                raise HTTPException(status_code=404, detail="Image not found")
+                raise HTTPException(status_code=response.status_code, detail=f"HTTP {response.status_code}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error downloading image: {str(e)}")
 
