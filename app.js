@@ -164,6 +164,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             const flagElement = document.createElement('div');
             flagElement.className = 'country-flag';
+            flagElement.style.cursor = 'pointer';
             flagElement.innerHTML = `
                 <div class="flag-emoji">
                     <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" 
@@ -175,7 +176,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 <div class="country-name">${countryName}</div>
                 <div class="count">${countryCount[countryCode]}</div>
             `;
-            flagElement.addEventListener('click', () => this.showCountryItems(countryCode));
+            flagElement.addEventListener('click', () => {
+                console.log('Haciendo click en país:', countryCode);
+                this.showCountryItems(countryCode);
+            });
             countriesGrid.appendChild(flagElement);
         });
     }
@@ -183,19 +187,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     showCountryItems(countryCode) {
         this.currentCountryCode = countryCode;
         const country = window.COUNTRIES[countryCode];
+        const countryName = country?.name || `País ${countryCode}`;
         
-        if (!country) {
-            console.error('País no encontrado:', countryCode);
-            return;
-        }
+        console.log('Mostrando items del país:', countryCode, countryName);
         
         const countryItems = this.items.filter(item => item.countryCode === countryCode);
+        console.log('Items encontrados:', countryItems.length);
 
         this.showScreen('country');
         
         const countryTitle = document.getElementById('countryTitle');
         if (countryTitle) {
-            countryTitle.textContent = country.name;
+            countryTitle.textContent = countryName;
         }
         
         const itemsList = document.getElementById('itemsList');
@@ -963,10 +966,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
             const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
             
+            // Mapeo especial para Suiza
+            if (pieceData.issuer?.name?.toLowerCase().includes('suiza') || 
+                pieceData.issuer?.name?.toLowerCase().includes('switzerland') ||
+                pieceData.issuer?.code === 'switzerland') {
+                countryCode = 'CH';
+            }
+            
             console.log('Debug Suiza:', {
                 issuerCode: pieceData.issuer?.code,
+                issuerName: pieceData.issuer?.name,
                 mappedCode: countryCode,
-                countryName: countryName,
+                countryName: window.COUNTRIES[countryCode]?.name,
                 existsInCountries: !!window.COUNTRIES[countryCode]
             });
             
