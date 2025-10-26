@@ -991,15 +991,29 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const index = this.items.findIndex(i => i.id === existingItem.id);
                 this.items[index] = item;
                 
-                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${existingItem.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(item)
-                }).catch(() => {});
+                // Intentar actualizar en API, si falla crear nuevo
+                try {
+                    const response = await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${existingItem.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
+                    
+                    if (!response.ok) {
+                        // Si el PUT falla (404), crear como nuevo item
+                        await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        }).catch(() => {});
+                    }
+                } catch (error) {
+                    console.log('Error actualizando, creando nuevo:', error);
+                }
             } else {
                 this.items.push(item);
                 
-                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item)
