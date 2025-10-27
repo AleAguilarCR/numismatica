@@ -8,6 +8,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
 
     async init() {
+        this.currentFilter = 'todo';
+        this.currentContinentsFilter = 'todo';
         this.setupEventListeners();
         this.populateCountrySelect();
         await this.loadData();
@@ -39,6 +41,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
+            
+            // Filtros
+            document.getElementById('typeFilter')?.addEventListener('change', (e) => {
+                this.currentFilter = e.target.value;
+                this.renderMainScreen();
+            });
+            document.getElementById('continentsTypeFilter')?.addEventListener('change', (e) => {
+                this.currentContinentsFilter = e.target.value;
+                this.showContinents();
+            });
             
             // Editor de fotos
             document.getElementById('cropBtn')?.addEventListener('click', () => this.cropPhoto());
@@ -131,13 +143,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Renderizando pantalla principal con', this.items.length, 'items');
 
-        if (this.items.length === 0) {
-            countriesGrid.innerHTML = '<div class="empty-state"><p>¡Comienza tu colección!</p><p>Agrega tu primera moneda o billete</p></div>';
+        // Filtrar items según el filtro seleccionado
+        const filteredItems = this.currentFilter === 'todo' ? 
+            this.items : 
+            this.items.filter(item => item.type === this.currentFilter);
+
+        if (filteredItems.length === 0) {
+            const filterText = this.currentFilter === 'todo' ? '' : ` de ${this.currentFilter === 'moneda' ? 'monedas' : 'billetes'}`;
+            countriesGrid.innerHTML = `<div class="empty-state"><p>¡Comienza tu colección!</p><p>No hay items${filterText} para mostrar</p></div>`;
             return;
         }
 
         const countryCount = {};
-        this.items.forEach(item => {
+        filteredItems.forEach(item => {
             countryCount[item.countryCode] = (countryCount[item.countryCode] || 0) + 1;
         });
 
@@ -152,8 +170,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const country = window.COUNTRIES[countryCode];
             const countryName = country?.name || `País ${countryCode}`;
             const countryFlag = country?.flag || '🏴';
-            
-
             
             const flagElement = document.createElement('div');
             flagElement.className = 'country-flag';
@@ -233,8 +249,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const continentsList = document.getElementById('continentsList');
         continentsList.innerHTML = '';
 
+        // Filtrar items según el filtro seleccionado
+        const filteredItems = this.currentContinentsFilter === 'todo' ? 
+            this.items : 
+            this.items.filter(item => item.type === this.currentContinentsFilter);
+
         const continents = {};
-        this.items.forEach(item => {
+        filteredItems.forEach(item => {
             const country = window.COUNTRIES[item.countryCode];
             if (country) {
                 if (!continents[country.continent]) {
@@ -244,14 +265,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
         });
 
-        Object.keys(continents).forEach(continentName => {
+        // Ordenar continentes alfabéticamente
+        const sortedContinents = Object.keys(continents).sort((a, b) => 
+            a.localeCompare(b, 'es', { sensitivity: 'base' })
+        );
+
+        sortedContinents.forEach(continentName => {
             const section = document.createElement('div');
             section.className = 'continent-section';
             
             const countriesHtml = Array.from(continents[continentName])
                 .map(countryCode => {
                     const country = window.COUNTRIES[countryCode];
-                    const count = this.items.filter(item => item.countryCode === countryCode).length;
+                    const count = filteredItems.filter(item => item.countryCode === countryCode).length;
                     return `<div class="country-flag" data-country="${countryCode}">
                         <div class="flag-emoji">
                             <img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" 

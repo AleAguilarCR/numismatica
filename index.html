@@ -14,6 +14,13 @@
         </header>
 
         <main class="main-screen" id="mainScreen">
+            <div class="filter-section">
+                <select id="typeFilter" class="filter-select">
+                    <option value="todo">Todo</option>
+                    <option value="moneda">Monedas</option>
+                    <option value="billete">Billetes</option>
+                </select>
+            </div>
             <section class="countries-grid" id="countriesGrid">
                 <div class="empty-state" id="emptyState">
                     <p>¡Comienza tu colección!</p>
@@ -130,6 +137,13 @@
                 <button class="back-btn" id="backFromContinents">←</button>
                 <h2>Por Continentes</h2>
             </header>
+            <div class="filter-section">
+                <select id="continentsTypeFilter" class="filter-select">
+                    <option value="todo">Todo</option>
+                    <option value="moneda">Monedas</option>
+                    <option value="billete">Billetes</option>
+                </select>
+            </div>
             <div class="continents-list" id="continentsList"></div>
         </div>
 
