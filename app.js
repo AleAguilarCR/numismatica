@@ -59,6 +59,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const backBtn = document.getElementById('backFromImageZoom');
                 const changeBtn = document.getElementById('changeImageBtn');
                 const deleteBtn = document.getElementById('deleteImageBtn');
+                const showControlsBtn = document.getElementById('showControlsBtn');
                 
                 if (backBtn) backBtn.addEventListener('click', () => {
                     if (this.currentZoomItem && this.currentZoomItem.item) {
@@ -69,6 +70,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 });
                 if (changeBtn) changeBtn.addEventListener('click', () => this.changeCurrentImage());
                 if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentImage());
+                if (showControlsBtn) showControlsBtn.addEventListener('click', () => this.toggleZoomControls());
             }, 100);
 
             // Formulario agregar
@@ -698,7 +700,31 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         document.getElementById('zoomImage').src = imageUrl;
         document.getElementById('imageZoomTitle').textContent = `${title} - ${item.denomination}`;
         
+        // Ocultar controles inicialmente
+        const zoomControls = document.getElementById('zoomControls');
+        const showControlsBtn = document.getElementById('showControlsBtn');
+        if (zoomControls) zoomControls.style.display = 'none';
+        if (showControlsBtn) {
+            showControlsBtn.style.display = 'block';
+            showControlsBtn.textContent = '⚙️ Opciones';
+        }
+        
         this.showScreen('imageZoom');
+    }
+    
+    toggleZoomControls() {
+        const zoomControls = document.getElementById('zoomControls');
+        const showControlsBtn = document.getElementById('showControlsBtn');
+        
+        if (zoomControls && showControlsBtn) {
+            if (zoomControls.style.display === 'none') {
+                zoomControls.style.display = 'block';
+                showControlsBtn.textContent = '❌ Ocultar';
+            } else {
+                zoomControls.style.display = 'none';
+                showControlsBtn.textContent = '⚙️ Opciones';
+            }
+        }
     }
     
     changeCurrentImage() {
