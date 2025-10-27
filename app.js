@@ -969,8 +969,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 countryCode = this.mapCountryByName(pieceData.issuer.name);
             }
             
+            // Si sigue siendo XX, crear país con nombre de Numista
+            if (countryCode === 'XX' && pieceData.issuer?.name) {
+                // Generar código único basado en el nombre
+                countryCode = this.generateCountryCode(pieceData.issuer.name);
+            }
+            
             // Si el país no existe, agregarlo automáticamente
-            if (!window.COUNTRIES[countryCode] && countryCode !== 'XX') {
+            if (!window.COUNTRIES[countryCode]) {
                 const countryName = pieceData.issuer?.name || `País ${countryCode}`;
                 window.COUNTRIES[countryCode] = {
                     name: countryName,
@@ -1473,6 +1479,41 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         return 'XX';
+    }
+    
+    generateCountryCode(issuerName) {
+        if (!issuerName) return 'XX';
+        
+        // Limpiar el nombre y tomar las primeras letras
+        const cleanName = issuerName
+            .replace(/[^a-zA-Z\s]/g, '') // Solo letras y espacios
+            .trim()
+            .toUpperCase();
+        
+        // Intentar diferentes estrategias para generar código
+        const words = cleanName.split(/\s+/);
+        
+        let code;
+        if (words.length >= 2) {
+            // Primeras letras de las primeras dos palabras
+            code = words[0].charAt(0) + words[1].charAt(0);
+        } else if (words[0] && words[0].length >= 2) {
+            // Primeras dos letras de la primera palabra
+            code = words[0].substring(0, 2);
+        } else {
+            // Fallback
+            code = 'XX';
+        }
+        
+        // Asegurar que el código no exista ya
+        let finalCode = code;
+        let counter = 1;
+        while (window.COUNTRIES[finalCode] && counter < 100) {
+            finalCode = code + counter;
+            counter++;
+        }
+        
+        return finalCode;
     }
     
     fixExistingXXItems(issuerName, correctCode) {
