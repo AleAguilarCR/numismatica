@@ -34,8 +34,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
             document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', () => this.fetchNumistaCollection());
-            document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.importCountriesFromNumista());
-            document.getElementById('fixSwitzerlandBtn')?.addEventListener('click', () => this.fixSwitzerlandItems());
+            document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -969,10 +968,22 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 countryCode = this.mapCountryByName(pieceData.issuer.name);
             }
             
-            // Si sigue siendo XX, crear país con nombre de Numista
+            // Si sigue siendo XX, preguntar al usuario
             if (countryCode === 'XX' && pieceData.issuer?.name) {
-                // Generar código único basado en el nombre
-                countryCode = this.generateCountryCode(pieceData.issuer.name);
+                const shouldAdd = await this.askToAddCountry(pieceData.issuer.name);
+                if (shouldAdd) {
+                    countryCode = this.generateCountryCode(pieceData.issuer.name);
+                    window.COUNTRIES[countryCode] = {
+                        name: pieceData.issuer.name,
+                        flag: this.getCountryFlag(countryCode),
+                        continent: 'Desconocido'
+                    };
+                    newCountryAdded = `${countryCode}: ${pieceData.issuer.name}`;
+                    this.populateCountrySelect();
+                    this.populateEditCountrySelect();
+                } else {
+                    return { success: false, action: 'cancelled' };
+                }
             }
             
             // Si el país no existe, agregarlo automáticamente
@@ -1514,6 +1525,106 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         return finalCode;
+    }
+    
+    async askToAddCountry(countryName) {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+            
+            modal.innerHTML = `
+                <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;">
+                    <h3 style="margin:0 0 1rem 0;">País No Encontrado</h3>
+                    <p>El país "<strong>${countryName}</strong>" no existe en la base de datos.</p>
+                    <p>¿Deseas agregarlo?</p>
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button id="addCountryYes" class="btn btn-primary" style="flex:1;">Sí, Agregar</button>
+                        <button id="addCountryNo" class="btn btn-secondary" style="flex:1;">No</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#addCountryYes').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve(true);
+            });
+            
+            modal.querySelector('#addCountryNo').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve(false);
+            });
+        });
+    }
+    
+    async addMissingCountriesFromCollection() {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        resultsDiv.innerHTML = '<p>Analizando países faltantes en tu colección...</p>';
+        
+        const missingCountries = new Set();
+        
+        // Revisar items con código XX
+        this.items.forEach(item => {
+            if (item.countryCode === 'XX' && item.country && item.country !== 'Desconocido') {
+                missingCountries.add(item.country);
+            }
+        });
+        
+        if (missingCountries.size === 0) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h3>✅ No hay países faltantes</h3>
+                    <p>Todos los países en tu colección ya están en la base de datos.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let added = 0;
+        const addedCountries = [];
+        
+        for (const countryName of missingCountries) {
+            const shouldAdd = await this.askToAddCountry(countryName);
+            if (shouldAdd) {
+                const code = this.generateCountryCode(countryName);
+                window.COUNTRIES[code] = {
+                    name: countryName,
+                    flag: this.getCountryFlag(code),
+                    continent: 'Desconocido'
+                };
+                
+                // Actualizar items con este país
+                this.items.forEach(item => {
+                    if (item.countryCode === 'XX' && item.country === countryName) {
+                        item.countryCode = code;
+                    }
+                });
+                
+                added++;
+                addedCountries.push(`${code}: ${countryName}`);
+            }
+        }
+        
+        if (added > 0) {
+            localStorage.setItem('coinCollection', JSON.stringify(this.items));
+            this.populateCountrySelect();
+            this.populateEditCountrySelect();
+            this.renderMainScreen();
+        }
+        
+        resultsDiv.innerHTML = `
+            <div style="padding: 1rem;">
+                <h3>✅ Proceso Completado</h3>
+                <p><strong>Países agregados:</strong> ${added} de ${missingCountries.size}</p>
+                ${addedCountries.length > 0 ? `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                        <h4>Países agregados:</h4>
+                        ${addedCountries.map(country => `<div>• ${country}</div>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }
     
     fixExistingXXItems(issuerName, correctCode) {
