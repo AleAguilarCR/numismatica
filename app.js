@@ -954,33 +954,22 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
-            // Usar directamente el código de Numista o mapear
+            // Intentar mapear por código primero
             let countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
             let newCountryAdded = null;
             
-            // Si no se pudo mapear, usar código original de Numista
-            if (countryCode === 'XX' && pieceData.issuer?.code) {
-                countryCode = pieceData.issuer.code.toUpperCase();
-            }
-            
-            // Si el país no existe en la base local, preguntar al usuario
-            if (!window.COUNTRIES[countryCode] && pieceData.issuer?.name) {
-                const shouldAdd = await this.askToAddCountry(pieceData.issuer.name);
-                if (shouldAdd) {
-                    window.COUNTRIES[countryCode] = {
-                        name: pieceData.issuer.name,
-                        flag: this.getCountryFlag(countryCode),
-                        continent: 'Desconocido'
-                    };
-                    newCountryAdded = `${countryCode}: ${pieceData.issuer.name}`;
-                    this.populateCountrySelect();
-                    this.populateEditCountrySelect();
+            // Si no se pudo mapear por código, buscar por similitud de nombre
+            if (countryCode === 'XX' && pieceData.issuer?.name) {
+                const match = this.findBestCountryMatch(pieceData.issuer.name);
+                if (match.similarity >= 0.9) {
+                    countryCode = match.code;
                 } else {
-                    return { success: false, action: 'cancelled' };
+                    // Coincidencia menor al 90%, asignar a XX para corrección manual
+                    countryCode = 'XX';
                 }
             }
             
-            // Si aún no existe, usar XX como fallback
+            // Si aún no existe el país, usar XX
             if (!window.COUNTRIES[countryCode]) {
                 countryCode = 'XX';
             }
@@ -1476,6 +1465,85 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         return 'XX';
+    }
+    
+    findBestCountryMatch(numistaName) {
+        if (!numistaName) return { code: 'XX', similarity: 0 };
+        
+        let bestMatch = { code: 'XX', similarity: 0 };
+        const cleanNumistaName = this.cleanCountryName(numistaName);
+        
+        for (const [code, country] of Object.entries(window.COUNTRIES)) {
+            const cleanLocalName = this.cleanCountryName(country.name);
+            const similarity = this.calculateSimilarity(cleanNumistaName, cleanLocalName);
+            
+            if (similarity > bestMatch.similarity) {
+                bestMatch = { code, similarity };
+            }
+        }
+        
+        return bestMatch;
+    }
+    
+    cleanCountryName(name) {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z\s]/g, '') // Solo letras y espacios
+            .replace(/\s+/g, ' ') // Espacios múltiples a uno
+            .trim();
+    }
+    
+    calculateSimilarity(str1, str2) {
+        // Algoritmo de similitud simple basado en palabras comunes
+        const words1 = str1.split(' ');
+        const words2 = str2.split(' ');
+        
+        // Buscar la palabra más larga en común
+        let maxMatch = 0;
+        
+        for (const word1 of words1) {
+            for (const word2 of words2) {
+                if (word1.length >= 3 && word2.length >= 3) {
+                    const similarity = this.levenshteinSimilarity(word1, word2);
+                    maxMatch = Math.max(maxMatch, similarity);
+                }
+            }
+        }
+        
+        // Bonus si una cadena contiene completamente a la otra
+        if (str1.includes(str2) || str2.includes(str1)) {
+            maxMatch = Math.max(maxMatch, 0.95);
+        }
+        
+        return maxMatch;
+    }
+    
+    levenshteinSimilarity(str1, str2) {
+        const matrix = [];
+        const len1 = str1.length;
+        const len2 = str2.length;
+        
+        for (let i = 0; i <= len1; i++) {
+            matrix[i] = [i];
+        }
+        
+        for (let j = 0; j <= len2; j++) {
+            matrix[0][j] = j;
+        }
+        
+        for (let i = 1; i <= len1; i++) {
+            for (let j = 1; j <= len2; j++) {
+                const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
+                );
+            }
+        }
+        
+        const maxLen = Math.max(len1, len2);
+        return maxLen === 0 ? 1 : (maxLen - matrix[len1][len2]) / maxLen;
     }
     
     generateCountryCode(issuerName) {
