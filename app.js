@@ -954,26 +954,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
+            // Usar directamente el código de Numista o mapear
             let countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
             let newCountryAdded = null;
             
-            // Mapeo especial para Suiza
-            if (pieceData.issuer?.name?.toLowerCase().includes('suiza') || 
-                pieceData.issuer?.name?.toLowerCase().includes('switzerland') ||
-                pieceData.issuer?.code === 'switzerland') {
-                countryCode = 'CH';
+            // Si no se pudo mapear, usar código original de Numista
+            if (countryCode === 'XX' && pieceData.issuer?.code) {
+                countryCode = pieceData.issuer.code.toUpperCase();
             }
             
-            // Intentar mapear por nombre si el código es XX
-            if (countryCode === 'XX' && pieceData.issuer?.name) {
-                countryCode = this.mapCountryByName(pieceData.issuer.name);
-            }
-            
-            // Si sigue siendo XX, preguntar al usuario
-            if (countryCode === 'XX' && pieceData.issuer?.name) {
+            // Si el país no existe en la base local, preguntar al usuario
+            if (!window.COUNTRIES[countryCode] && pieceData.issuer?.name) {
                 const shouldAdd = await this.askToAddCountry(pieceData.issuer.name);
                 if (shouldAdd) {
-                    countryCode = this.generateCountryCode(pieceData.issuer.name);
                     window.COUNTRIES[countryCode] = {
                         name: pieceData.issuer.name,
                         flag: this.getCountryFlag(countryCode),
@@ -987,17 +980,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
-            // Si el país no existe, agregarlo automáticamente
+            // Si aún no existe, usar XX como fallback
             if (!window.COUNTRIES[countryCode]) {
-                const countryName = pieceData.issuer?.name || `País ${countryCode}`;
-                window.COUNTRIES[countryCode] = {
-                    name: countryName,
-                    flag: this.getCountryFlag(countryCode),
-                    continent: 'Desconocido'
-                };
-                newCountryAdded = `${countryCode}: ${countryName}`;
-                this.populateCountrySelect();
-                this.populateEditCountrySelect();
+                countryCode = 'XX';
             }
             
             const countryName = window.COUNTRIES[countryCode]?.name || pieceData.issuer?.name || 'Desconocido';
@@ -1579,12 +1564,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const resultsDiv = document.getElementById('numistaCollectionResults');
         resultsDiv.innerHTML = '<p>Analizando países faltantes en tu colección...</p>';
         
-        const missingCountries = new Set();
+        const missingCountries = new Map();
         
-        // Revisar items con código XX
+        // Revisar items con código XX y extraer países
         this.items.forEach(item => {
             if (item.countryCode === 'XX' && item.country && item.country !== 'Desconocido') {
-                missingCountries.add(item.country);
+                // Generar código basado en el nombre del país
+                const code = this.generateCountryCode(item.country);
+                missingCountries.set(code, item.country);
             }
         });
         
@@ -1601,10 +1588,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         let added = 0;
         const addedCountries = [];
         
-        for (const countryName of missingCountries) {
+        for (const [code, countryName] of missingCountries) {
             const shouldAdd = await this.askToAddCountry(countryName);
             if (shouldAdd) {
-                const code = this.generateCountryCode(countryName);
                 window.COUNTRIES[code] = {
                     name: countryName,
                     flag: this.getCountryFlag(code),
