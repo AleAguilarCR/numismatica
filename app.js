@@ -955,6 +955,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             
             let countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
+            let newCountryAdded = null;
             
             // Mapeo especial para Suiza
             if (pieceData.issuer?.name?.toLowerCase().includes('suiza') || 
@@ -963,13 +964,20 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 countryCode = 'CH';
             }
             
+            // Intentar mapear por nombre si el código es XX
+            if (countryCode === 'XX' && pieceData.issuer?.name) {
+                countryCode = this.mapCountryByName(pieceData.issuer.name);
+            }
+            
             // Si el país no existe, agregarlo automáticamente
             if (!window.COUNTRIES[countryCode] && countryCode !== 'XX') {
+                const countryName = pieceData.issuer?.name || `País ${countryCode}`;
                 window.COUNTRIES[countryCode] = {
-                    name: pieceData.issuer?.name || `País ${countryCode}`,
+                    name: countryName,
                     flag: this.getCountryFlag(countryCode),
                     continent: 'Desconocido'
                 };
+                newCountryAdded = `${countryCode}: ${countryName}`;
                 this.populateCountrySelect();
                 this.populateEditCountrySelect();
             }
@@ -1033,7 +1041,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            return { success: true, action: existingItem ? 'replaced' : 'added' };
+            return { 
+                success: true, 
+                action: existingItem ? 'replaced' : 'added',
+                newCountry: newCountryAdded
+            };
             
         } catch (error) {
             console.error('Error importing item:', error);
@@ -1103,6 +1115,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         let replaced = 0;
         let ignored = 0;
         let errors = 0;
+        let newCountries = 0;
+        const ignoredItems = [];
+        const addedCountries = [];
         
         const progressDiv = document.getElementById('numistaCollectionResults');
         
@@ -1118,7 +1133,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     </div>
                     <p><strong>${i + 1}</strong> de <strong>${this.numistaItems.length}</strong> items (${progress}%)</p>
                     <div style="font-size: 0.9em; color: #666;">
-                        ✅ Importados: ${imported} | 🔄 Reemplazados: ${replaced} | ⏭️ Ignorados: ${ignored} | ❌ Errores: ${errors}
+                        ✅ Importados: ${imported} | 🔄 Reemplazados: ${replaced} | ⏭️ Ignorados: ${ignored} | ❌ Errores: ${errors}<br>
+                        🌍 Nuevos países: ${newCountries}
                     </div>
                     <p style="font-size: 0.8em; margin-top: 1rem;">Procesando: ${item.type?.title || 'Item desconocido'}</p>
                 </div>
@@ -1133,7 +1149,15 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (result.success) {
                 if (result.action === 'added') imported++;
                 else if (result.action === 'replaced') replaced++;
-                else if (result.action === 'ignored') ignored++;
+                else if (result.action === 'ignored') {
+                    ignored++;
+                    ignoredItems.push(item.type?.title || 'Item desconocido');
+                }
+                
+                if (result.newCountry) {
+                    newCountries++;
+                    addedCountries.push(result.newCountry);
+                }
             } else {
                 if (result.action === 'cancelled') break;
                 errors++;
@@ -1144,7 +1168,39 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         await this.loadData();
         this.renderMainScreen();
         
-        alert(`Importación completada:\n- Importados: ${imported}\n- Reemplazados: ${replaced}\n- Ignorados: ${ignored}\n- Errores: ${errors}`);
+        // Mostrar reporte detallado
+        progressDiv.innerHTML = `
+            <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                <h3>✅ Importación Completada</h3>
+                
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                    <h4>Resumen</h4>
+                    <div>✅ <strong>Importados:</strong> ${imported}</div>
+                    <div>🔄 <strong>Reemplazados:</strong> ${replaced}</div>
+                    <div>⏭️ <strong>Ignorados:</strong> ${ignored}</div>
+                    <div>❌ <strong>Errores:</strong> ${errors}</div>
+                    <div>🌍 <strong>Nuevos países:</strong> ${newCountries}</div>
+                </div>
+                
+                ${addedCountries.length > 0 ? `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f0f8ff; border-radius: 4px;">
+                        <h4>🌍 Países agregados (${addedCountries.length})</h4>
+                        <div style="max-height: 100px; overflow-y: auto; font-size: 0.9em;">
+                            ${addedCountries.map(country => `<div>• ${country}</div>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${ignoredItems.length > 0 ? `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                        <h4>⏭️ Items ignorados (${ignoredItems.length})</h4>
+                        <div style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                            ${ignoredItems.map(title => `<div>• ${title}</div>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
         
         this.duplicateAction = null;
     }
@@ -1370,6 +1426,53 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'YE': '🇾🇪', 'YT': '🇾🇹', 'ZA': '🇿🇦', 'ZM': '🇿🇲', 'ZW': '🇿🇼'
         };
         return flags[countryCode] || '🏴';
+    }
+    
+    mapCountryByName(issuerName) {
+        if (!issuerName) return 'XX';
+        
+        const name = issuerName.toLowerCase();
+        const nameMapping = {
+            'estados unidos': 'US', 'united states': 'US', 'usa': 'US',
+            'reino unido': 'GB', 'united kingdom': 'GB', 'gran bretaña': 'GB',
+            'alemania': 'DE', 'germany': 'DE', 'deutschland': 'DE',
+            'francia': 'FR', 'france': 'FR',
+            'españa': 'ES', 'spain': 'ES',
+            'italia': 'IT', 'italy': 'IT',
+            'suiza': 'CH', 'switzerland': 'CH',
+            'austria': 'AT',
+            'bélgica': 'BE', 'belgium': 'BE',
+            'países bajos': 'NL', 'netherlands': 'NL', 'holanda': 'NL',
+            'portugal': 'PT',
+            'grecia': 'GR', 'greece': 'GR',
+            'turquía': 'TR', 'turkey': 'TR',
+            'rusia': 'RU', 'russia': 'RU',
+            'china': 'CN',
+            'japón': 'JP', 'japan': 'JP',
+            'corea del sur': 'KR', 'south korea': 'KR',
+            'india': 'IN',
+            'australia': 'AU',
+            'canadá': 'CA', 'canada': 'CA',
+            'méxico': 'MX', 'mexico': 'MX',
+            'brasil': 'BR', 'brazil': 'BR',
+            'argentina': 'AR',
+            'chile': 'CL',
+            'colombia': 'CO',
+            'perú': 'PE', 'peru': 'PE',
+            'venezuela': 'VE',
+            'ecuador': 'EC',
+            'bolivia': 'BO',
+            'uruguay': 'UY',
+            'paraguay': 'PY'
+        };
+        
+        for (const [countryName, code] of Object.entries(nameMapping)) {
+            if (name.includes(countryName)) {
+                return code;
+            }
+        }
+        
+        return 'XX';
     }
     
     fixExistingXXItems(issuerName, correctCode) {
