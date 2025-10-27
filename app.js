@@ -78,8 +78,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             // Formulario editar
             document.getElementById('editForm')?.addEventListener('submit', (e) => this.handleEditItem(e));
-            document.getElementById('editPhotoPreviewFront')?.addEventListener('click', () => this.selectPhoto('front', 'edit'));
-            document.getElementById('editPhotoPreviewBack')?.addEventListener('click', () => this.selectPhoto('back', 'edit'));
             document.getElementById('editPhotoInputFront')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'front', 'edit'));
             document.getElementById('editPhotoInputBack')?.addEventListener('change', (e) => this.handlePhotoSelect(e, 'back', 'edit'));
             document.getElementById('deleteItemBtn')?.addEventListener('click', () => this.deleteItem());
@@ -480,34 +478,38 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const frontPreview = document.getElementById('editPhotoPreviewFront');
         const backPreview = document.getElementById('editPhotoPreviewBack');
         
+        // Limpiar eventos anteriores
+        frontPreview.replaceWith(frontPreview.cloneNode(true));
+        backPreview.replaceWith(backPreview.cloneNode(true));
+        
+        // Obtener referencias nuevas después del clonado
+        const newFrontPreview = document.getElementById('editPhotoPreviewFront');
+        const newBackPreview = document.getElementById('editPhotoPreviewBack');
+        
         if (item.photoFront) {
-            frontPreview.innerHTML = `<img src="${item.photoFront}" alt="Anverso" style="cursor: pointer;">`;
-            frontPreview.dataset.photo = item.photoFront;
-            frontPreview.onclick = null;
-            frontPreview.addEventListener('click', (e) => {
+            newFrontPreview.innerHTML = `<img src="${item.photoFront}" alt="Anverso" style="cursor: pointer;">`;
+            newFrontPreview.dataset.photo = item.photoFront;
+            newFrontPreview.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 this.showImageZoom(item.id, 'front');
             });
         } else {
-            frontPreview.innerHTML = '<span>📷 Foto Anverso</span>';
-            frontPreview.onclick = null;
-            frontPreview.addEventListener('click', () => this.selectPhoto('front', 'edit'));
+            newFrontPreview.innerHTML = '<span>📷 Foto Anverso</span>';
+            newFrontPreview.addEventListener('click', () => this.selectPhoto('front', 'edit'));
         }
         
         if (item.photoBack) {
-            backPreview.innerHTML = `<img src="${item.photoBack}" alt="Reverso" style="cursor: pointer;">`;
-            backPreview.dataset.photo = item.photoBack;
-            backPreview.onclick = null;
-            backPreview.addEventListener('click', (e) => {
+            newBackPreview.innerHTML = `<img src="${item.photoBack}" alt="Reverso" style="cursor: pointer;">`;
+            newBackPreview.dataset.photo = item.photoBack;
+            newBackPreview.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 this.showImageZoom(item.id, 'back');
             });
         } else {
-            backPreview.innerHTML = '<span>📷 Foto Reverso</span>';
-            backPreview.onclick = null;
-            backPreview.addEventListener('click', () => this.selectPhoto('back', 'edit'));
+            newBackPreview.innerHTML = '<span>📷 Foto Reverso</span>';
+            newBackPreview.addEventListener('click', () => this.selectPhoto('back', 'edit'));
         }
         
         this.showScreen('edit');
