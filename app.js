@@ -35,6 +35,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', () => this.fetchNumistaCollection());
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
+            document.getElementById('listCountriesBtn')?.addEventListener('click', () => this.listCountries());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -1534,12 +1535,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             modal.innerHTML = `
                 <div style="background:white;padding:2rem;border-radius:8px;max-width:400px;width:90%;">
-                    <h3 style="margin:0 0 1rem 0;">País No Encontrado</h3>
-                    <p>El país "<strong>${countryName}</strong>" no existe en la base de datos.</p>
-                    <p>¿Deseas agregarlo?</p>
+                    <h3 style="margin:0 0 1rem 0;">País no encontrado en base de datos local</h3>
+                    <p>"<strong>${countryName}</strong>"</p>
                     <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                        <button id="addCountryYes" class="btn btn-primary" style="flex:1;">Sí, Agregar</button>
-                        <button id="addCountryNo" class="btn btn-secondary" style="flex:1;">No</button>
+                        <button id="addCountryYes" class="btn btn-primary" style="flex:1;">Agregar</button>
+                        <button id="addCountryNo" class="btn btn-secondary" style="flex:1;">Ignorar</button>
                     </div>
                 </div>
             `;
@@ -1556,6 +1556,23 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 resolve(false);
             });
         });
+    }
+    
+    listCountries() {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        const countries = Object.entries(window.COUNTRIES)
+            .sort(([,a], [,b]) => a.name.localeCompare(b.name, 'es'))
+            .map(([code, country]) => `<div style="padding: 0.25rem 0;"><strong>${code}:</strong> ${country.name} ${country.flag}</div>`)
+            .join('');
+        
+        resultsDiv.innerHTML = `
+            <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                <h3>📜 Lista de Países (${Object.keys(window.COUNTRIES).length})</h3>
+                <div style="font-size: 0.9em; line-height: 1.4;">
+                    ${countries}
+                </div>
+            </div>
+        `;
     }
     
     async addMissingCountriesFromCollection() {
