@@ -58,8 +58,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             setTimeout(() => {
                 const backBtn = document.getElementById('backFromImageZoom');
                 const changeBtn = document.getElementById('changeImageBtn');
-                const deleteBtn = document.getElementById('deleteImageBtn');
-                const showControlsBtn = document.getElementById('showControlsBtn');
                 
                 if (backBtn) backBtn.addEventListener('click', () => {
                     if (this.currentZoomItem && this.currentZoomItem.item) {
@@ -69,8 +67,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     }
                 });
                 if (changeBtn) changeBtn.addEventListener('click', () => this.changeCurrentImage());
-                if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteCurrentImage());
-                if (showControlsBtn) showControlsBtn.addEventListener('click', () => this.toggleZoomControls());
             }, 100);
 
             // Formulario agregar
@@ -700,32 +696,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         document.getElementById('zoomImage').src = imageUrl;
         document.getElementById('imageZoomTitle').textContent = `${title} - ${item.denomination}`;
         
-        // Ocultar controles inicialmente
-        const zoomControls = document.getElementById('zoomControls');
-        const showControlsBtn = document.getElementById('showControlsBtn');
-        if (zoomControls) zoomControls.style.display = 'none';
-        if (showControlsBtn) {
-            showControlsBtn.style.display = 'block';
-            showControlsBtn.textContent = '⚙️ Opciones';
-        }
-        
         this.showScreen('imageZoom');
     }
     
-    toggleZoomControls() {
-        const zoomControls = document.getElementById('zoomControls');
-        const showControlsBtn = document.getElementById('showControlsBtn');
-        
-        if (zoomControls && showControlsBtn) {
-            if (zoomControls.style.display === 'none') {
-                zoomControls.style.display = 'block';
-                showControlsBtn.textContent = '❌ Ocultar';
-            } else {
-                zoomControls.style.display = 'none';
-                showControlsBtn.textContent = '⚙️ Opciones';
-            }
-        }
-    }
+
     
     changeCurrentImage() {
         if (!this.currentZoomItem) return;
@@ -735,7 +709,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         modal.innerHTML = `
             <div style="background:white;padding:2rem;border-radius:8px;max-width:300px;width:90%;">
-                <h3 style="margin:0 0 1.5rem 0;text-align:center;">Cambiar Imagen</h3>
+                <h3 style="margin:0 0 1.5rem 0;text-align:center;">Actualizar Imagen</h3>
                 <button class="btn btn-primary btn-full" id="uploadImageBtn" style="margin-bottom:1rem;">📁 Subir Imagen</button>
                 <button class="btn btn-secondary btn-full" id="numistaImageBtn" style="margin-bottom:1rem;">🌐 Desde Numista</button>
                 <button class="btn btn-secondary btn-full" id="cancelChangeBtn">Cancelar</button>
