@@ -51,6 +51,23 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 this.currentContinentsFilter = e.target.value;
                 this.showContinents();
             });
+            // Mapa mundial - configurar después de que el DOM esté listo
+            setTimeout(() => {
+                const mapBtn = document.getElementById('showMapBtn');
+                const backMapBtn = document.getElementById('backFromWorldMap');
+                
+                console.log('Configurando botón del mapa:', mapBtn ? 'encontrado' : 'no encontrado');
+                
+                if (mapBtn) {
+                    mapBtn.addEventListener('click', () => {
+                        console.log('Botón del mapa clickeado');
+                        this.showWorldMap();
+                    });
+                }
+                if (backMapBtn) {
+                    backMapBtn.addEventListener('click', () => this.showScreen('continents'));
+                }
+            }, 100);
             
             // Editor de fotos
             document.getElementById('cropBtn')?.addEventListener('click', () => this.cropPhoto());
@@ -307,6 +324,93 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
 
         this.showScreen('continents');
+        
+        // Configurar event listener del botón del mapa después de renderizar
+        setTimeout(() => {
+            const mapBtn = document.getElementById('showMapBtn');
+            if (mapBtn && !mapBtn.hasAttribute('data-listener-added')) {
+                console.log('Agregando event listener al botón del mapa');
+                mapBtn.addEventListener('click', () => {
+                    console.log('Botón del mapa clickeado desde continentes');
+                    this.showWorldMap();
+                });
+                mapBtn.setAttribute('data-listener-added', 'true');
+            }
+        }, 50);
+    }
+
+    showWorldMap() {
+        console.log('showWorldMap llamado');
+        this.renderWorldMap();
+        this.showScreen('worldMap');
+    }
+
+    renderWorldMap() {
+        const svg = document.getElementById('worldMapSvg');
+        if (!svg) return;
+
+        // Analizar países por tipo
+        const countryTypes = {};
+        this.items.forEach(item => {
+            if (!countryTypes[item.countryCode]) {
+                countryTypes[item.countryCode] = { moneda: false, billete: false };
+            }
+            countryTypes[item.countryCode][item.type] = true;
+        });
+
+        // Mapa mundial SVG simplificado con países principales
+        const countries = {
+            'US': 'M 200 200 L 350 200 L 350 280 L 200 280 Z', // Estados Unidos
+            'CA': 'M 200 150 L 350 150 L 350 200 L 200 200 Z', // Canadá
+            'MX': 'M 200 280 L 300 280 L 300 320 L 200 320 Z', // México
+            'BR': 'M 400 350 L 500 350 L 500 450 L 400 450 Z', // Brasil
+            'AR': 'M 380 400 L 450 400 L 450 480 L 380 480 Z', // Argentina
+            'GB': 'M 500 180 L 520 180 L 520 200 L 500 200 Z', // Reino Unido
+            'FR': 'M 520 200 L 550 200 L 550 230 L 520 230 Z', // Francia
+            'DE': 'M 550 180 L 580 180 L 580 210 L 550 210 Z', // Alemania
+            'ES': 'M 500 230 L 540 230 L 540 260 L 500 260 Z', // España
+            'IT': 'M 550 230 L 570 230 L 570 280 L 550 280 Z', // Italia
+            'RU': 'M 580 120 L 750 120 L 750 220 L 580 220 Z', // Rusia
+            'CN': 'M 700 200 L 800 200 L 800 280 L 700 280 Z', // China
+            'JP': 'M 820 220 L 850 220 L 850 260 L 820 260 Z', // Japón
+            'IN': 'M 650 280 L 720 280 L 720 350 L 650 350 Z', // India
+            'AU': 'M 750 380 L 850 380 L 850 450 L 750 450 Z', // Australia
+            'ZA': 'M 550 400 L 600 400 L 600 450 L 550 450 Z', // Sudáfrica
+            'EG': 'M 550 300 L 580 300 L 580 330 L 550 330 Z', // Egipto
+            'CR': 'M 250 320 L 270 320 L 270 330 L 250 330 Z', // Costa Rica
+            'CH': 'M 540 200 L 550 200 L 550 210 L 540 210 Z', // Suiza
+        };
+
+        let svgContent = '';
+        
+        // Dibujar países
+        Object.entries(countries).forEach(([countryCode, path]) => {
+            let fillColor = '#f0f0f0'; // Color por defecto (sin datos)
+            
+            if (countryTypes[countryCode]) {
+                const hasMonedas = countryTypes[countryCode].moneda;
+                const hasBilletes = countryTypes[countryCode].billete;
+                
+                if (hasMonedas && hasBilletes) {
+                    fillColor = '#8844ff'; // Morado - ambos
+                } else if (hasMonedas) {
+                    fillColor = '#ff4444'; // Rojo - solo monedas
+                } else if (hasBilletes) {
+                    fillColor = '#4444ff'; // Azul - solo billetes
+                }
+            }
+            
+            const countryName = window.COUNTRIES[countryCode]?.name || countryCode;
+            const count = this.items.filter(item => item.countryCode === countryCode).length;
+            
+            svgContent += `<path d="${path}" fill="${fillColor}" stroke="#333" stroke-width="1" 
+                          style="cursor: pointer;" 
+                          onclick="app.showCountryItems('${countryCode}')">
+                          <title>${countryName} (${count} items)</title>
+                        </path>`;
+        });
+        
+        svg.innerHTML = svgContent;
     }
 
     populateCountrySelect() {
