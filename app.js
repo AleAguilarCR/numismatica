@@ -16,6 +16,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         await this.loadData();
         this.updateEditModeUI();
         this.renderMainScreen();
+        
+        // Configurar sincronización periódica
+        this.startPeriodicSync();
     }
 
     setupEventListeners() {
@@ -651,7 +654,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.showScreen('edit');
     }
 
-    handleEditItem(event) {
+    async handleEditItem(event) {
         event.preventDefault();
         
         if (!this.currentEditingItem) return;
@@ -680,11 +683,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             this.items[itemIndex] = updatedItem;
             localStorage.setItem('coinCollection', JSON.stringify(this.items));
             
-            fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedItem)
-            }).catch(() => {});
+            try {
+                await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${this.currentEditingItem.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedItem)
+                });
+                console.log('Item actualizado en API');
+            } catch (error) {
+                console.error('Error actualizando en API:', error);
+            }
         }
         
         const countryCode = this.currentCountryCode;
@@ -740,7 +748,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
     }
 
-    handleAddItem(event) {
+    async handleAddItem(event) {
         event.preventDefault();
         
         const photoPreviewFront = document.getElementById('photoPreviewFront');
@@ -764,11 +772,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         this.items.push(item);
         
-        fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-        }).catch(() => {});
+        try {
+            await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            console.log('Item guardado en API');
+        } catch (error) {
+            console.error('Error guardando en API:', error);
+        }
         
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
@@ -789,41 +802,35 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     async loadData() {
         console.log('Cargando datos...');
         
-        const saved = localStorage.getItem('coinCollection');
-        if (saved) {
-            try {
-                this.items = JSON.parse(saved);
-                console.log('Datos cargados desde localStorage:', this.items.length, 'items');
-            } catch (error) {
-                console.error('Error parsing localStorage:', error);
-                this.items = [];
-            }
-        }
-        
         try {
             const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
             const response = await fetch(`${API_URL}/coins`);
             if (response.ok) {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
-                
-                if (apiItems.length > 0 && (this.items.length === 0 || apiItems.length > this.items.length)) {
-                    this.items = apiItems;
-                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                    console.log('Usando datos del API');
-                } else {
-                    console.log('Manteniendo datos de localStorage');
-                }
+                this.items = apiItems;
+                localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                console.log('Datos sincronizados desde API');
+            } else {
+                throw new Error('API no disponible');
             }
         } catch (error) {
             console.log('API error, usando localStorage:', error.message);
+            const saved = localStorage.getItem('coinCollection');
+            if (saved) {
+                try {
+                    this.items = JSON.parse(saved);
+                    console.log('Datos cargados desde localStorage:', this.items.length, 'items');
+                } catch (parseError) {
+                    console.error('Error parsing localStorage:', parseError);
+                    this.items = [];
+                }
+            } else {
+                this.items = [];
+            }
         }
         
         console.log('Total items cargados:', this.items.length);
-        
-        if (this.currentScreen === 'main') {
-            this.renderMainScreen();
-        }
     }
 
     showImageZoom(itemId, side) {
@@ -2144,6 +2151,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         this.showScreen('add');
+    }
+    
+    startPeriodicSync() {
+        // Sincronizar cada 30 segundos
+        setInterval(async () => {
+            if (!this.editMode) { // Solo sincronizar en modo read-only
+                const currentLength = this.items.length;
+                await this.loadData();
+                if (this.items.length !== currentLength && this.currentScreen === 'main') {
+                    this.renderMainScreen();
+                }
+            }
+        }, 30000);
     }
     
     activateEditMode() {
