@@ -51,23 +51,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 this.currentContinentsFilter = e.target.value;
                 this.showContinents();
             });
-            // Mapa mundial - configurar después de que el DOM esté listo
-            setTimeout(() => {
-                const mapBtn = document.getElementById('showMapBtn');
-                const backMapBtn = document.getElementById('backFromWorldMap');
-                
-                console.log('Configurando botón del mapa:', mapBtn ? 'encontrado' : 'no encontrado');
-                
-                if (mapBtn) {
-                    mapBtn.addEventListener('click', () => {
-                        console.log('Botón del mapa clickeado');
-                        this.showWorldMap();
-                    });
+            // Mapa mundial - usar delegación de eventos
+            document.addEventListener('click', (e) => {
+                if (e.target && e.target.id === 'showMapBtn') {
+                    console.log('Botón del mapa clickeado via delegación');
+                    e.preventDefault();
+                    this.showWorldMap();
                 }
-                if (backMapBtn) {
-                    backMapBtn.addEventListener('click', () => this.showScreen('continents'));
+                if (e.target && e.target.id === 'backFromWorldMap') {
+                    e.preventDefault();
+                    this.showScreen('continents');
                 }
-            }, 100);
+            });
             
             // Editor de fotos
             document.getElementById('cropBtn')?.addEventListener('click', () => this.cropPhoto());
@@ -325,18 +320,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         this.showScreen('continents');
         
-        // Configurar event listener del botón del mapa después de renderizar
-        setTimeout(() => {
-            const mapBtn = document.getElementById('showMapBtn');
-            if (mapBtn && !mapBtn.hasAttribute('data-listener-added')) {
-                console.log('Agregando event listener al botón del mapa');
-                mapBtn.addEventListener('click', () => {
-                    console.log('Botón del mapa clickeado desde continentes');
-                    this.showWorldMap();
-                });
-                mapBtn.setAttribute('data-listener-added', 'true');
-            }
-        }, 50);
+
     }
 
     showWorldMap() {
