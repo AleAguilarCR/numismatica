@@ -286,7 +286,15 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const section = document.createElement('div');
             section.className = 'continent-section';
             
-            const countriesHtml = Array.from(continents[continentName])
+            // Ordenar países alfabéticamente dentro del continente
+            const sortedCountries = Array.from(continents[continentName])
+                .sort((a, b) => {
+                    const nameA = window.COUNTRIES[a]?.name || '';
+                    const nameB = window.COUNTRIES[b]?.name || '';
+                    return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+                });
+            
+            const countriesHtml = sortedCountries
                 .map(countryCode => {
                     const country = window.COUNTRIES[countryCode];
                     const count = filteredItems.filter(item => item.countryCode === countryCode).length;
@@ -320,7 +328,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         this.showScreen('continents');
         
-
+        // Posicionar al inicio de la página
+        window.scrollTo(0, 0);
     }
 
     showWorldMap() {
