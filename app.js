@@ -254,6 +254,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (editBtn) {
                 if (this.editMode) {
                     editBtn.addEventListener('click', () => this.editItem(item.id));
+                    editBtn.style.display = 'block';
                 } else {
                     editBtn.style.display = 'none';
                 }
@@ -2157,20 +2158,24 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     updateEditModeUI() {
-        const editButtons = ['addItemBtn', 'searchImageBtn', 'importNumistaBtn', 'activateEditBtn'];
+        const editOnlyButtons = ['addItemBtn', 'searchImageBtn', 'importNumistaBtn'];
+        const activateBtn = document.getElementById('activateEditBtn');
         const changeImageBtn = document.getElementById('changeImageBtn');
         
-        editButtons.forEach(btnId => {
+        // Ocultar solo botones de edición, mantener continentes visible
+        editOnlyButtons.forEach(btnId => {
             const btn = document.getElementById(btnId);
             if (btn) {
-                if (btnId === 'activateEditBtn') {
-                    btn.style.display = this.editMode ? 'none' : 'block';
-                } else {
-                    btn.style.display = this.editMode ? 'block' : 'none';
-                }
+                btn.style.display = this.editMode ? 'block' : 'none';
             }
         });
         
+        // Botón activar edición
+        if (activateBtn) {
+            activateBtn.style.display = this.editMode ? 'none' : 'block';
+        }
+        
+        // Botón cambiar imagen en zoom
         if (changeImageBtn) {
             changeImageBtn.style.display = this.editMode ? 'block' : 'none';
         }
