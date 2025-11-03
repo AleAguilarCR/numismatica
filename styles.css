@@ -470,8 +470,8 @@ body {
 .legend-color {
     width: 16px;
     height: 16px;
-    border-radius: 3px;
-    border: 1px solid #ccc;
+    border-radius: 50%;
+    border: 2px solid #333;
 }
 
 #worldMapSvg {
