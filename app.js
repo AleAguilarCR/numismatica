@@ -82,6 +82,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             setTimeout(() => {
                 const backBtn = document.getElementById('backFromImageZoom');
                 const changeBtn = document.getElementById('changeImageBtn');
+                const prevBtn = document.getElementById('prevImageBtn');
+                const nextBtn = document.getElementById('nextImageBtn');
                 
                 if (backBtn) backBtn.addEventListener('click', () => {
                     if (this.currentZoomItem && this.currentZoomItem.item) {
@@ -91,6 +93,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     }
                 });
                 if (changeBtn) changeBtn.addEventListener('click', () => this.changeCurrentImage());
+                if (prevBtn) prevBtn.addEventListener('click', () => this.switchZoomImage('prev'));
+                if (nextBtn) nextBtn.addEventListener('click', () => this.switchZoomImage('next'));
             }, 100);
 
             // Formulario agregar
@@ -234,7 +238,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     <p><strong>Año:</strong> ${item.year}</p>
                     <p><strong>Estado:</strong> ${item.condition}</p>
                     ${item.value ? `<p><strong>Valor:</strong> $${item.value}</p>` : ''}
-                    ${item.catalogLink ? `<p><strong>Catálogo:</strong> <a href="${item.catalogLink}" target="_blank" rel="noopener">Ver enlace</a></p>` : ''}
+                    ${item.catalogLink ? `<p><strong>Catálogo:</strong> <a href="${item.catalogLink}" target="_blank" rel="noopener">Ver enlace</a> <button class="btn-link" onclick="window.open('${item.catalogLink}', '_blank')">→</button></p>` : ''}
                 </div>
                 <button class="btn btn-secondary edit-btn">Editar</button>
             `;
@@ -825,7 +829,31 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         document.getElementById('zoomImage').src = imageUrl;
         document.getElementById('imageZoomTitle').textContent = `${title} - ${item.denomination}`;
         
+        // Mostrar/ocultar botones de navegación
+        const prevBtn = document.getElementById('prevImageBtn');
+        const nextBtn = document.getElementById('nextImageBtn');
+        const hasFront = item.photoFront;
+        const hasBack = item.photoBack;
+        
+        if (prevBtn && nextBtn) {
+            prevBtn.style.display = (hasFront && hasBack) ? 'block' : 'none';
+            nextBtn.style.display = (hasFront && hasBack) ? 'block' : 'none';
+        }
+        
         this.showScreen('imageZoom');
+    }
+    
+    switchZoomImage(direction) {
+        if (!this.currentZoomItem) return;
+        
+        const { item, side } = this.currentZoomItem;
+        const hasFront = item.photoFront;
+        const hasBack = item.photoBack;
+        
+        if (!hasFront || !hasBack) return;
+        
+        const newSide = side === 'front' ? 'back' : 'front';
+        this.showImageZoom(item.id, newSide);
     }
     
 

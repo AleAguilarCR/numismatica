@@ -143,7 +143,7 @@
                     <option value="moneda">Monedas</option>
                     <option value="billete">Billetes</option>
                 </select>
-                <button class="btn btn-secondary" id="showMapBtn" style="margin-left: 1rem;">🗺️ Mapa</button>
+                <button class="btn btn-secondary" id="showMapBtn" style="margin-left: 1rem;" onclick="app.showWorldMap()">🗺️ Mapa</button>
             </div>
             <div class="continents-list" id="continentsList"></div>
         </div>
@@ -218,7 +218,9 @@
             </header>
             <div class="image-zoom">
                 <div class="zoom-image-container">
+                    <button class="nav-btn nav-prev" id="prevImageBtn">←</button>
                     <img id="zoomImage" src="" alt="Imagen ampliada" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px;">
+                    <button class="nav-btn nav-next" id="nextImageBtn">→</button>
                 </div>
                 <div class="zoom-actions">
                     <button class="btn btn-primary btn-full" id="changeImageBtn">🔄 Actualizar Imagen</button>

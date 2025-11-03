@@ -377,16 +377,65 @@ body {
 }
 
 .zoom-image-container {
+    position: relative;
     text-align: center;
     background: #f9f9f9;
     border-radius: 8px;
     padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(33, 150, 243, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.2s;
+}
+
+.nav-btn:hover {
+    background: rgba(33, 150, 243, 1);
+}
+
+.nav-prev {
+    left: 10px;
+}
+
+.nav-next {
+    right: 10px;
 }
 
 .zoom-controls {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+/* Botón de enlace */
+.btn-link {
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+}
+
+.btn-link:hover {
+    background: #1976D2;
 }
 
 /* World Map */
@@ -461,5 +510,19 @@ body {
     
     .continent-countries {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    
+    .nav-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .nav-prev {
+        left: 5px;
+    }
+    
+    .nav-next {
+        right: 5px;
     }
 }
