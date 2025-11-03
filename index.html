@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Numismática v1.5 - Colección de Monedas y Billetes</title>
+    <title>Numismática v1.6 - Colección de Monedas y Billetes</title>
     <link rel="stylesheet" href="styles.css">
     <meta name="theme-color" content="#2196F3">
 </head>
 <body>
     <div class="app">
         <header class="header">
-            <h1 id="appTitle">🪙 Numismática v1.5</h1>
+            <h1 id="appTitle">🪙 Numismática v1.6</h1>
         </header>
 
         <main class="main-screen" id="mainScreen">
@@ -143,6 +143,7 @@
                     <option value="moneda">Monedas</option>
                     <option value="billete">Billetes</option>
                 </select>
+                <button class="btn btn-secondary" id="showMapBtn" style="margin-left: 1rem;">🗺️ Mapa</button>
             </div>
             <div class="continents-list" id="continentsList"></div>
         </div>
@@ -190,6 +191,23 @@
                 <button class="btn btn-secondary btn-full" id="importCountriesBtn" style="margin-top: 0.5rem;">🌍 Agregar Países Faltantes</button>
                 <button class="btn btn-secondary btn-full" id="listCountriesBtn" style="margin-top: 0.5rem;">📜 Listar Países</button>
                 <div class="numista-collection-results" id="numistaCollectionResults"></div>
+            </div>
+        </div>
+
+        <div class="screen hidden" id="worldMapScreen">
+            <header class="screen-header">
+                <button class="back-btn" id="backFromWorldMap">←</button>
+                <h2>Mapa Mundial</h2>
+            </header>
+            <div class="map-container">
+                <div class="map-legend">
+                    <div class="legend-item"><span class="legend-color" style="background: #ff4444;"></span> Solo Monedas</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #4444ff;"></span> Solo Billetes</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #8844ff;"></span> Ambos</div>
+                </div>
+                <svg id="worldMapSvg" viewBox="0 0 1000 500" style="width: 100%; height: 400px; border: 1px solid #ccc;">
+                    <!-- Mapa mundial SVG simplificado -->
+                </svg>
             </div>
         </div>
 
