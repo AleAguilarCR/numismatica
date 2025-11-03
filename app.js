@@ -5,6 +5,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.items = [];
         this.currentScreen = 'main';
         this.previousScreen = 'main';
+        this.editMode = false;
     }
 
     async init() {
@@ -13,6 +14,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.setupEventListeners();
         this.populateCountrySelect();
         await this.loadData();
+        this.updateEditModeUI();
         this.renderMainScreen();
     }
 
@@ -23,6 +25,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('searchImageBtn')?.addEventListener('click', () => this.searchByImage());
             document.getElementById('continentsBtn')?.addEventListener('click', () => this.showContinents());
             document.getElementById('importNumistaBtn')?.addEventListener('click', () => this.showScreen('numistaImport'));
+            document.getElementById('activateEditBtn')?.addEventListener('click', () => this.activateEditMode());
 
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
@@ -86,7 +89,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 const nextBtn = document.getElementById('nextImageBtn');
                 
                 if (backBtn) backBtn.addEventListener('click', () => {
-                    if (this.currentZoomItem && this.currentZoomItem.item) {
+                    if (this.currentZoomItem && this.currentZoomItem.item && this.editMode) {
                         this.editItem(this.currentZoomItem.item.id);
                     } else {
                         this.showScreen('country');
@@ -134,6 +137,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const mainScreen = document.getElementById('mainScreen');
             if (mainScreen) {
                 mainScreen.classList.remove('hidden');
+                this.updateEditModeUI();
                 this.renderMainScreen();
             }
         } else if (screenName === 'country') {
@@ -248,13 +252,17 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const itemPlaceholder = itemCard.querySelector('.item-photo-placeholder');
             
             if (editBtn) {
-                editBtn.addEventListener('click', () => this.editItem(item.id));
+                if (this.editMode) {
+                    editBtn.addEventListener('click', () => this.editItem(item.id));
+                } else {
+                    editBtn.style.display = 'none';
+                }
             }
             if (itemPhoto) {
-                itemPhoto.addEventListener('click', () => this.editItem(item.id));
+                itemPhoto.addEventListener('click', () => this.showImageZoom(item.id, 'front'));
             }
             if (itemPlaceholder) {
-                itemPlaceholder.addEventListener('click', () => this.editItem(item.id));
+                itemPlaceholder.addEventListener('click', () => this.editMode ? this.editItem(item.id) : null);
             }
             
             itemsList.appendChild(itemCard);
@@ -2135,5 +2143,36 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         this.showScreen('add');
+    }
+    
+    activateEditMode() {
+        const password = prompt('Ingrese la contraseña para activar el modo de edición:');
+        if (password === '098765') {
+            this.editMode = true;
+            this.updateEditModeUI();
+            alert('✅ Modo de edición activado');
+        } else if (password !== null) {
+            alert('❌ Contraseña incorrecta');
+        }
+    }
+    
+    updateEditModeUI() {
+        const editButtons = ['addItemBtn', 'searchImageBtn', 'importNumistaBtn', 'activateEditBtn'];
+        const changeImageBtn = document.getElementById('changeImageBtn');
+        
+        editButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                if (btnId === 'activateEditBtn') {
+                    btn.style.display = this.editMode ? 'none' : 'block';
+                } else {
+                    btn.style.display = this.editMode ? 'block' : 'none';
+                }
+            }
+        });
+        
+        if (changeImageBtn) {
+            changeImageBtn.style.display = this.editMode ? 'block' : 'none';
+        }
     }
 };
