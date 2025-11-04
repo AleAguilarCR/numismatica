@@ -366,6 +366,38 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         console.log('showWorldMap llamado');
         this.renderWorldMap();
         this.showScreen('worldMap');
+        this.setupMapDrag();
+    }
+    
+    setupMapDrag() {
+        const svg = document.getElementById('worldMapSvg');
+        const container = document.getElementById('mapContainer');
+        if (!svg || !container) return;
+        
+        let isDragging = false;
+        let startX, startY, currentX = 0, currentY = 0;
+        
+        svg.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - currentX;
+            startY = e.clientY - currentY;
+            svg.style.cursor = 'grabbing';
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            currentX = e.clientX - startX;
+            currentY = e.clientY - startY;
+            
+            const zoom = this.mapZoom || 1;
+            svg.style.transform = `scale(${zoom}) translate(${currentX/zoom}px, ${currentY/zoom}px)`;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            svg.style.cursor = 'grab';
+        });
     }
 
     renderWorldMap() {
@@ -383,8 +415,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (!countryTypes[item.countryCode]) {
                 countryTypes[item.countryCode] = { moneda: false, billete: false };
             }
-            countryTypes[item.countryCode][item.type] = true;
+            if (item.type === 'moneda') {
+                countryTypes[item.countryCode].moneda = true;
+            } else if (item.type === 'billete') {
+                countryTypes[item.countryCode].billete = true;
+            }
         });
+        
+        console.log('Tipos por país:', countryTypes);
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
@@ -417,36 +455,38 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             <path d="M450,300 L600,300 L600,450 L450,450 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
         `;
         
-        // Dibujar puntos por país
-        Object.entries(countryPositions).forEach(([countryCode, pos]) => {
-            if (countryTypes[countryCode]) {
-                const hasMonedas = countryTypes[countryCode].moneda;
-                const hasBilletes = countryTypes[countryCode].billete;
-                const countryName = window.COUNTRIES[countryCode]?.name || countryCode;
-                const count = this.items.filter(item => item.countryCode === countryCode).length;
-                
-                let fillColor, strokeColor;
-                if (hasMonedas && hasBilletes) {
-                    fillColor = '#8844ff'; // Morado - ambos
-                    strokeColor = '#6622cc';
-                } else if (hasMonedas) {
-                    fillColor = '#ff4444'; // Rojo - solo monedas
-                    strokeColor = '#cc2222';
-                } else if (hasBilletes) {
-                    fillColor = '#4444ff'; // Azul - solo billetes
-                    strokeColor = '#2222cc';
+        // Solo agregar puntos si hay items
+        if (Object.keys(countryTypes).length > 0) {
+            Object.entries(countryPositions).forEach(([countryCode, pos]) => {
+                if (countryTypes[countryCode]) {
+                    const hasMonedas = countryTypes[countryCode].moneda;
+                    const hasBilletes = countryTypes[countryCode].billete;
+                    const countryName = window.COUNTRIES[countryCode]?.name || countryCode;
+                    const count = this.items.filter(item => item.countryCode === countryCode).length;
+                    
+                    let fillColor, strokeColor;
+                    if (hasMonedas && hasBilletes) {
+                        fillColor = '#8844ff';
+                        strokeColor = '#6622cc';
+                    } else if (hasMonedas) {
+                        fillColor = '#ff4444';
+                        strokeColor = '#cc2222';
+                    } else if (hasBilletes) {
+                        fillColor = '#4444ff';
+                        strokeColor = '#2222cc';
+                    }
+                    
+                    svgContent += `
+                        <circle cx="${pos.cx}" cy="${pos.cy}" r="8" 
+                                fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
+                                style="cursor: pointer;" 
+                                onclick="app.showCountryItems('${countryCode}')">
+                            <title>${countryName}: ${count} items</title>
+                        </circle>
+                    `;
                 }
-                
-                svgContent += `
-                    <circle cx="${pos.cx}" cy="${pos.cy}" r="8" 
-                            fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
-                            style="cursor: pointer;" 
-                            onclick="app.showCountryItems('${countryCode}')">
-                        <title>${countryName}: ${count} items</title>
-                    </circle>
-                `;
-            }
-        });
+            });
+        }
         
         svg.innerHTML = svgContent;
         console.log('Mapa renderizado con', svgContent.length, 'caracteres de contenido');
@@ -2181,6 +2221,24 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         this.showScreen('add');
+    }
+    
+    zoomMap(factor) {
+        const svg = document.getElementById('worldMapSvg');
+        if (!svg) return;
+        
+        this.mapZoom = (this.mapZoom || 1) * factor;
+        this.mapZoom = Math.max(0.5, Math.min(4, this.mapZoom));
+        
+        svg.style.transform = `scale(${this.mapZoom})`;
+    }
+    
+    resetMapZoom() {
+        const svg = document.getElementById('worldMapSvg');
+        if (!svg) return;
+        
+        this.mapZoom = 1;
+        svg.style.transform = 'scale(1) translate(0px, 0px)';
     }
     
     startPeriodicSync() {
