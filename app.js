@@ -22,6 +22,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.updateEditModeUI();
         this.renderMainScreen();
         
+        // Debug: verificar que los items se cargaron
+        if (this.items.length > 0) {
+            console.log('Primer item:', this.items[0]);
+        }
+        
         // Configurar sincronización periódica
         this.startPeriodicSync();
     }
@@ -183,9 +188,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         if (filteredItems.length === 0) {
             const filterText = this.currentFilter === 'todo' ? '' : ` de ${this.currentFilter === 'moneda' ? 'monedas' : 'billetes'}`;
             if (this.items.length === 0) {
-                countriesGrid.innerHTML = `<div class="empty-state"><p>Cargando colección...</p><p>Por favor espera un momento</p></div>`;
+                countriesGrid.innerHTML = `<div class="empty-state"><p>¡Comienza tu colección!</p><p>Agrega tu primera moneda o billete</p></div>`;
             } else {
-                countriesGrid.innerHTML = `<div class="empty-state"><p>¡Comienza tu colección!</p><p>No hay items${filterText} para mostrar</p></div>`;
+                countriesGrid.innerHTML = `<div class="empty-state"><p>No hay items${filterText} para mostrar</p><p>Usa el filtro "Todo" para ver todos los items</p></div>`;
             }
             return;
         }
@@ -268,12 +273,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             const itemPlaceholder = itemCard.querySelector('.item-photo-placeholder');
             
             if (editBtn) {
-                if (this.editMode) {
-                    editBtn.addEventListener('click', () => this.editItem(item.id));
-                    editBtn.style.display = 'block';
-                } else {
-                    editBtn.style.display = 'none';
-                }
+                editBtn.addEventListener('click', () => this.editItem(item.id));
+                editBtn.style.display = this.editMode ? 'block' : 'none';
             }
             if (itemPhoto) {
                 itemPhoto.addEventListener('click', () => this.showImageZoom(item.id, 'front'));
@@ -387,9 +388,36 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        let svgContent = '';
+        // Coordenadas de países (cx, cy para círculos)
+        const countryPositions = {
+            'US': { cx: 200, cy: 200 }, 'CA': { cx: 180, cy: 150 }, 'MX': { cx: 180, cy: 250 },
+            'BR': { cx: 320, cy: 350 }, 'AR': { cx: 300, cy: 420 }, 'CL': { cx: 280, cy: 400 },
+            'CO': { cx: 260, cy: 300 }, 'PE': { cx: 270, cy: 350 }, 'VE': { cx: 290, cy: 280 },
+            'EC': { cx: 250, cy: 320 }, 'BO': { cx: 290, cy: 370 }, 'UY': { cx: 330, cy: 430 },
+            'PY': { cx: 310, cy: 390 }, 'CR': { cx: 200, cy: 280 }, 'PA': { cx: 220, cy: 290 },
+            'GT': { cx: 180, cy: 270 }, 'HN': { cx: 190, cy: 275 }, 'NI': { cx: 195, cy: 280 },
+            'SV': { cx: 185, cy: 275 }, 'CU': { cx: 220, cy: 240 }, 'DO': { cx: 250, cy: 245 },
+            'GB': { cx: 480, cy: 170 }, 'FR': { cx: 500, cy: 200 }, 'DE': { cx: 520, cy: 180 },
+            'ES': { cx: 480, cy: 220 }, 'IT': { cx: 520, cy: 220 }, 'PT': { cx: 460, cy: 220 },
+            'CH': { cx: 510, cy: 200 }, 'AT': { cx: 530, cy: 190 }, 'BE': { cx: 500, cy: 185 },
+            'NL': { cx: 505, cy: 175 }, 'PL': { cx: 540, cy: 170 }, 'RU': { cx: 650, cy: 150 },
+            'CN': { cx: 700, cy: 220 }, 'JP': { cx: 780, cy: 220 }, 'KR': { cx: 760, cy: 210 },
+            'IN': { cx: 650, cy: 250 }, 'AU': { cx: 750, cy: 400 }, 'NZ': { cx: 800, cy: 450 },
+            'ZA': { cx: 540, cy: 400 }, 'EG': { cx: 550, cy: 250 }, 'MA': { cx: 470, cy: 240 },
+            'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
+        };
+
+        // Mapa base simplificado
+        let svgContent = `
+            <!-- Continentes base -->
+            <path d="M150,150 L350,150 L350,300 L150,300 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+            <path d="M400,120 L600,120 L600,280 L400,280 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+            <path d="M600,200 L800,200 L800,350 L600,350 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+            <path d="M700,350 L850,350 L850,450 L700,450 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+            <path d="M450,300 L600,300 L600,450 L450,450 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+        `;
         
-        // Dibujar solo puntos por país
+        // Dibujar puntos por país
         Object.entries(countryPositions).forEach(([countryCode, pos]) => {
             if (countryTypes[countryCode]) {
                 const hasMonedas = countryTypes[countryCode].moneda;
@@ -2181,6 +2209,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const editOnlyButtons = ['addItemBtn', 'searchImageBtn', 'importNumistaBtn'];
         const activateBtn = document.getElementById('activateEditBtn');
         const changeImageBtn = document.getElementById('changeImageBtn');
+        const continentsBtn = document.getElementById('continentsBtn');
         
         // Ocultar solo botones de edición, mantener continentes visible
         editOnlyButtons.forEach(btnId => {
@@ -2189,6 +2218,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 btn.style.display = this.editMode ? 'block' : 'none';
             }
         });
+        
+        // Botón continentes siempre visible
+        if (continentsBtn) {
+            continentsBtn.style.display = 'block';
+        }
         
         // Botón activar edición
         if (activateBtn) {
