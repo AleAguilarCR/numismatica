@@ -13,7 +13,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.currentContinentsFilter = 'todo';
         this.setupEventListeners();
         this.populateCountrySelect();
+        
+        // Cargar datos primero
         await this.loadData();
+        console.log('Items cargados en init:', this.items.length);
+        
+        // Luego configurar UI
         this.updateEditModeUI();
         this.renderMainScreen();
         
@@ -141,7 +146,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (mainScreen) {
                 mainScreen.classList.remove('hidden');
                 this.updateEditModeUI();
-                this.renderMainScreen();
+                // Forzar renderizado después de un pequeño delay
+                setTimeout(() => this.renderMainScreen(), 100);
             }
         } else if (screenName === 'country') {
             const countryScreen = document.getElementById('countryScreen');
@@ -165,15 +171,22 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
         
         console.log('Renderizando pantalla principal con', this.items.length, 'items');
+        console.log('Modo edición:', this.editMode);
 
         // Filtrar items según el filtro seleccionado
         const filteredItems = this.currentFilter === 'todo' ? 
             this.items : 
             this.items.filter(item => item.type === this.currentFilter);
 
+        console.log('Items filtrados:', filteredItems.length);
+
         if (filteredItems.length === 0) {
             const filterText = this.currentFilter === 'todo' ? '' : ` de ${this.currentFilter === 'moneda' ? 'monedas' : 'billetes'}`;
-            countriesGrid.innerHTML = `<div class="empty-state"><p>¡Comienza tu colección!</p><p>No hay items${filterText} para mostrar</p></div>`;
+            if (this.items.length === 0) {
+                countriesGrid.innerHTML = `<div class="empty-state"><p>Cargando colección...</p><p>Por favor espera un momento</p></div>`;
+            } else {
+                countriesGrid.innerHTML = `<div class="empty-state"><p>¡Comienza tu colección!</p><p>No hay items${filterText} para mostrar</p></div>`;
+            }
             return;
         }
 
@@ -356,7 +369,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
     renderWorldMap() {
         const svg = document.getElementById('worldMapSvg');
-        if (!svg) return;
+        if (!svg) {
+            console.error('SVG del mapa no encontrado');
+            return;
+        }
+
+        console.log('Renderizando mapa con', this.items.length, 'items');
 
         // Analizar países por tipo
         const countryTypes = {};
@@ -366,6 +384,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             countryTypes[item.countryCode][item.type] = true;
         });
+        
+        console.log('Países en el mapa:', Object.keys(countryTypes));
 
         let svgContent = '';
         
@@ -401,6 +421,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
         
         svg.innerHTML = svgContent;
+        console.log('Mapa renderizado con', svgContent.length, 'caracteres de contenido');
     }
 
     populateCountrySelect() {
