@@ -850,16 +850,15 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
         this.items.push(item);
         
-        try {
-            await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            });
+        fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        }).then(() => {
             console.log('Item guardado en API');
-        } catch (error) {
+        }).catch(error => {
             console.error('Error guardando en API:', error);
-        }
+        });
         
         localStorage.setItem('coinCollection', JSON.stringify(this.items));
         
