@@ -1085,7 +1085,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
         
         try {
-            const response = await fetch('https://api.numista.com/v3/collection_items?user_id=529122&lang=es', {
+            const response = await fetch('https://api.numista.com/v2/collection_items?user_id=529122&lang=es', {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
