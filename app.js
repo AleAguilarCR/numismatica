@@ -43,7 +43,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromCountry')?.addEventListener('click', () => {
-                this.showScreen('main');
+                this.showScreen(this.previousScreen);
             });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromEdit')?.addEventListener('click', () => {
@@ -451,22 +451,10 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
         };
 
-        // Mapa mundial simplificado
+        // Mapa mundial con imagen de fondo
         let svgContent = `
-            <!-- Mapa base -->
-            <rect x="0" y="0" width="1000" height="500" fill="#e6f3ff" stroke="#ccc" stroke-width="1"/>
-            <!-- América del Norte -->
-            <path d="M50,80 L300,80 L320,200 L280,250 L200,280 L100,250 L50,180 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
-            <!-- América del Sur -->
-            <path d="M200,280 L280,250 L320,350 L300,450 L200,480 L150,400 L180,320 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
-            <!-- Europa -->
-            <path d="M400,80 L550,80 L580,180 L520,220 L450,200 L400,150 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
-            <!-- África -->
-            <path d="M450,200 L580,180 L600,350 L550,450 L450,420 L420,300 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
-            <!-- Asia -->
-            <path d="M580,80 L850,80 L900,200 L850,300 L700,350 L580,300 L550,180 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
-            <!-- Oceanía -->
-            <path d="M750,350 L900,350 L920,450 L800,480 L750,420 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
+            <image href="https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg" 
+                   x="0" y="0" width="1000" height="500" opacity="0.8"/>
         `;
         
         // Solo agregar puntos si hay items
