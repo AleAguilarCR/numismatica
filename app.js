@@ -1061,11 +1061,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 
-                fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.items[itemIndex])
-                }).catch(() => {});
+                try {
+                    await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins/${item.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.items[itemIndex])
+                    });
+                } catch (e) { console.log('Error PUT:', e); }
                 
                 this.editItem(item.id);
             }
@@ -1246,11 +1248,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     
                     if (!response.ok) {
                         // Si el PUT falla (404), crear como nuevo item
-                        await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item)
-                        }).catch(() => {});
+                        try {
+                            await fetch(`${window.API_URL || 'https://numismatica-7pat.onrender.com'}/coins`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(item)
+                            });
+                        } catch (e) { console.log('Error POST:', e); }
                     }
                 } catch (error) {
                     console.log('Error actualizando, creando nuevo:', error);
