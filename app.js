@@ -57,7 +57,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromImageSearch')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
             document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
-            document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', () => this.fetchNumistaCollection());
+            document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', async () => {
+                try {
+                    await this.fetchNumistaCollection();
+                } catch (error) {
+                    console.error('Error en fetchNumistaCollection:', error);
+                    alert('Error al obtener colección de Numista: ' + error.message);
+                }
+            });
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
             document.getElementById('listCountriesBtn')?.addEventListener('click', () => this.listCountries());
             
@@ -1075,69 +1082,26 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     async fetchNumistaCollection() {
-        const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
-        const clientId = '529122';
-        const userId = '529122';
         const resultsDiv = document.getElementById('numistaCollectionResults');
         
-        resultsDiv.innerHTML = '<p>Obteniendo token de acceso...</p>';
-        
-        try {
-            // Obtener token OAuth con client_id
-            const tokenResponse = await fetch(`https://api.numista.com/v3/oauth_token?grant_type=client_credentials&scope=view_collection&client_id=${clientId}&client_secret=${apiKey}`, {
-                headers: {
-                    'Numista-API-Key': apiKey,
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!tokenResponse.ok) {
-                throw new Error(`Error obteniendo token ${tokenResponse.status}: ${tokenResponse.statusText}`);
-            }
-            
-            const tokenData = await tokenResponse.json();
-            const accessToken = tokenData.access_token;
-            
-            resultsDiv.innerHTML = '<p>Obteniendo colección de Numista...</p>';
-            
-            // Obtener la colección usando el token
-            const response = await fetch(`https://api.numista.com/v3/users/${userId}/collected_items?lang=es`, {
-                headers: {
-                    'Numista-API-Key': apiKey,
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            this.displayNumistaCollection(data);
-            
-        } catch (error) {
-            console.error('Error fetching Numista collection:', error);
-            resultsDiv.innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <h3>📚 Importación desde Numista</h3>
-                    <p>No se pudo conectar con la colección de Numista automáticamente.</p>
-                    <p><small>Error: ${error.message}</small></p>
-                    <br>
-                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
-                        <h4>🚀 Importación Manual</h4>
-                        <p>Puedes importar items individuales fácilmente:</p>
-                        <ol style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.6;">
-                            <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #007bff;">Numista.com</a></li>
-                            <li>Busca tu moneda o billete</li>
-                            <li>Copia la URL de la página</li>
-                            <li>Usa "Incluir desde Numista" al agregar items</li>
-                        </ol>
-                    </div>
-                    <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item</button>
+        resultsDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <h3>📚 Importación desde Numista</h3>
+                <p>La importación automática no está disponible actualmente.</p>
+                <br>
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                    <h4>🚀 Importación Manual</h4>
+                    <p>Puedes importar items individuales fácilmente:</p>
+                    <ol style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.6;">
+                        <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #007bff;">Numista.com</a></li>
+                        <li>Busca tu moneda o billete</li>
+                        <li>Copia la URL de la página</li>
+                        <li>Usa "Incluir desde Numista" al agregar items</li>
+                    </ol>
                 </div>
-            `;
-        }
+                <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item</button>
+            </div>
+        `;
     }
     
     displayNumistaCollection(collectionData) {
@@ -1436,40 +1400,44 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     mapNumistaCountry(numistaCode, issuerName) {
-        if (!numistaCode) return 'XX';
+        if (!numistaCode && !issuerName) return 'XX';
         
         // Buscar por código directo (ISO)
-        const directCode = numistaCode.toUpperCase();
-        if (window.COUNTRIES[directCode]) {
-            return directCode;
+        if (numistaCode) {
+            const directCode = numistaCode.toUpperCase();
+            if (window.COUNTRIES[directCode]) {
+                return directCode;
+            }
+            
+            // Mapeo de códigos Numista a ISO
+            const mapping = {
+                'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
+                'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
+                'argentina': 'AR', 'brazil': 'BR', 'chile': 'CL', 'colombia': 'CO',
+                'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'bolivia': 'BO',
+                'uruguay': 'UY', 'paraguay': 'PY', 'panama': 'PA', 'guatemala': 'GT',
+                'honduras': 'HN', 'nicaragua': 'NI', 'el-salvador': 'SV', 'cuba': 'CU',
+                'dominican-republic': 'DO', 'italy': 'IT', 'portugal': 'PT',
+                'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH',
+                'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
+                'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
+                'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
+                'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
+            };
+            
+            const code = numistaCode.toLowerCase();
+            if (mapping[code]) return mapping[code];
         }
         
-        // Mapeo de códigos Numista a ISO
-        const mapping = {
-            'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
-            'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
-            'argentina': 'AR', 'brazil': 'BR', 'chile': 'CL', 'colombia': 'CO',
-            'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'bolivia': 'BO',
-            'uruguay': 'UY', 'paraguay': 'PY', 'panama': 'PA', 'guatemala': 'GT',
-            'honduras': 'HN', 'nicaragua': 'NI', 'el-salvador': 'SV', 'cuba': 'CU',
-            'dominican-republic': 'DO', 'italy': 'IT', 'portugal': 'PT',
-            'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH',
-            'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
-            'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
-            'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
-            'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
-        };
+        // Búsqueda por nombre
+        if (issuerName) {
+            const match = this.findBestCountryMatch(issuerName);
+            if (match.similarity >= 0.9) {
+                return match.code;
+            }
+        }
         
-        const code = numistaCode.toLowerCase();
-        return mapping[code] || 'XX';
-        
-        // Búsqueda por nombre deshabilitada
-        // if (issuerName) {
-        //     const match = this.findBestCountryMatch(issuerName);
-        //     if (match.similarity >= 0.7) {
-        //         return match.code;
-        //     }
-        // }
+        return 'XX';
     }
     
     async importCountriesFromNumista() {
