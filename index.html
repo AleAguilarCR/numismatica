@@ -32,7 +32,7 @@
                 <button class="btn btn-secondary" id="searchImageBtn">🔍 Buscar por Imagen</button>
                 <button class="btn btn-secondary" id="continentsBtn">🌍 Por Continentes</button>
                 <button class="btn btn-secondary" id="importNumistaBtn">📥 Importar de Numista</button>
-
+                <button class="btn btn-secondary" id="testBtn" onclick="alert('¡Botón funciona!')">🧪 Test</button>
             </section>
         </main>
 
@@ -144,7 +144,7 @@
                     <option value="moneda">Monedas</option>
                     <option value="billete">Billetes</option>
                 </select>
-                <button class="btn btn-secondary" id="showMapBtn" style="margin-left: 1rem;" onclick="app.showWorldMap()">🗺️ Mapa</button>
+                <button class="btn btn-secondary" id="showMapBtn" style="margin-left: 1rem;">🗺️ Mapa</button>
             </div>
             <div class="continents-list" id="continentsList"></div>
         </div>
@@ -315,8 +315,22 @@
     <script src="app.js"></script>
     <script>
         window.API_URL = 'https://numismatica-7pat.onrender.com';
-        const app = new window.CoinCollectionApp();
-        app.init();
+        
+        // Verificar que todo esté cargado
+        console.log('Verificando dependencias...');
+        console.log('COUNTRIES disponible:', typeof window.COUNTRIES !== 'undefined');
+        console.log('CoinCollectionApp disponible:', typeof window.CoinCollectionApp !== 'undefined');
+        
+        // Inicializar la aplicación
+        try {
+            const app = new window.CoinCollectionApp();
+            window.app = app; // Hacer la app global para debugging
+            app.init();
+            console.log('Aplicación inicializada correctamente');
+        } catch (error) {
+            console.error('Error inicializando la aplicación:', error);
+            alert('Error inicializando la aplicación. Revisa la consola del navegador.');
+        }
     </script>
 </body>
 </html>
