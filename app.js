@@ -5,7 +5,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.items = [];
         this.currentScreen = 'main';
         this.previousScreen = 'main';
-        this.editMode = false;
+        this.editMode = true;
     }
 
     async init() {
@@ -38,7 +38,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('searchImageBtn')?.addEventListener('click', () => this.searchByImage());
             document.getElementById('continentsBtn')?.addEventListener('click', () => this.showContinents());
             document.getElementById('importNumistaBtn')?.addEventListener('click', () => this.showScreen('numistaImport'));
-            document.getElementById('activateEditBtn')?.addEventListener('click', () => this.activateEditMode());
+
 
             // Botones de navegación
             document.getElementById('backFromAdd')?.addEventListener('click', () => this.showScreen('main'));
@@ -445,14 +445,18 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
         };
 
-        // Mapa base simplificado
+        // Mapa base con continentes
         let svgContent = `
-            <!-- Continentes base -->
-            <path d="M150,150 L350,150 L350,300 L150,300 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
-            <path d="M400,120 L600,120 L600,280 L400,280 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
-            <path d="M600,200 L800,200 L800,350 L600,350 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
-            <path d="M700,350 L850,350 L850,450 L700,450 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
-            <path d="M450,300 L600,300 L600,450 L450,450 Z" fill="#e8f4f8" stroke="#ccc" stroke-width="1" opacity="0.3"/>
+            <!-- América -->
+            <path d="M150,120 Q200,100 250,120 L280,180 Q300,220 280,280 L250,350 Q200,380 150,350 L120,280 Q100,220 120,180 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <!-- Europa -->
+            <path d="M450,120 Q500,100 550,120 L580,160 Q600,200 580,240 L550,280 Q500,300 450,280 L420,240 Q400,200 420,160 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <!-- Asia -->
+            <path d="M600,100 Q700,80 800,100 L850,150 Q880,200 850,250 L800,300 Q700,320 600,300 L550,250 Q520,200 550,150 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <!-- África -->
+            <path d="M450,280 Q500,260 550,280 L580,320 Q600,360 580,400 L550,440 Q500,460 450,440 L420,400 Q400,360 420,320 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <!-- Oceanía -->
+            <path d="M750,350 Q800,330 850,350 L880,390 Q900,430 880,470 L850,480 Q800,490 750,480 L720,470 Q700,430 720,390 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
         `;
         
         // Solo agregar puntos si hay items
@@ -1197,20 +1201,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 }
             }
             
-            // Intentar mapear por código primero
-            let countryCode = this.mapNumistaCountry(pieceData.issuer?.code);
+            // Mapear país usando código y nombre
+            let countryCode = this.mapNumistaCountry(pieceData.issuer?.code, pieceData.issuer?.name);
             let newCountryAdded = null;
-            
-            // Si no se pudo mapear por código, buscar por similitud de nombre
-            if (countryCode === 'XX' && pieceData.issuer?.name) {
-                const match = this.findBestCountryMatch(pieceData.issuer.name);
-                if (match.similarity >= 0.9) {
-                    countryCode = match.code;
-                } else {
-                    // Coincidencia menor al 90%, asignar a XX para corrección manual
-                    countryCode = 'XX';
-                }
-            }
             
             // Si aún no existe el país, usar XX
             if (!window.COUNTRIES[countryCode]) {
@@ -1231,7 +1224,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 country: countryName,
                 denomination: pieceData.value?.text || pieceData.title,
                 year: pieceData.min_year || new Date().getFullYear(),
-                condition: grade,
+                condition: this.mapNumistaGrade(grade),
                 value: null,
                 notes: `Importado de Numista: ${pieceData.title} (Numista ID: ${pieceId})`,
                 catalogLink: `https://en.numista.com/catalogue/pieces${pieceId}.html`,
@@ -1440,60 +1433,44 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.duplicateAction = null;
     }
     
-    mapNumistaCountry(numistaCode) {
-        if (!numistaCode) return 'XX';
+    mapNumistaCountry(numistaCode, issuerName) {
+        if (!numistaCode && !issuerName) return 'XX';
         
-        const mapping = {
-            'united-states': 'US',
-            'costa-rica': 'CR',
-            'mexico': 'MX',
-            'canada': 'CA',
-            'spain': 'ES',
-            'france': 'FR',
-            'germany': 'DE',
-            'united-kingdom': 'GB',
-            'argentina': 'AR',
-            'brazil': 'BR',
-            'chile': 'CL',
-            'colombia': 'CO',
-            'peru': 'PE',
-            'venezuela': 'VE',
-            'ecuador': 'EC',
-            'bolivia': 'BO',
-            'uruguay': 'UY',
-            'paraguay': 'PY',
-            'panama': 'PA',
-            'guatemala': 'GT',
-            'honduras': 'HN',
-            'nicaragua': 'NI',
-            'el-salvador': 'SV',
-            'cuba': 'CU',
-            'dominican-republic': 'DO',
-            'puerto-rico': 'PR',
-            'italy': 'IT',
-            'portugal': 'PT',
-            'netherlands': 'NL',
-            'belgium': 'BE',
-            'switzerland': 'CH',
-            'suiza': 'CH',
-            'austria': 'AT',
-            'poland': 'PL',
-            'russia': 'RU',
-            'china': 'CN',
-            'japan': 'JP',
-            'south-korea': 'KR',
-            'india': 'IN',
-            'australia': 'AU',
-            'new-zealand': 'NZ',
-            'south-africa': 'ZA',
-            'egypt': 'EG',
-            'morocco': 'MA',
-            'tunisia': 'TN',
-            'algeria': 'DZ'
-        };
+        // Primero buscar por código
+        if (numistaCode) {
+            const directCode = numistaCode.toUpperCase();
+            if (window.COUNTRIES[directCode]) {
+                return directCode;
+            }
+            
+            const mapping = {
+                'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
+                'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
+                'argentina': 'AR', 'brazil': 'BR', 'chile': 'CL', 'colombia': 'CO',
+                'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'bolivia': 'BO',
+                'uruguay': 'UY', 'paraguay': 'PY', 'panama': 'PA', 'guatemala': 'GT',
+                'honduras': 'HN', 'nicaragua': 'NI', 'el-salvador': 'SV', 'cuba': 'CU',
+                'dominican-republic': 'DO', 'italy': 'IT', 'portugal': 'PT',
+                'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH',
+                'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
+                'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
+                'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
+                'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
+            };
+            
+            const code = numistaCode.toLowerCase();
+            if (mapping[code]) return mapping[code];
+        }
         
-        const code = numistaCode.toLowerCase();
-        return mapping[code] || 'XX';
+        // Si no encuentra por código, buscar por nombre con mayor similitud
+        if (issuerName) {
+            const match = this.findBestCountryMatch(issuerName);
+            if (match.similarity >= 0.7) {
+                return match.code;
+            }
+        }
+        
+        return 'XX';
     }
     
     async importCountriesFromNumista() {
@@ -1619,6 +1596,20 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 </div>
             `;
         }
+    }
+    
+    mapNumistaGrade(numistaGrade) {
+        if (!numistaGrade) return 'F';
+        
+        const gradeMap = {
+            'poor': 'G', 'fair': 'G', 'good': 'G',
+            'very good': 'VG', 'fine': 'F', 'very fine': 'VF',
+            'extremely fine': 'XF', 'about uncirculated': 'AU',
+            'uncirculated': 'AU', 'mint state': 'AU'
+        };
+        
+        const grade = numistaGrade.toLowerCase();
+        return gradeMap[grade] || numistaGrade.toUpperCase() || 'F';
     }
     
     getCountryFlag(countryCode) {
@@ -2252,44 +2243,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }, 30000);
     }
     
-    activateEditMode() {
-        const password = prompt('Ingrese la contraseña para activar el modo de edición:');
-        if (password === '098765') {
-            this.editMode = true;
-            this.updateEditModeUI();
-            alert('✅ Modo de edición activado');
-        } else if (password !== null) {
-            alert('❌ Contraseña incorrecta');
-        }
-    }
+
     
     updateEditModeUI() {
-        const editOnlyButtons = ['addItemBtn', 'searchImageBtn', 'importNumistaBtn'];
-        const activateBtn = document.getElementById('activateEditBtn');
-        const changeImageBtn = document.getElementById('changeImageBtn');
-        const continentsBtn = document.getElementById('continentsBtn');
-        
-        // Ocultar solo botones de edición, mantener continentes visible
-        editOnlyButtons.forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                btn.style.display = this.editMode ? 'block' : 'none';
-            }
-        });
-        
-        // Botón continentes siempre visible
-        if (continentsBtn) {
-            continentsBtn.style.display = 'block';
-        }
-        
-        // Botón activar edición
-        if (activateBtn) {
-            activateBtn.style.display = this.editMode ? 'none' : 'block';
-        }
-        
-        // Botón cambiar imagen en zoom
-        if (changeImageBtn) {
-            changeImageBtn.style.display = this.editMode ? 'block' : 'none';
-        }
+        // Todos los botones siempre visibles
     }
 };
