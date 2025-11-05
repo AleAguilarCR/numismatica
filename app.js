@@ -57,14 +57,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('backFromImageSearch')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
             document.getElementById('backFromNumistaImport')?.addEventListener('click', () => this.showScreen('main'));
-            document.getElementById('fetchNumistaCollectionBtn')?.addEventListener('click', async () => {
-                try {
-                    await this.fetchNumistaCollection();
-                } catch (error) {
-                    console.error('Error en fetchNumistaCollection:', error);
-                    alert('Error al obtener colección de Numista: ' + error.message);
-                }
-            });
+            const fetchBtn = document.getElementById('fetchNumistaCollectionBtn');
+            if (fetchBtn) {
+                fetchBtn.addEventListener('click', () => {
+                    console.log('Botón Numista clickeado');
+                    this.fetchNumistaCollection();
+                });
+            }
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
             document.getElementById('listCountriesBtn')?.addEventListener('click', () => this.listCountries());
             
@@ -1081,7 +1080,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
     }
     
-    async fetchNumistaCollection() {
+    fetchNumistaCollection() {
+        console.log('fetchNumistaCollection ejecutado');
         const resultsDiv = document.getElementById('numistaCollectionResults');
         
         resultsDiv.innerHTML = `
