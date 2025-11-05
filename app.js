@@ -46,7 +46,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 this.showScreen('main');
             });
             document.getElementById('backFromContinents')?.addEventListener('click', () => this.showScreen('main'));
-            document.getElementById('backFromEdit')?.addEventListener('click', () => this.showScreen('country'));
+            document.getElementById('backFromEdit')?.addEventListener('click', () => {
+                if (this.previousScreen === 'continents') {
+                    this.showScreen('continents');
+                } else {
+                    this.showScreen('country');
+                }
+            });
             document.getElementById('backFromPhotoEditor')?.addEventListener('click', () => this.showScreen(this.previousScreen));
             document.getElementById('backFromImageSearch')?.addEventListener('click', () => this.showScreen('main'));
             document.getElementById('backFromNumista')?.addEventListener('click', () => this.showScreen('add'));
@@ -445,18 +451,22 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
         };
 
-        // Mapa base con continentes
+        // Mapa mundial simplificado
         let svgContent = `
-            <!-- América -->
-            <path d="M150,120 Q200,100 250,120 L280,180 Q300,220 280,280 L250,350 Q200,380 150,350 L120,280 Q100,220 120,180 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <!-- Mapa base -->
+            <rect x="0" y="0" width="1000" height="500" fill="#e6f3ff" stroke="#ccc" stroke-width="1"/>
+            <!-- América del Norte -->
+            <path d="M50,80 L300,80 L320,200 L280,250 L200,280 L100,250 L50,180 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
+            <!-- América del Sur -->
+            <path d="M200,280 L280,250 L320,350 L300,450 L200,480 L150,400 L180,320 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
             <!-- Europa -->
-            <path d="M450,120 Q500,100 550,120 L580,160 Q600,200 580,240 L550,280 Q500,300 450,280 L420,240 Q400,200 420,160 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
-            <!-- Asia -->
-            <path d="M600,100 Q700,80 800,100 L850,150 Q880,200 850,250 L800,300 Q700,320 600,300 L550,250 Q520,200 550,150 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <path d="M400,80 L550,80 L580,180 L520,220 L450,200 L400,150 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
             <!-- África -->
-            <path d="M450,280 Q500,260 550,280 L580,320 Q600,360 580,400 L550,440 Q500,460 450,440 L420,400 Q400,360 420,320 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <path d="M450,200 L580,180 L600,350 L550,450 L450,420 L420,300 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
+            <!-- Asia -->
+            <path d="M580,80 L850,80 L900,200 L850,300 L700,350 L580,300 L550,180 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
             <!-- Oceanía -->
-            <path d="M750,350 Q800,330 850,350 L880,390 Q900,430 880,470 L850,480 Q800,490 750,480 L720,470 Q700,430 720,390 Z" fill="#e8f4f8" stroke="#999" stroke-width="2" opacity="0.6"/>
+            <path d="M750,350 L900,350 L920,450 L800,480 L750,420 Z" fill="#d4e6f1" stroke="#2c3e50" stroke-width="2"/>
         `;
         
         // Solo agregar puntos si hay items
@@ -1434,43 +1444,40 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     mapNumistaCountry(numistaCode, issuerName) {
-        if (!numistaCode && !issuerName) return 'XX';
+        if (!numistaCode) return 'XX';
         
-        // Primero buscar por código
-        if (numistaCode) {
-            const directCode = numistaCode.toUpperCase();
-            if (window.COUNTRIES[directCode]) {
-                return directCode;
-            }
-            
-            const mapping = {
-                'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
-                'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
-                'argentina': 'AR', 'brazil': 'BR', 'chile': 'CL', 'colombia': 'CO',
-                'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'bolivia': 'BO',
-                'uruguay': 'UY', 'paraguay': 'PY', 'panama': 'PA', 'guatemala': 'GT',
-                'honduras': 'HN', 'nicaragua': 'NI', 'el-salvador': 'SV', 'cuba': 'CU',
-                'dominican-republic': 'DO', 'italy': 'IT', 'portugal': 'PT',
-                'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH',
-                'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
-                'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
-                'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
-                'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
-            };
-            
-            const code = numistaCode.toLowerCase();
-            if (mapping[code]) return mapping[code];
+        // Buscar por código directo (ISO)
+        const directCode = numistaCode.toUpperCase();
+        if (window.COUNTRIES[directCode]) {
+            return directCode;
         }
         
-        // Si no encuentra por código, buscar por nombre con mayor similitud
-        if (issuerName) {
-            const match = this.findBestCountryMatch(issuerName);
-            if (match.similarity >= 0.7) {
-                return match.code;
-            }
-        }
+        // Mapeo de códigos Numista a ISO
+        const mapping = {
+            'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
+            'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
+            'argentina': 'AR', 'brazil': 'BR', 'chile': 'CL', 'colombia': 'CO',
+            'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'bolivia': 'BO',
+            'uruguay': 'UY', 'paraguay': 'PY', 'panama': 'PA', 'guatemala': 'GT',
+            'honduras': 'HN', 'nicaragua': 'NI', 'el-salvador': 'SV', 'cuba': 'CU',
+            'dominican-republic': 'DO', 'italy': 'IT', 'portugal': 'PT',
+            'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH',
+            'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
+            'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
+            'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
+            'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
+        };
         
-        return 'XX';
+        const code = numistaCode.toLowerCase();
+        return mapping[code] || 'XX';
+        
+        // Búsqueda por nombre deshabilitada
+        // if (issuerName) {
+        //     const match = this.findBestCountryMatch(issuerName);
+        //     if (match.similarity >= 0.7) {
+        //         return match.code;
+        //     }
+        // }
     }
     
     async importCountriesFromNumista() {
@@ -1601,15 +1608,23 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     mapNumistaGrade(numistaGrade) {
         if (!numistaGrade) return 'F';
         
-        const gradeMap = {
-            'poor': 'G', 'fair': 'G', 'good': 'G',
-            'very good': 'VG', 'fine': 'F', 'very fine': 'VF',
-            'extremely fine': 'XF', 'about uncirculated': 'AU',
-            'uncirculated': 'AU', 'mint state': 'AU'
+        // Mapeo directo de códigos Numista
+        const directMap = {
+            'G': 'G', 'VG': 'VG', 'F': 'F', 'VF': 'VF', 'XF': 'XF', 'AU': 'AU'
         };
         
-        const grade = numistaGrade.toLowerCase();
-        return gradeMap[grade] || numistaGrade.toUpperCase() || 'F';
+        const grade = numistaGrade.toUpperCase().trim();
+        if (directMap[grade]) return grade;
+        
+        // Mapeo por texto completo
+        const gradeMap = {
+            'POOR': 'G', 'FAIR': 'G', 'GOOD': 'G',
+            'VERY GOOD': 'VG', 'FINE': 'F', 'VERY FINE': 'VF',
+            'EXTREMELY FINE': 'XF', 'ABOUT UNCIRCULATED': 'AU',
+            'UNCIRCULATED': 'AU', 'MINT STATE': 'AU'
+        };
+        
+        return gradeMap[grade] || grade || 'F';
     }
     
     getCountryFlag(countryCode) {
