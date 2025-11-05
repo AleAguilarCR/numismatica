@@ -1077,28 +1077,50 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         }
     }
     
-    fetchNumistaCollection() {
+    async fetchNumistaCollection() {
         console.log('fetchNumistaCollection ejecutado');
         const resultsDiv = document.getElementById('numistaCollectionResults');
+        const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
-        resultsDiv.innerHTML = `
-            <div style="text-align: center; padding: 2rem;">
-                <h3>📚 Importación desde Numista</h3>
-                <p>La importación automática no está disponible actualmente.</p>
-                <br>
-                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
-                    <h4>🚀 Importación Manual</h4>
-                    <p>Puedes importar items individuales fácilmente:</p>
-                    <ol style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.6;">
-                        <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #007bff;">Numista.com</a></li>
-                        <li>Busca tu moneda o billete</li>
-                        <li>Copia la URL de la página</li>
-                        <li>Usa "Incluir desde Numista" al agregar items</li>
-                    </ol>
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
+        
+        try {
+            const response = await fetch('https://api.numista.com/v3/collection_items?user_id=529122&lang=es', {
+                headers: {
+                    'Numista-API-Key': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+            const collectionData = await response.json();
+            this.displayNumistaCollection(collectionData);
+            
+        } catch (error) {
+            console.error('Error fetching collection:', error);
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h3>❌ Error de Conexión</h3>
+                    <p>No se pudo conectar con Numista</p>
+                    <p><small>Error: ${error.message}</small></p>
+                    <br>
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                        <h4>🚀 Importación Manual</h4>
+                        <p>Puedes importar items individuales:</p>
+                        <ol style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.6;">
+                            <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #007bff;">Numista.com</a></li>
+                            <li>Busca tu moneda o billete</li>
+                            <li>Copia la URL de la página</li>
+                            <li>Usa "Incluir desde Numista" al agregar items</li>
+                        </ol>
+                    </div>
+                    <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item</button>
                 </div>
-                <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item</button>
-            </div>
-        `;
+            `;
+        }
     }
     
     displayNumistaCollection(collectionData) {
@@ -1115,7 +1137,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         resultsDiv.innerHTML = `
             <h3>Colección de Numista (${collectionData.item_count} items)</h3>
             <p>Mostrando los primeros 10 items:</p>
-            <button class="btn btn-success btn-full" onclick="app.importAllNumistaItems()" style="margin-bottom: 1rem;">📥 Importar Todos</button>
+            <button class="btn btn-success btn-full" id="importAllBtn" style="margin-bottom: 1rem;">📥 Importar Todos</button>
             <div class="numista-items">
                 ${items.map(item => `
                     <div class="numista-item" style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
@@ -1129,6 +1151,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 `).join('')}
             </div>
         `;
+        
+        // Agregar event listener para importar todos
+        setTimeout(() => {
+            document.getElementById('importAllBtn')?.addEventListener('click', () => {
+                this.importAllNumistaItems();
+            });
+        }, 100);
     }
     
     async importNumistaItem(pieceId, quantity = 1, grade = 'Bueno') {
