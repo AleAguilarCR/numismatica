@@ -881,7 +881,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         try {
             const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
+            console.log('Conectando a:', `${API_URL}/coins`);
             const response = await fetch(`${API_URL}/coins`);
+            console.log('Respuesta del API:', response.status, response.statusText);
             if (response.ok) {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
@@ -889,7 +891,9 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 localStorage.setItem('coinCollection', JSON.stringify(this.items));
                 console.log('Datos sincronizados desde API');
             } else {
-                throw new Error('API no disponible');
+                const errorText = await response.text();
+                console.log('Error del API:', errorText);
+                throw new Error(`API error: ${response.status}`);
             }
         } catch (error) {
             console.log('API error, usando localStorage:', error.message);
@@ -1085,7 +1089,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
         
         try {
-            const response = await fetch('https://api.numista.com/v2/collection_items?user_id=529122&lang=es', {
+            // Probar diferentes endpoints de Numista
+            const response = await fetch('https://api.numista.com/v2/users/529122/collection?lang=es', {
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
