@@ -1114,7 +1114,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
             
             // Paso 2: Usar el token para obtener la colección
-            const response = await fetch(`https://api.numista.com/v3/users/${clientId}/collection?lang=es`, {
+            const response = await fetch(`https://api.numista.com/v3/users/${clientId}/collected_items`, {
                 headers: {
                     'Authorization': `Bearer ${tokenData.access_token}`,
                     'Accept': 'application/json'
