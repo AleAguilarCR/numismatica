@@ -67,6 +67,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
             document.getElementById('listCountriesBtn')?.addEventListener('click', () => this.listCountries());
             document.getElementById('syncStatusBtn')?.addEventListener('click', () => this.showSyncStatus());
+            document.getElementById('debugCountriesBtn')?.addEventListener('click', () => this.debugCountryMapping());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -1181,15 +1182,37 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         this.numistaItems = collectionData.items;
         const items = collectionData.items.slice(0, 10);
         
+        // Analizar países para debug
+        const countryAnalysis = {};
+        collectionData.items.forEach(item => {
+            const issuerName = item.type?.issuer?.name || 'Desconocido';
+            const issuerCode = item.type?.issuer?.code || 'N/A';
+            const mappedCode = this.mapNumistaCountry(issuerCode, issuerName);
+            
+            if (!countryAnalysis[issuerName]) {
+                countryAnalysis[issuerName] = {
+                    count: 0,
+                    issuerCode: issuerCode,
+                    mappedCode: mappedCode,
+                    inDatabase: !!window.COUNTRIES[mappedCode]
+                };
+            }
+            countryAnalysis[issuerName].count++;
+        });
+        
+        console.log('Análisis de países Numista:', countryAnalysis);
+        
         resultsDiv.innerHTML = `
             <h3>Colección de Numista (${collectionData.item_count} items)</h3>
             <p>Mostrando los primeros 10 items:</p>
-            <button class="btn btn-success btn-full" id="importAllBtn" style="margin-bottom: 1rem;">📥 Importar Todos</button>
+            <button class="btn btn-success btn-full" id="importAllBtn" style="margin-bottom: 1rem;">📥 Importar Todos (${collectionData.items.length})</button>
+            <button class="btn btn-info btn-full" id="analyzeCountriesBtn" style="margin-bottom: 1rem;">🔍 Analizar Países</button>
             <div class="numista-items">
                 ${items.map(item => `
                     <div class="numista-item" style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
                         <h4>${item.type?.title || 'Título no disponible'}</h4>
                         <p><strong>País:</strong> ${item.type?.issuer?.name || 'Desconocido'}</p>
+                        <p><strong>Código:</strong> ${item.type?.issuer?.code || 'N/A'}</p>
                         <p><strong>Categoría:</strong> ${item.type?.category || 'N/A'}</p>
                         <p><strong>Cantidad:</strong> ${item.quantity || 1}</p>
                         <p><strong>Estado:</strong> ${item.grade || 'N/A'}</p>
@@ -1199,10 +1222,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             </div>
         `;
         
-        // Agregar event listener para importar todos
+        // Agregar event listeners
         setTimeout(() => {
             document.getElementById('importAllBtn')?.addEventListener('click', () => {
                 this.importAllNumistaItems();
+            });
+            document.getElementById('analyzeCountriesBtn')?.addEventListener('click', () => {
+                this.showCountryAnalysis(countryAnalysis);
             });
         }, 100);
     }
@@ -1255,7 +1281,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
 
             
             const item = {
-                id: existingItem ? existingItem.id : Date.now(),
+                id: existingItem ? existingItem.id : Date.now() + Math.random(),
                 type: pieceData.category === 'banknote' ? 'billete' : 'moneda',
                 countryCode: countryCode,
                 country: countryName,
@@ -1480,7 +1506,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 return directCode;
             }
             
-            // Mapeo de códigos Numista a ISO
+            // Mapeo extendido de códigos Numista a ISO
             const mapping = {
                 'united-states': 'US', 'costa-rica': 'CR', 'mexico': 'MX', 'canada': 'CA',
                 'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'united-kingdom': 'GB',
@@ -1493,22 +1519,147 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 'austria': 'AT', 'poland': 'PL', 'russia': 'RU', 'china': 'CN',
                 'japan': 'JP', 'south-korea': 'KR', 'india': 'IN', 'australia': 'AU',
                 'new-zealand': 'NZ', 'south-africa': 'ZA', 'egypt': 'EG',
-                'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ'
+                'morocco': 'MA', 'tunisia': 'TN', 'algeria': 'DZ',
+                // Mapeos adicionales comunes
+                'european-union': 'EU', 'soviet-union': 'SU', 'yugoslavia': 'YU',
+                'czechoslovakia': 'CS', 'east-germany': 'DD', 'west-germany': 'DE',
+                'hong-kong': 'HK', 'macao': 'MO', 'taiwan': 'TW',
+                'puerto-rico': 'PR', 'guam': 'GU', 'virgin-islands': 'VI'
             };
             
             const code = numistaCode.toLowerCase();
             if (mapping[code]) return mapping[code];
         }
         
-        // Búsqueda por nombre
+        // Búsqueda por nombre con umbral más bajo
         if (issuerName) {
             const match = this.findBestCountryMatch(issuerName);
-            if (match.similarity >= 0.9) {
+            if (match.similarity >= 0.7) {
                 return match.code;
+            }
+            
+            // Mapeo directo por nombre común
+            const nameMapping = this.getDirectNameMapping();
+            const cleanName = issuerName.toLowerCase().trim();
+            
+            for (const [pattern, code] of Object.entries(nameMapping)) {
+                if (cleanName.includes(pattern)) {
+                    return code;
+                }
             }
         }
         
         return 'XX';
+    }
+    
+    getDirectNameMapping() {
+        return {
+            'estados unidos': 'US', 'united states': 'US', 'usa': 'US', 'america': 'US',
+            'reino unido': 'GB', 'united kingdom': 'GB', 'gran bretaña': 'GB', 'england': 'GB',
+            'alemania': 'DE', 'germany': 'DE', 'deutschland': 'DE',
+            'francia': 'FR', 'france': 'FR',
+            'españa': 'ES', 'spain': 'ES',
+            'italia': 'IT', 'italy': 'IT',
+            'suiza': 'CH', 'switzerland': 'CH', 'schweiz': 'CH', 'suisse': 'CH',
+            'austria': 'AT', 'österreich': 'AT',
+            'bélgica': 'BE', 'belgium': 'BE', 'belgique': 'BE',
+            'países bajos': 'NL', 'netherlands': 'NL', 'holanda': 'NL', 'holland': 'NL',
+            'portugal': 'PT',
+            'grecia': 'GR', 'greece': 'GR',
+            'turquía': 'TR', 'turkey': 'TR',
+            'rusia': 'RU', 'russia': 'RU', 'russian': 'RU',
+            'china': 'CN', 'people\'s republic': 'CN',
+            'japón': 'JP', 'japan': 'JP',
+            'corea del sur': 'KR', 'south korea': 'KR', 'korea': 'KR',
+            'india': 'IN',
+            'australia': 'AU',
+            'canadá': 'CA', 'canada': 'CA',
+            'méxico': 'MX', 'mexico': 'MX',
+            'brasil': 'BR', 'brazil': 'BR',
+            'argentina': 'AR',
+            'chile': 'CL',
+            'colombia': 'CO',
+            'perú': 'PE', 'peru': 'PE',
+            'venezuela': 'VE',
+            'ecuador': 'EC',
+            'bolivia': 'BO',
+            'uruguay': 'UY',
+            'paraguay': 'PY',
+            'costa rica': 'CR',
+            'panamá': 'PA', 'panama': 'PA',
+            'guatemala': 'GT',
+            'honduras': 'HN',
+            'nicaragua': 'NI',
+            'el salvador': 'SV', 'salvador': 'SV',
+            'cuba': 'CU',
+            'república dominicana': 'DO', 'dominican': 'DO',
+            'hong kong': 'HK',
+            'macao': 'MO', 'macau': 'MO',
+            'taiwan': 'TW',
+            'puerto rico': 'PR',
+            'sudáfrica': 'ZA', 'south africa': 'ZA',
+            'egipto': 'EG', 'egypt': 'EG',
+            'marruecos': 'MA', 'morocco': 'MA',
+            'túnez': 'TN', 'tunisia': 'TN',
+            'argelia': 'DZ', 'algeria': 'DZ'
+        };
+    }
+    
+    showCountryAnalysis(countryAnalysis) {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        
+        const sortedCountries = Object.entries(countryAnalysis)
+            .sort(([,a], [,b]) => b.count - a.count);
+        
+        const unmappedCountries = sortedCountries.filter(([,data]) => data.mappedCode === 'XX');
+        const mappedCountries = sortedCountries.filter(([,data]) => data.mappedCode !== 'XX');
+        
+        resultsDiv.innerHTML = `
+            <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                <h3>🔍 Análisis de Países de Numista</h3>
+                
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                    <h4>📊 Resumen</h4>
+                    <div><strong>Total países únicos:</strong> ${sortedCountries.length}</div>
+                    <div><strong>Países mapeados:</strong> ${mappedCountries.length}</div>
+                    <div><strong>Países sin mapear:</strong> ${unmappedCountries.length}</div>
+                    <div><strong>Total items:</strong> ${Object.values(countryAnalysis).reduce((sum, data) => sum + data.count, 0)}</div>
+                </div>
+                
+                ${unmappedCountries.length > 0 ? `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                        <h4>⚠️ Países sin mapear (${unmappedCountries.length})</h4>
+                        <div style="max-height: 200px; overflow-y: auto; font-size: 0.9em;">
+                            ${unmappedCountries.map(([name, data]) => 
+                                `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid #eee;">
+                                    <span><strong>${name}</strong> (${data.issuerCode})</span>
+                                    <span>${data.count} items</span>
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #f0f8ff; border-radius: 4px;">
+                    <h4>✅ Países mapeados (${mappedCountries.length})</h4>
+                    <div style="max-height: 200px; overflow-y: auto; font-size: 0.9em;">
+                        ${mappedCountries.slice(0, 15).map(([name, data]) => {
+                            const country = window.COUNTRIES[data.mappedCode];
+                            return `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid #eee;">
+                                <span><strong>${name}</strong> → ${country?.flag || ''} ${country?.name || data.mappedCode}</span>
+                                <span>${data.count} items</span>
+                            </div>`;
+                        }).join('')}
+                        ${mappedCountries.length > 15 ? `<div><em>... y ${mappedCountries.length - 15} más</em></div>` : ''}
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="app.importAllNumistaItems()" style="margin-right: 0.5rem;">📥 Importar Todos</button>
+                    <button class="btn btn-secondary" onclick="app.displayNumistaCollection({items: app.numistaItems, item_count: app.numistaItems.length})">← Volver</button>
+                </div>
+            </div>
+        `;
     }
     
     async importCountriesFromNumista() {
@@ -2293,6 +2444,33 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     
     updateEditModeUI() {
         // Todos los botones siempre visibles
+    }
+    
+    // Función de utilidad para debug de países
+    debugCountryMapping() {
+        if (!this.numistaItems) {
+            console.log('No hay items de Numista cargados');
+            return;
+        }
+        
+        const mapping = {};
+        this.numistaItems.forEach(item => {
+            const issuerName = item.type?.issuer?.name;
+            const issuerCode = item.type?.issuer?.code;
+            const mapped = this.mapNumistaCountry(issuerCode, issuerName);
+            
+            if (!mapping[issuerName]) {
+                mapping[issuerName] = {
+                    code: issuerCode,
+                    mapped: mapped,
+                    count: 0
+                };
+            }
+            mapping[issuerName].count++;
+        });
+        
+        console.table(mapping);
+        return mapping;
     }
     
     async showSyncStatus() {
