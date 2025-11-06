@@ -1086,29 +1086,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const clientId = '529122';
         
-        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔑 Configurando OAuth...</h3><p>Obteniendo token de acceso...</p></div>';
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
         
         try {
-            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token', {
-                method: 'POST',
+            const response = await fetch(`https://api.numista.com/v3/users/${clientId}/collection?lang=es`, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${apiKey}&scope=view_collection`
-            });
-            
-            if (!tokenResponse.ok) {
-                throw new Error(`OAuth error ${tokenResponse.status}: ${tokenResponse.statusText}`);
-            }
-            
-            const tokenData = await tokenResponse.json();
-            const accessToken = tokenData.access_token;
-            
-            resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
-            
-            const response = await fetch('https://api.numista.com/v3/collection?lang=es', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
                 }
             });
@@ -1138,7 +1121,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                             <li>Usa "Incluir desde Numista" al agregar items</li>
                         </ol>
                     </div>
-                    <button class="btn btn-primary" onclick="app.showScreen('add')" style="margin-top: 1rem; padding: 0.75rem 2rem;">Agregar Item Manualmente</button>
+                    <button class="btn btn-primary" onclick="app.showScreen('add')" style="margin-top: 1rem; padding: 0.75rem 2rem;">Agregar Item</button>
                 </div>
             `;
         }
