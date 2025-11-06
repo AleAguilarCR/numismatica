@@ -66,6 +66,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             }
             document.getElementById('importCountriesBtn')?.addEventListener('click', () => this.addMissingCountriesFromCollection());
             document.getElementById('listCountriesBtn')?.addEventListener('click', () => this.listCountries());
+            document.getElementById('syncStatusBtn')?.addEventListener('click', () => this.showSyncStatus());
             
             // Título como botón home
             document.getElementById('appTitle')?.addEventListener('click', () => this.showScreen('main'));
@@ -1104,6 +1105,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (!tokenResponse.ok) {
                 const errorText = await tokenResponse.text();
                 console.error('Token error response:', errorText);
+                if (tokenResponse.status === 429) {
+                    throw new Error('Cuota mensual de Numista excedida (2000 requests/mes)');
+                } else if (tokenResponse.status === 401) {
+                    throw new Error('Cuota mensual agotada o credenciales inválidas');
+                }
                 throw new Error(`OAuth error ${tokenResponse.status}: ${errorText}`);
             }
             
@@ -1128,6 +1134,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Collection error response:', errorText);
+                if (response.status === 429) {
+                    throw new Error('Cuota mensual de Numista excedida (2000 requests/mes)');
+                } else if (response.status === 401) {
+                    throw new Error('Cuota mensual agotada o token expirado');
+                }
                 throw new Error(`Error ${response.status}: ${errorText}`);
             }
             
@@ -2282,5 +2293,183 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     
     updateEditModeUI() {
         // Todos los botones siempre visibles
+    }
+    
+    async showSyncStatus() {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔄 Verificando sincronización...</h3></div>';
+        
+        try {
+            const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
+            const response = await fetch(`${API_URL}/coins`);
+            
+            if (response.ok) {
+                const serverItems = await response.json();
+                const localItems = JSON.parse(localStorage.getItem('coinCollection') || '[]');
+                
+                const serverCount = serverItems.length;
+                const localCount = localItems.length;
+                const lastSync = localStorage.getItem('lastSyncTime') || 'Nunca';
+                
+                // Comparar IDs para encontrar diferencias
+                const serverIds = new Set(serverItems.map(item => item.id));
+                const localIds = new Set(localItems.map(item => item.id));
+                
+                const onlyInServer = serverItems.filter(item => !localIds.has(item.id));
+                const onlyInLocal = localItems.filter(item => !serverIds.has(item.id));
+                
+                resultsDiv.innerHTML = `
+                    <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                        <h3>📊 Estado de Sincronización</h3>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                            <h4>📈 Resumen</h4>
+                            <div><strong>Base de datos central:</strong> ${serverCount} items</div>
+                            <div><strong>Almacenamiento local:</strong> ${localCount} items</div>
+                            <div><strong>Última sincronización:</strong> ${lastSync}</div>
+                            <div><strong>Estado:</strong> ${serverCount === localCount ? '✅ Sincronizado' : '⚠️ Diferencias detectadas'}</div>
+                        </div>
+                        
+                        ${onlyInServer.length > 0 ? `
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #f0f8ff; border-radius: 4px;">
+                                <h4>📥 Solo en servidor (${onlyInServer.length})</h4>
+                                <div style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                                    ${onlyInServer.slice(0, 10).map(item => 
+                                        `<div>• ${item.denomination} (${item.country}) - ${item.year}</div>`
+                                    ).join('')}
+                                    ${onlyInServer.length > 10 ? `<div><em>... y ${onlyInServer.length - 10} más</em></div>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${onlyInLocal.length > 0 ? `
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                                <h4>📤 Solo en local (${onlyInLocal.length})</h4>
+                                <div style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                                    ${onlyInLocal.slice(0, 10).map(item => 
+                                        `<div>• ${item.denomination} (${item.country}) - ${item.year}</div>`
+                                    ).join('')}
+                                    ${onlyInLocal.length > 10 ? `<div><em>... y ${onlyInLocal.length - 10} más</em></div>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn btn-primary" onclick="app.forceSyncFromServer()" style="margin-right: 0.5rem;">🔄 Sincronizar desde servidor</button>
+                            <button class="btn btn-secondary" onclick="app.showServerData()">👁️ Ver datos del servidor</button>
+                        </div>
+                    </div>
+                `;
+                
+                localStorage.setItem('lastSyncTime', new Date().toLocaleString());
+                
+            } else {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+        } catch (error) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h3>❌ Error de Conexión</h3>
+                    <p>No se pudo conectar con la base de datos central</p>
+                    <p><small>Error: ${error.message}</small></p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                        <strong>Datos locales:</strong> ${this.items.length} items
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    async forceSyncFromServer() {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔄 Sincronizando...</h3></div>';
+        
+        await this.loadData();
+        this.renderMainScreen();
+        
+        resultsDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <h3>✅ Sincronización Completada</h3>
+                <p>Datos actualizados desde el servidor</p>
+                <p><strong>Total items:</strong> ${this.items.length}</p>
+            </div>
+        `;
+    }
+    
+    async showServerData() {
+        const resultsDiv = document.getElementById('numistaCollectionResults');
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📡 Obteniendo datos del servidor...</h3></div>';
+        
+        try {
+            const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
+            const response = await fetch(`${API_URL}/coins`);
+            
+            if (response.ok) {
+                const serverItems = await response.json();
+                
+                // Agrupar por país
+                const countryCount = {};
+                serverItems.forEach(item => {
+                    countryCount[item.countryCode] = (countryCount[item.countryCode] || 0) + 1;
+                });
+                
+                const sortedCountries = Object.entries(countryCount)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 20);
+                
+                resultsDiv.innerHTML = `
+                    <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+                        <h3>📡 Base de Datos Central</h3>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 4px;">
+                            <h4>📊 Estadísticas Generales</h4>
+                            <div><strong>Total items:</strong> ${serverItems.length}</div>
+                            <div><strong>Países únicos:</strong> ${Object.keys(countryCount).length}</div>
+                            <div><strong>Última actualización:</strong> ${new Date().toLocaleString()}</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #f0f8ff; border-radius: 4px;">
+                            <h4>🌍 Top 20 Países</h4>
+                            <div style="max-height: 200px; overflow-y: auto; font-size: 0.9em;">
+                                ${sortedCountries.map(([code, count]) => {
+                                    const country = window.COUNTRIES[code];
+                                    const name = country?.name || code;
+                                    const flag = country?.flag || '🏴';
+                                    return `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0;">
+                                        <span>${flag} ${name}</span>
+                                        <strong>${count}</strong>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                            <h4>📋 Últimos 10 Items</h4>
+                            <div style="max-height: 200px; overflow-y: auto; font-size: 0.9em;">
+                                ${serverItems.slice(-10).reverse().map(item => 
+                                    `<div style="padding: 0.25rem 0; border-bottom: 1px solid #eee;">
+                                        <strong>${item.denomination}</strong> - ${item.country} (${item.year})
+                                        <br><small>ID: ${item.id} | Tipo: ${item.type}</small>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } else {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+        } catch (error) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h3>❌ Error</h3>
+                    <p>No se pudo obtener los datos del servidor</p>
+                    <p><small>Error: ${error.message}</small></p>
+                </div>
+            `;
+        }
     }
 };
