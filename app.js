@@ -1090,35 +1090,49 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         try {
             // Paso 1: Obtener token OAuth usando client credentials
+            console.log('Solicitando token OAuth...');
             const tokenResponse = await fetch(`https://api.numista.com/v3/oauth_token?grant_type=client_credentials&scope=view_collection`, {
+                method: 'GET',
                 headers: {
                     'Numista-API-Key': apiKey,
                     'Accept': 'application/json'
                 }
             });
             
+            console.log('Token response status:', tokenResponse.status);
+            
             if (!tokenResponse.ok) {
                 const errorText = await tokenResponse.text();
+                console.error('Token error response:', errorText);
                 throw new Error(`OAuth error ${tokenResponse.status}: ${errorText}`);
             }
             
             const tokenData = await tokenResponse.json();
+            console.log('Token obtenido exitosamente, user_id:', tokenData.user_id);
             
             resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
             
             // Paso 2: Usar el token para obtener la colección
+            console.log('Solicitando colección con token...');
             const response = await fetch(`https://api.numista.com/v3/users/${clientId}/collected_items`, {
+                method: 'GET',
                 headers: {
+                    'Numista-API-Key': apiKey,
                     'Authorization': `Bearer ${tokenData.access_token}`,
                     'Accept': 'application/json'
                 }
             });
             
+            console.log('Collection response status:', response.status);
+            
             if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                console.error('Collection error response:', errorText);
+                throw new Error(`Error ${response.status}: ${errorText}`);
             }
             
             const collectionData = await response.json();
+            console.log('Colección obtenida:', collectionData);
             this.displayNumistaCollection(collectionData);
             
         } catch (error) {
