@@ -1086,12 +1086,37 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         const clientId = '529122';
         
-        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔑 Obteniendo token OAuth...</h3><p>Autenticando con Numista...</p></div>';
         
         try {
+            // Paso 1: Obtener token OAuth usando client credentials
+            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Numista-API-Key': apiKey
+                },
+                body: new URLSearchParams({
+                    'grant_type': 'client_credentials',
+                    'client_id': clientId,
+                    'client_secret': apiKey,
+                    'scope': 'view_collection'
+                })
+            });
+            
+            if (!tokenResponse.ok) {
+                const errorText = await tokenResponse.text();
+                throw new Error(`OAuth error ${tokenResponse.status}: ${errorText}`);
+            }
+            
+            const tokenData = await tokenResponse.json();
+            
+            resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
+            
+            // Paso 2: Usar el token para obtener la colección
             const response = await fetch(`https://api.numista.com/v3/users/${clientId}/collection?lang=es`, {
                 headers: {
-                    'Numista-API-Key': apiKey,
+                    'Authorization': `Bearer ${tokenData.access_token}`,
                     'Accept': 'application/json'
                 }
             });
