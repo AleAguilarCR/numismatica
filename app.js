@@ -1084,18 +1084,17 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     async fetchNumistaCollection() {
         const resultsDiv = document.getElementById('numistaCollectionResults');
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
+        const clientId = '529122';
         
         resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔑 Configurando OAuth...</h3><p>Obteniendo token de acceso...</p></div>';
         
         try {
-            // Usar client credentials para autenticar tu propia cuenta
             const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Numista-API-Key': apiKey
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: 'grant_type=client_credentials&scope=view_collection'
+                body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${apiKey}&scope=view_collection`
             });
             
             if (!tokenResponse.ok) {
@@ -1107,7 +1106,6 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             
             resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
             
-            // Ahora obtener la colección con el token
             const response = await fetch('https://api.numista.com/v3/collection?lang=es', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -1130,17 +1128,17 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     <p>No se pudo conectar con Numista</p>
                     <p><small>Error: ${error.message}</small></p>
                     <br>
-                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
-                        <h4>🚀 Importación Manual</h4>
-                        <p>Puedes importar items individuales:</p>
-                        <ol style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.6;">
-                            <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #007bff;">Numista.com</a></li>
+                    <div style="background: #e8f4fd; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #2196F3;">
+                        <h4>🚀 Importación Manual Disponible</h4>
+                        <p>Puedes importar items individuales fácilmente:</p>
+                        <ol style="text-align: left; max-width: 400px; margin: 1rem auto; line-height: 1.8;">
+                            <li>Ve a <a href="https://en.numista.com" target="_blank" style="color: #1976D2; font-weight: bold;">Numista.com</a></li>
                             <li>Busca tu moneda o billete</li>
-                            <li>Copia la URL de la página</li>
+                            <li>Copia la URL de la página del item</li>
                             <li>Usa "Incluir desde Numista" al agregar items</li>
                         </ol>
                     </div>
-                    <button class="btn btn-primary" onclick="app.showScreen('add')">Agregar Item</button>
+                    <button class="btn btn-primary" onclick="app.showScreen('add')" style="margin-top: 1rem; padding: 0.75rem 2rem;">Agregar Item Manualmente</button>
                 </div>
             `;
         }
