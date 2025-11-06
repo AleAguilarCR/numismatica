@@ -1082,37 +1082,40 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     }
     
     async fetchNumistaCollection() {
-        console.log('fetchNumistaCollection ejecutado');
         const resultsDiv = document.getElementById('numistaCollectionResults');
         const apiKey = '7uX6sQn1IUvCrV11BfAvVEb20Hx3Hikl9EyPPBvg';
         
-        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
+        resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>🔑 Configurando OAuth...</h3><p>Obteniendo token de acceso...</p></div>';
         
         try {
-            // Intentar primero con OAuth si está disponible, luego con API key
-            let response;
-            const accessToken = localStorage.getItem('numista_access_token');
+            // Usar client credentials para autenticar tu propia cuenta
+            const tokenResponse = await fetch('https://api.numista.com/v3/oauth_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Numista-API-Key': apiKey
+                },
+                body: 'grant_type=client_credentials&scope=view_collection'
+            });
             
-            if (accessToken) {
-                response = await fetch('https://api.numista.com/v3/users/529122/collection?lang=es', {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Accept': 'application/json'
-                    }
-                });
-            } else {
-                response = await fetch('https://api.numista.com/v3/users/529122/collection?lang=es', {
-                    headers: {
-                        'Numista-API-Key': apiKey,
-                        'Accept': 'application/json'
-                    }
-                });
+            if (!tokenResponse.ok) {
+                throw new Error(`OAuth error ${tokenResponse.status}: ${tokenResponse.statusText}`);
             }
             
-            if (!response.ok) {
-                if (response.status === 401 && !accessToken) {
-                    throw new Error('Se requiere autenticación OAuth para acceder a la colección');
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+            
+            resultsDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><h3>📥 Obteniendo colección...</h3><p>Conectando con Numista...</p></div>';
+            
+            // Ahora obtener la colección con el token
+            const response = await fetch('https://api.numista.com/v3/collection?lang=es', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json'
                 }
+            });
+            
+            if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             
