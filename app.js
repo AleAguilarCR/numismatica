@@ -881,36 +881,43 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     async loadData() {
         console.log('Cargando datos...');
         
+        // Primero cargar desde localStorage
+        const saved = localStorage.getItem('coinCollection');
+        if (saved) {
+            try {
+                this.items = JSON.parse(saved);
+                console.log('Datos cargados desde localStorage:', this.items.length, 'items');
+            } catch (parseError) {
+                console.error('Error parsing localStorage:', parseError);
+                this.items = [];
+            }
+        } else {
+            this.items = [];
+        }
+        
+        // Luego intentar sincronizar con API (sin sobrescribir si falla)
         try {
             const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
-            console.log('Conectando a:', `${API_URL}/coins`);
-            const response = await fetch(`${API_URL}/coins`);
+            console.log('Intentando sincronizar con:', `${API_URL}/coins`);
+            const response = await fetch(`${API_URL}/coins`, { timeout: 5000 });
             console.log('Respuesta del API:', response.status, response.statusText);
             if (response.ok) {
                 const apiItems = await response.json();
                 console.log('Datos del API:', apiItems.length, 'items');
-                this.items = apiItems;
-                localStorage.setItem('coinCollection', JSON.stringify(this.items));
-                console.log('Datos sincronizados desde API');
-            } else {
-                const errorText = await response.text();
-                console.log('Error del API:', errorText);
-                throw new Error(`API error: ${response.status}`);
-            }
-        } catch (error) {
-            console.log('API error, usando localStorage:', error.message);
-            const saved = localStorage.getItem('coinCollection');
-            if (saved) {
-                try {
-                    this.items = JSON.parse(saved);
-                    console.log('Datos cargados desde localStorage:', this.items.length, 'items');
-                } catch (parseError) {
-                    console.error('Error parsing localStorage:', parseError);
-                    this.items = [];
+                
+                // Solo actualizar si el API tiene más items o si localStorage está vacío
+                if (apiItems.length > this.items.length || this.items.length === 0) {
+                    this.items = apiItems;
+                    localStorage.setItem('coinCollection', JSON.stringify(this.items));
+                    console.log('Datos actualizados desde API');
+                } else {
+                    console.log('Manteniendo datos locales (más recientes)');
                 }
             } else {
-                this.items = [];
+                console.log('API no disponible, usando datos locales');
             }
+        } catch (error) {
+            console.log('Error de conexión API, usando localStorage:', error.message);
         }
         
         console.log('Total items cargados:', this.items.length);
