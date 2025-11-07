@@ -440,23 +440,23 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        // Coordenadas de países (cx, cy para círculos) - corregidas
+        // Coordenadas de países (cx, cy para círculos) - ajustadas al mapa
         const countryPositions = {
-            'US': { cx: 200, cy: 180 }, 'CA': { cx: 180, cy: 120 }, 'MX': { cx: 180, cy: 220 },
-            'BR': { cx: 320, cy: 320 }, 'AR': { cx: 300, cy: 380 }, 'CL': { cx: 280, cy: 360 },
-            'CO': { cx: 260, cy: 270 }, 'PE': { cx: 270, cy: 320 }, 'VE': { cx: 290, cy: 250 },
-            'EC': { cx: 250, cy: 290 }, 'BO': { cx: 290, cy: 340 }, 'UY': { cx: 330, cy: 390 },
-            'PY': { cx: 310, cy: 360 }, 'CR': { cx: 200, cy: 250 }, 'PA': { cx: 220, cy: 260 },
-            'GT': { cx: 180, cy: 240 }, 'HN': { cx: 190, cy: 245 }, 'NI': { cx: 195, cy: 250 },
-            'SV': { cx: 185, cy: 245 }, 'CU': { cx: 220, cy: 210 }, 'DO': { cx: 250, cy: 215 },
-            'GB': { cx: 480, cy: 140 }, 'FR': { cx: 500, cy: 170 }, 'DE': { cx: 520, cy: 150 },
-            'ES': { cx: 480, cy: 190 }, 'IT': { cx: 520, cy: 190 }, 'PT': { cx: 460, cy: 190 },
-            'CH': { cx: 510, cy: 170 }, 'AT': { cx: 530, cy: 160 }, 'BE': { cx: 500, cy: 155 },
-            'NL': { cx: 505, cy: 145 }, 'PL': { cx: 540, cy: 140 }, 'RU': { cx: 650, cy: 120 },
-            'CN': { cx: 700, cy: 190 }, 'JP': { cx: 780, cy: 190 }, 'KR': { cx: 760, cy: 180 },
-            'IN': { cx: 650, cy: 220 }, 'AU': { cx: 750, cy: 370 }, 'NZ': { cx: 800, cy: 420 },
-            'ZA': { cx: 540, cy: 370 }, 'EG': { cx: 550, cy: 220 }, 'MA': { cx: 470, cy: 210 },
-            'DZ': { cx: 500, cy: 210 }, 'TN': { cx: 520, cy: 200 }
+            'US': { cx: 200, cy: 200 }, 'CA': { cx: 200, cy: 150 }, 'MX': { cx: 180, cy: 250 },
+            'BR': { cx: 320, cy: 350 }, 'AR': { cx: 300, cy: 420 }, 'CL': { cx: 280, cy: 400 },
+            'CO': { cx: 260, cy: 300 }, 'PE': { cx: 270, cy: 350 }, 'VE': { cx: 290, cy: 280 },
+            'EC': { cx: 250, cy: 320 }, 'BO': { cx: 290, cy: 370 }, 'UY': { cx: 330, cy: 430 },
+            'PY': { cx: 310, cy: 390 }, 'CR': { cx: 200, cy: 280 }, 'PA': { cx: 220, cy: 290 },
+            'GT': { cx: 180, cy: 270 }, 'HN': { cx: 190, cy: 275 }, 'NI': { cx: 195, cy: 280 },
+            'SV': { cx: 185, cy: 275 }, 'CU': { cx: 220, cy: 240 }, 'DO': { cx: 250, cy: 245 },
+            'GB': { cx: 480, cy: 170 }, 'FR': { cx: 500, cy: 200 }, 'DE': { cx: 520, cy: 180 },
+            'ES': { cx: 480, cy: 220 }, 'IT': { cx: 520, cy: 220 }, 'PT': { cx: 460, cy: 220 },
+            'CH': { cx: 510, cy: 200 }, 'AT': { cx: 530, cy: 190 }, 'BE': { cx: 500, cy: 185 },
+            'NL': { cx: 505, cy: 175 }, 'PL': { cx: 540, cy: 170 }, 'RU': { cx: 650, cy: 150 },
+            'CN': { cx: 700, cy: 220 }, 'JP': { cx: 780, cy: 220 }, 'KR': { cx: 760, cy: 210 },
+            'IN': { cx: 650, cy: 250 }, 'AU': { cx: 750, cy: 400 }, 'NZ': { cx: 800, cy: 450 },
+            'ZA': { cx: 540, cy: 400 }, 'EG': { cx: 550, cy: 250 }, 'MA': { cx: 470, cy: 240 },
+            'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
         };
 
         // Mapa mundial con imagen de fondo
