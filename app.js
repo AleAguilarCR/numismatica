@@ -465,38 +465,39 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                    x="0" y="0" width="1000" height="500" opacity="0.8"/>
         `;
         
-        // Solo agregar puntos si hay items
-        if (Object.keys(countryTypes).length > 0) {
-            Object.entries(countryPositions).forEach(([countryCode, pos]) => {
-                if (countryTypes[countryCode]) {
-                    const hasMonedas = countryTypes[countryCode].moneda;
-                    const hasBilletes = countryTypes[countryCode].billete;
-                    const countryName = window.COUNTRIES[countryCode]?.name || countryCode;
-                    const count = this.items.filter(item => item.countryCode === countryCode).length;
-                    
-                    let fillColor, strokeColor;
-                    if (hasMonedas && hasBilletes) {
-                        fillColor = '#8844ff';
-                        strokeColor = '#6622cc';
-                    } else if (hasMonedas) {
-                        fillColor = '#ff4444';
-                        strokeColor = '#cc2222';
-                    } else {
-                        fillColor = '#4444ff';
-                        strokeColor = '#2222cc';
-                    }
-                    
-                    svgContent += `
-                        <circle cx="${pos.cx}" cy="${pos.cy}" r="8" 
-                                fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
-                                style="cursor: pointer;" 
-                                onclick="app.showCountryItems('${countryCode}')">
-                            <title>${countryName}: ${count} items</title>
-                        </circle>
-                    `;
+        // Agregar puntos para todos los países con items
+        Object.entries(countryTypes).forEach(([countryCode, types]) => {
+            const pos = countryPositions[countryCode];
+            if (pos) {
+                const hasMonedas = types.moneda;
+                const hasBilletes = types.billete;
+                const countryName = window.COUNTRIES[countryCode]?.name || countryCode;
+                const count = this.items.filter(item => item.countryCode === countryCode).length;
+                
+                let fillColor, strokeColor;
+                if (hasMonedas && hasBilletes) {
+                    fillColor = '#8844ff';
+                    strokeColor = '#6622cc';
+                } else if (hasMonedas) {
+                    fillColor = '#ff4444';
+                    strokeColor = '#cc2222';
+                } else {
+                    fillColor = '#4444ff';
+                    strokeColor = '#2222cc';
                 }
-            });
-        }
+                
+                svgContent += `
+                    <circle cx="${pos.cx}" cy="${pos.cy}" r="8" 
+                            fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
+                            style="cursor: pointer;" 
+                            onclick="app.showCountryItems('${countryCode}')">
+                        <title>${countryName}: ${count} items</title>
+                    </circle>
+                `;
+            } else {
+                console.log('País sin coordenadas en mapa:', countryCode, window.COUNTRIES[countryCode]?.name);
+            }
+        });
         
         svg.innerHTML = svgContent;
         console.log('Mapa renderizado con', svgContent.length, 'caracteres de contenido');
@@ -1506,9 +1507,16 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
     mapNumistaCountry(numistaCode, issuerName) {
         if (!numistaCode && !issuerName) return 'XX';
         
-        // Buscar por código directo (ISO)
+        // Buscar por código directo (ISO) - evitar confusiones
         if (numistaCode) {
             const directCode = numistaCode.toUpperCase();
+            // Mapeos específicos para evitar confusiones
+            if (directCode === 'CR' && issuerName && issuerName.toLowerCase().includes('costa')) {
+                return 'CR';
+            }
+            if (directCode === 'CN' && issuerName && issuerName.toLowerCase().includes('china')) {
+                return 'CN';
+            }
             if (window.COUNTRIES[directCode]) {
                 return directCode;
             }
