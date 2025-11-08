@@ -440,37 +440,87 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        // Coordenadas de países (cx, cy para círculos) - ajustadas 50px a la derecha
+        // Coordenadas de países (cx, cy) - basadas en proyección equirectangular 1000x500
         const countryPositions = {
-            'US': { cx: 250, cy: 200 }, 'CA': { cx: 250, cy: 150 }, 'MX': { cx: 230, cy: 250 },
-            'BR': { cx: 370, cy: 350 }, 'AR': { cx: 350, cy: 420 }, 'CL': { cx: 330, cy: 400 },
-            'CO': { cx: 310, cy: 300 }, 'PE': { cx: 320, cy: 350 }, 'VE': { cx: 340, cy: 280 },
-            'EC': { cx: 300, cy: 320 }, 'BO': { cx: 340, cy: 370 }, 'UY': { cx: 380, cy: 430 },
-            'PY': { cx: 360, cy: 390 }, 'CR': { cx: 250, cy: 280 }, 'PA': { cx: 270, cy: 290 },
-            'GT': { cx: 230, cy: 270 }, 'HN': { cx: 240, cy: 275 }, 'NI': { cx: 245, cy: 280 },
-            'SV': { cx: 235, cy: 275 }, 'CU': { cx: 270, cy: 240 }, 'DO': { cx: 300, cy: 245 },
-            'GB': { cx: 530, cy: 170 }, 'FR': { cx: 550, cy: 200 }, 'DE': { cx: 570, cy: 180 },
-            'ES': { cx: 530, cy: 220 }, 'IT': { cx: 570, cy: 220 }, 'PT': { cx: 510, cy: 220 },
-            'CH': { cx: 560, cy: 200 }, 'AT': { cx: 580, cy: 190 }, 'BE': { cx: 550, cy: 185 },
-            'NL': { cx: 555, cy: 175 }, 'PL': { cx: 590, cy: 170 }, 'RU': { cx: 700, cy: 150 },
-            'CN': { cx: 750, cy: 220 }, 'JP': { cx: 830, cy: 220 }, 'KR': { cx: 810, cy: 210 },
-            'IN': { cx: 700, cy: 250 }, 'AU': { cx: 800, cy: 400 }, 'NZ': { cx: 850, cy: 450 },
-            'ZA': { cx: 590, cy: 400 }, 'EG': { cx: 600, cy: 250 }, 'MA': { cx: 520, cy: 240 },
-            'DZ': { cx: 550, cy: 240 }, 'TN': { cx: 570, cy: 230 },
-            // Países adicionales faltantes
-            'IL': { cx: 620, cy: 240 }, 'HR': { cx: 590, cy: 200 }, 'BA': { cx: 580, cy: 210 },
-            'UA': { cx: 630, cy: 160 }, 'JM': { cx: 290, cy: 250 }, 'AF': { cx: 730, cy: 210 },
-            'BT': { cx: 770, cy: 200 }, 'ZM': { cx: 610, cy: 350 }, 'AE': { cx: 650, cy: 240 },
-            'KP': { cx: 810, cy: 190 }, 'UZ': { cx: 700, cy: 180 }, 'VN': { cx: 790, cy: 240 },
-            'GY': { cx: 360, cy: 300 }, 'SG': { cx: 790, cy: 280 }, 'MY': { cx: 780, cy: 270 },
-            'BY': { cx: 610, cy: 150 }, 'HK': { cx: 770, cy: 230 }, 'MG': { cx: 640, cy: 380 },
-            'TT': { cx: 370, cy: 270 }, 'ET': { cx: 640, cy: 280 }, 'TJ': { cx: 730, cy: 190 },
-            'GN': { cx: 500, cy: 280 }, 'IS': { cx: 510, cy: 120 }, 'SR': { cx: 370, cy: 290 },
-            'ID': { cx: 810, cy: 300 }, 'KH': { cx: 790, cy: 250 }, 'MZ': { cx: 630, cy: 380 },
-            'NO': { cx: 570, cy: 120 }, 'IQ': { cx: 640, cy: 220 }, 'CI': { cx: 520, cy: 300 },
-            'NP': { cx: 750, cy: 200 }, 'KG': { cx: 720, cy: 180 }, 'LK': { cx: 750, cy: 280 },
-            'LB': { cx: 630, cy: 230 }, 'TR': { cx: 630, cy: 200 }, 'SO': { cx: 650, cy: 300 },
-            'PH': { cx: 830, cy: 260 }, 'PK': { cx: 730, cy: 220 }
+            // América del Norte
+            'US': { cx: 200, cy: 200 }, 'CA': { cx: 200, cy: 150 }, 'MX': { cx: 180, cy: 250 },
+            // América Central
+            'GT': { cx: 180, cy: 270 }, 'HN': { cx: 190, cy: 275 }, 'NI': { cx: 195, cy: 280 },
+            'CR': { cx: 200, cy: 285 }, 'PA': { cx: 220, cy: 290 }, 'SV': { cx: 185, cy: 275 },
+            'CU': { cx: 220, cy: 240 }, 'JM': { cx: 230, cy: 250 }, 'DO': { cx: 250, cy: 245 },
+            'TT': { cx: 320, cy: 270 },
+            // América del Sur
+            'CO': { cx: 260, cy: 300 }, 'VE': { cx: 290, cy: 280 }, 'GY': { cx: 310, cy: 290 },
+            'SR': { cx: 320, cy: 295 }, 'BR': { cx: 320, cy: 350 }, 'EC': { cx: 250, cy: 320 },
+            'PE': { cx: 270, cy: 350 }, 'BO': { cx: 290, cy: 370 }, 'PY': { cx: 310, cy: 390 },
+            'AR': { cx: 300, cy: 420 }, 'UY': { cx: 330, cy: 430 }, 'CL': { cx: 280, cy: 400 },
+            // Europa Occidental
+            'GB': { cx: 480, cy: 170 }, 'IE': { cx: 470, cy: 175 }, 'IS': { cx: 460, cy: 120 },
+            'NO': { cx: 520, cy: 120 }, 'SE': { cx: 540, cy: 130 }, 'FI': { cx: 560, cy: 120 },
+            'DK': { cx: 530, cy: 150 }, 'NL': { cx: 505, cy: 175 }, 'BE': { cx: 500, cy: 185 },
+            'FR': { cx: 500, cy: 200 }, 'ES': { cx: 480, cy: 220 }, 'PT': { cx: 460, cy: 220 },
+            'IT': { cx: 520, cy: 220 }, 'CH': { cx: 510, cy: 200 }, 'AT': { cx: 530, cy: 190 },
+            'DE': { cx: 520, cy: 180 },
+            // Europa Oriental
+            'PL': { cx: 540, cy: 170 }, 'CZ': { cx: 530, cy: 180 }, 'SK': { cx: 540, cy: 185 },
+            'HU': { cx: 540, cy: 195 }, 'RO': { cx: 560, cy: 200 }, 'BG': { cx: 550, cy: 210 },
+            'GR': { cx: 540, cy: 230 }, 'AL': { cx: 535, cy: 220 }, 'MK': { cx: 540, cy: 215 },
+            'BA': { cx: 535, cy: 205 }, 'HR': { cx: 530, cy: 200 }, 'SI': { cx: 525, cy: 195 },
+            'RS': { cx: 540, cy: 205 }, 'ME': { cx: 535, cy: 210 },
+            'BY': { cx: 570, cy: 150 }, 'UA': { cx: 580, cy: 160 }, 'MD': { cx: 570, cy: 180 },
+            'RU': { cx: 650, cy: 150 }, 'EE': { cx: 560, cy: 140 }, 'LV': { cx: 555, cy: 145 },
+            'LT': { cx: 550, cy: 150 },
+            // Medio Oriente
+            'TR': { cx: 580, cy: 200 }, 'SY': { cx: 590, cy: 210 }, 'LB': { cx: 585, cy: 215 },
+            'IL': { cx: 585, cy: 220 }, 'JO': { cx: 590, cy: 225 }, 'IQ': { cx: 600, cy: 220 },
+            'IR': { cx: 620, cy: 210 }, 'AF': { cx: 650, cy: 210 }, 'PK': { cx: 680, cy: 220 },
+            'AE': { cx: 610, cy: 240 }, 'SA': { cx: 600, cy: 250 }, 'YE': { cx: 605, cy: 270 },
+            'OM': { cx: 615, cy: 260 }, 'KW': { cx: 605, cy: 235 }, 'QA': { cx: 610, cy: 245 },
+            'BH': { cx: 608, cy: 242 },
+            // Asia Central
+            'KZ': { cx: 650, cy: 160 }, 'UZ': { cx: 640, cy: 180 }, 'TM': { cx: 630, cy: 190 },
+            'TJ': { cx: 660, cy: 190 }, 'KG': { cx: 670, cy: 180 },
+            // Asia Oriental
+            'CN': { cx: 700, cy: 220 }, 'MN': { cx: 720, cy: 180 }, 'KP': { cx: 760, cy: 200 },
+            'KR': { cx: 760, cy: 210 }, 'JP': { cx: 780, cy: 220 },
+            // Asia Meridional
+            'IN': { cx: 680, cy: 250 }, 'NP': { cx: 700, cy: 200 }, 'BT': { cx: 710, cy: 205 },
+            'BD': { cx: 720, cy: 240 }, 'LK': { cx: 700, cy: 280 }, 'MV': { cx: 685, cy: 290 },
+            // Sudeste Asiático
+            'MM': { cx: 730, cy: 250 }, 'TH': { cx: 740, cy: 260 }, 'LA': { cx: 745, cy: 250 },
+            'VN': { cx: 750, cy: 260 }, 'KH': { cx: 745, cy: 265 }, 'MY': { cx: 740, cy: 290 },
+            'SG': { cx: 745, cy: 295 }, 'ID': { cx: 760, cy: 310 }, 'BN': { cx: 755, cy: 285 },
+            'PH': { cx: 780, cy: 260 }, 'TL': { cx: 780, cy: 320 },
+            // África del Norte
+            'MA': { cx: 470, cy: 240 }, 'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 },
+            'LY': { cx: 530, cy: 250 }, 'EG': { cx: 550, cy: 250 }, 'SD': { cx: 560, cy: 270 },
+            // África Occidental
+            'MR': { cx: 460, cy: 260 }, 'ML': { cx: 480, cy: 270 }, 'SN': { cx: 450, cy: 275 },
+            'GN': { cx: 460, cy: 280 }, 'SL': { cx: 455, cy: 285 }, 'LR': { cx: 460, cy: 290 },
+            'CI': { cx: 470, cy: 290 }, 'GH': { cx: 480, cy: 295 }, 'TG': { cx: 485, cy: 295 },
+            'BJ': { cx: 490, cy: 295 }, 'NG': { cx: 500, cy: 295 }, 'NE': { cx: 500, cy: 270 },
+            'BF': { cx: 480, cy: 275 }, 'GM': { cx: 450, cy: 275 }, 'GW': { cx: 455, cy: 278 },
+            // África Central
+            'TD': { cx: 530, cy: 280 }, 'CF': { cx: 540, cy: 290 }, 'CM': { cx: 520, cy: 300 },
+            'GQ': { cx: 515, cy: 305 }, 'GA': { cx: 520, cy: 310 }, 'CG': { cx: 530, cy: 315 },
+            'CD': { cx: 550, cy: 320 }, 'AO': { cx: 530, cy: 350 },
+            // África Oriental
+            'ET': { cx: 590, cy: 280 }, 'ER': { cx: 595, cy: 270 }, 'DJ': { cx: 600, cy: 275 },
+            'SO': { cx: 605, cy: 290 }, 'KE': { cx: 590, cy: 310 }, 'UG': { cx: 580, cy: 315 },
+            'TZ': { cx: 585, cy: 330 }, 'RW': { cx: 575, cy: 325 }, 'BI': { cx: 575, cy: 330 },
+            'MZ': { cx: 590, cy: 360 }, 'MW': { cx: 585, cy: 350 }, 'ZM': { cx: 570, cy: 350 },
+            'ZW': { cx: 575, cy: 365 }, 'BW': { cx: 560, cy: 380 }, 'NA': { cx: 530, cy: 380 },
+            'ZA': { cx: 560, cy: 400 }, 'LS': { cx: 565, cy: 395 }, 'SZ': { cx: 575, cy: 390 },
+            'MG': { cx: 605, cy: 380 }, 'MU': { cx: 615, cy: 395 }, 'SC': { cx: 620, cy: 320 },
+            // Oceanía
+            'AU': { cx: 780, cy: 400 }, 'NZ': { cx: 850, cy: 450 }, 'PG': { cx: 800, cy: 320 },
+            'FJ': { cx: 870, cy: 350 }, 'NC': { cx: 840, cy: 380 }, 'VU': { cx: 835, cy: 360 },
+            'SB': { cx: 820, cy: 330 }, 'WS': { cx: 890, cy: 340 }, 'TO': { cx: 885, cy: 355 },
+            'KI': { cx: 885, cy: 310 }, 'TV': { cx: 870, cy: 320 }, 'NR': { cx: 835, cy: 305 },
+            'PW': { cx: 790, cy: 280 }, 'FM': { cx: 810, cy: 290 }, 'MH': { cx: 840, cy: 290 },
+            // Regiones especiales
+            'HK': { cx: 720, cy: 230 }, 'MO': { cx: 718, cy: 232 }, 'TW': { cx: 770, cy: 240 },
+            'GF': { cx: 330, cy: 300 }, 'SR': { cx: 320, cy: 295 }, 'GY': { cx: 310, cy: 290 }
         };
 
         // Mapa mundial con imagen de fondo
@@ -490,8 +540,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                 
                 let fillColor, strokeColor;
                 if (hasMonedas && hasBilletes) {
-                    fillColor = '#8844ff';
-                    strokeColor = '#6622cc';
+                    fillColor = '#ffdd00';
+                    strokeColor = '#cc9900';
                 } else if (hasMonedas) {
                     fillColor = '#ff4444';
                     strokeColor = '#cc2222';
@@ -914,7 +964,19 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         try {
             const API_URL = window.API_URL || 'https://numismatica-7pat.onrender.com';
             console.log('Intentando sincronizar con:', `${API_URL}/coins`);
-            const response = await fetch(`${API_URL}/coins`, { timeout: 5000 });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(`${API_URL}/coins`, { 
+                signal: controller.signal,
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            clearTimeout(timeoutId);
+            
             console.log('Respuesta del API:', response.status, response.statusText);
             if (response.ok) {
                 const apiItems = await response.json();
@@ -929,10 +991,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     console.log('Manteniendo datos locales (más recientes)');
                 }
             } else {
-                console.log('API no disponible, usando datos locales');
+                console.log(`API error ${response.status}: Servidor no disponible`);
             }
         } catch (error) {
-            console.log('Error de conexión API, usando localStorage:', error.message);
+            if (error.name === 'AbortError') {
+                console.log('Timeout de conexión API, usando localStorage');
+            } else {
+                console.log('Error de conexión API (servidor inactivo), usando localStorage:', error.message);
+            }
         }
         
         console.log('Total items cargados:', this.items.length);
@@ -1528,7 +1594,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             if (issuerName) {
                 const name = issuerName.toLowerCase();
                 if (name.includes('costa') && name.includes('rica')) return 'CR';
-                if (name.includes('china') || name.includes('people')) return 'CN';
+                if (name.includes('china') || name.includes('people') || name.includes('república popular')) return 'CN';
                 if (name.includes('russia') || name.includes('rusia')) return 'RU';
             }
             if (window.COUNTRIES[directCode]) {
