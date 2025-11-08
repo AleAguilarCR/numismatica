@@ -440,37 +440,37 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        // Coordenadas de países (cx, cy para círculos) - ajustadas al mapa
+        // Coordenadas de países (cx, cy para círculos) - ajustadas 50px a la derecha
         const countryPositions = {
-            'US': { cx: 200, cy: 200 }, 'CA': { cx: 200, cy: 150 }, 'MX': { cx: 180, cy: 250 },
-            'BR': { cx: 320, cy: 350 }, 'AR': { cx: 300, cy: 420 }, 'CL': { cx: 280, cy: 400 },
-            'CO': { cx: 260, cy: 300 }, 'PE': { cx: 270, cy: 350 }, 'VE': { cx: 290, cy: 280 },
-            'EC': { cx: 250, cy: 320 }, 'BO': { cx: 290, cy: 370 }, 'UY': { cx: 330, cy: 430 },
-            'PY': { cx: 310, cy: 390 }, 'CR': { cx: 200, cy: 280 }, 'PA': { cx: 220, cy: 290 },
-            'GT': { cx: 180, cy: 270 }, 'HN': { cx: 190, cy: 275 }, 'NI': { cx: 195, cy: 280 },
-            'SV': { cx: 185, cy: 275 }, 'CU': { cx: 220, cy: 240 }, 'DO': { cx: 250, cy: 245 },
-            'GB': { cx: 480, cy: 170 }, 'FR': { cx: 500, cy: 200 }, 'DE': { cx: 520, cy: 180 },
-            'ES': { cx: 480, cy: 220 }, 'IT': { cx: 520, cy: 220 }, 'PT': { cx: 460, cy: 220 },
-            'CH': { cx: 510, cy: 200 }, 'AT': { cx: 530, cy: 190 }, 'BE': { cx: 500, cy: 185 },
-            'NL': { cx: 505, cy: 175 }, 'PL': { cx: 540, cy: 170 }, 'RU': { cx: 650, cy: 150 },
-            'CN': { cx: 700, cy: 220 }, 'JP': { cx: 780, cy: 220 }, 'KR': { cx: 760, cy: 210 },
-            'IN': { cx: 650, cy: 250 }, 'AU': { cx: 750, cy: 400 }, 'NZ': { cx: 800, cy: 450 },
-            'ZA': { cx: 540, cy: 400 }, 'EG': { cx: 550, cy: 250 }, 'MA': { cx: 470, cy: 240 },
-            'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 },
+            'US': { cx: 250, cy: 200 }, 'CA': { cx: 250, cy: 150 }, 'MX': { cx: 230, cy: 250 },
+            'BR': { cx: 370, cy: 350 }, 'AR': { cx: 350, cy: 420 }, 'CL': { cx: 330, cy: 400 },
+            'CO': { cx: 310, cy: 300 }, 'PE': { cx: 320, cy: 350 }, 'VE': { cx: 340, cy: 280 },
+            'EC': { cx: 300, cy: 320 }, 'BO': { cx: 340, cy: 370 }, 'UY': { cx: 380, cy: 430 },
+            'PY': { cx: 360, cy: 390 }, 'CR': { cx: 250, cy: 280 }, 'PA': { cx: 270, cy: 290 },
+            'GT': { cx: 230, cy: 270 }, 'HN': { cx: 240, cy: 275 }, 'NI': { cx: 245, cy: 280 },
+            'SV': { cx: 235, cy: 275 }, 'CU': { cx: 270, cy: 240 }, 'DO': { cx: 300, cy: 245 },
+            'GB': { cx: 530, cy: 170 }, 'FR': { cx: 550, cy: 200 }, 'DE': { cx: 570, cy: 180 },
+            'ES': { cx: 530, cy: 220 }, 'IT': { cx: 570, cy: 220 }, 'PT': { cx: 510, cy: 220 },
+            'CH': { cx: 560, cy: 200 }, 'AT': { cx: 580, cy: 190 }, 'BE': { cx: 550, cy: 185 },
+            'NL': { cx: 555, cy: 175 }, 'PL': { cx: 590, cy: 170 }, 'RU': { cx: 700, cy: 150 },
+            'CN': { cx: 750, cy: 220 }, 'JP': { cx: 830, cy: 220 }, 'KR': { cx: 810, cy: 210 },
+            'IN': { cx: 700, cy: 250 }, 'AU': { cx: 800, cy: 400 }, 'NZ': { cx: 850, cy: 450 },
+            'ZA': { cx: 590, cy: 400 }, 'EG': { cx: 600, cy: 250 }, 'MA': { cx: 520, cy: 240 },
+            'DZ': { cx: 550, cy: 240 }, 'TN': { cx: 570, cy: 230 },
             // Países adicionales faltantes
-            'IL': { cx: 570, cy: 240 }, 'HR': { cx: 540, cy: 200 }, 'BA': { cx: 530, cy: 210 },
-            'UA': { cx: 580, cy: 160 }, 'JM': { cx: 240, cy: 250 }, 'AF': { cx: 680, cy: 210 },
-            'BT': { cx: 720, cy: 200 }, 'ZM': { cx: 560, cy: 350 }, 'AE': { cx: 600, cy: 240 },
-            'KP': { cx: 760, cy: 190 }, 'UZ': { cx: 650, cy: 180 }, 'VN': { cx: 740, cy: 240 },
-            'GY': { cx: 310, cy: 300 }, 'SG': { cx: 740, cy: 280 }, 'MY': { cx: 730, cy: 270 },
-            'BY': { cx: 560, cy: 150 }, 'HK': { cx: 720, cy: 230 }, 'MG': { cx: 590, cy: 380 },
-            'TT': { cx: 320, cy: 270 }, 'ET': { cx: 590, cy: 280 }, 'TJ': { cx: 680, cy: 190 },
-            'GN': { cx: 450, cy: 280 }, 'IS': { cx: 460, cy: 120 }, 'SR': { cx: 320, cy: 290 },
-            'ID': { cx: 760, cy: 300 }, 'KH': { cx: 740, cy: 250 }, 'MZ': { cx: 580, cy: 380 },
-            'NO': { cx: 520, cy: 120 }, 'IQ': { cx: 590, cy: 220 }, 'CI': { cx: 470, cy: 300 },
-            'NP': { cx: 700, cy: 200 }, 'KG': { cx: 670, cy: 180 }, 'LK': { cx: 700, cy: 280 },
-            'LB': { cx: 580, cy: 230 }, 'TR': { cx: 580, cy: 200 }, 'SO': { cx: 600, cy: 300 },
-            'PH': { cx: 780, cy: 260 }, 'PK': { cx: 680, cy: 220 }
+            'IL': { cx: 620, cy: 240 }, 'HR': { cx: 590, cy: 200 }, 'BA': { cx: 580, cy: 210 },
+            'UA': { cx: 630, cy: 160 }, 'JM': { cx: 290, cy: 250 }, 'AF': { cx: 730, cy: 210 },
+            'BT': { cx: 770, cy: 200 }, 'ZM': { cx: 610, cy: 350 }, 'AE': { cx: 650, cy: 240 },
+            'KP': { cx: 810, cy: 190 }, 'UZ': { cx: 700, cy: 180 }, 'VN': { cx: 790, cy: 240 },
+            'GY': { cx: 360, cy: 300 }, 'SG': { cx: 790, cy: 280 }, 'MY': { cx: 780, cy: 270 },
+            'BY': { cx: 610, cy: 150 }, 'HK': { cx: 770, cy: 230 }, 'MG': { cx: 640, cy: 380 },
+            'TT': { cx: 370, cy: 270 }, 'ET': { cx: 640, cy: 280 }, 'TJ': { cx: 730, cy: 190 },
+            'GN': { cx: 500, cy: 280 }, 'IS': { cx: 510, cy: 120 }, 'SR': { cx: 370, cy: 290 },
+            'ID': { cx: 810, cy: 300 }, 'KH': { cx: 790, cy: 250 }, 'MZ': { cx: 630, cy: 380 },
+            'NO': { cx: 570, cy: 120 }, 'IQ': { cx: 640, cy: 220 }, 'CI': { cx: 520, cy: 300 },
+            'NP': { cx: 750, cy: 200 }, 'KG': { cx: 720, cy: 180 }, 'LK': { cx: 750, cy: 280 },
+            'LB': { cx: 630, cy: 230 }, 'TR': { cx: 630, cy: 200 }, 'SO': { cx: 650, cy: 300 },
+            'PH': { cx: 830, cy: 260 }, 'PK': { cx: 730, cy: 220 }
         };
 
         // Mapa mundial con imagen de fondo
@@ -1524,15 +1524,12 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         // Buscar por código directo (ISO) - evitar confusiones
         if (numistaCode) {
             const directCode = numistaCode.toUpperCase();
-            // Mapeos específicos para evitar confusiones
-            if (directCode === 'CR' && issuerName && (issuerName.toLowerCase().includes('costa') || issuerName.toLowerCase().includes('rica'))) {
-                return 'CR';
-            }
-            if (directCode === 'CN' && issuerName && (issuerName.toLowerCase().includes('china') || issuerName.toLowerCase().includes('people'))) {
-                return 'CN';
-            }
-            if (directCode === 'RU' && issuerName && (issuerName.toLowerCase().includes('russia') || issuerName.toLowerCase().includes('rusia'))) {
-                return 'RU';
+            // Mapeos específicos para evitar confusiones - prioridad absoluta
+            if (issuerName) {
+                const name = issuerName.toLowerCase();
+                if (name.includes('costa') && name.includes('rica')) return 'CR';
+                if (name.includes('china') || name.includes('people')) return 'CN';
+                if (name.includes('russia') || name.includes('rusia')) return 'RU';
             }
             if (window.COUNTRIES[directCode]) {
                 return directCode;
