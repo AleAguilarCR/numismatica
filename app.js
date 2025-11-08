@@ -456,7 +456,21 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'CN': { cx: 700, cy: 220 }, 'JP': { cx: 780, cy: 220 }, 'KR': { cx: 760, cy: 210 },
             'IN': { cx: 650, cy: 250 }, 'AU': { cx: 750, cy: 400 }, 'NZ': { cx: 800, cy: 450 },
             'ZA': { cx: 540, cy: 400 }, 'EG': { cx: 550, cy: 250 }, 'MA': { cx: 470, cy: 240 },
-            'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 }
+            'DZ': { cx: 500, cy: 240 }, 'TN': { cx: 520, cy: 230 },
+            // Países adicionales faltantes
+            'IL': { cx: 570, cy: 240 }, 'HR': { cx: 540, cy: 200 }, 'BA': { cx: 530, cy: 210 },
+            'UA': { cx: 580, cy: 160 }, 'JM': { cx: 240, cy: 250 }, 'AF': { cx: 680, cy: 210 },
+            'BT': { cx: 720, cy: 200 }, 'ZM': { cx: 560, cy: 350 }, 'AE': { cx: 600, cy: 240 },
+            'KP': { cx: 760, cy: 190 }, 'UZ': { cx: 650, cy: 180 }, 'VN': { cx: 740, cy: 240 },
+            'GY': { cx: 310, cy: 300 }, 'SG': { cx: 740, cy: 280 }, 'MY': { cx: 730, cy: 270 },
+            'BY': { cx: 560, cy: 150 }, 'HK': { cx: 720, cy: 230 }, 'MG': { cx: 590, cy: 380 },
+            'TT': { cx: 320, cy: 270 }, 'ET': { cx: 590, cy: 280 }, 'TJ': { cx: 680, cy: 190 },
+            'GN': { cx: 450, cy: 280 }, 'IS': { cx: 460, cy: 120 }, 'SR': { cx: 320, cy: 290 },
+            'ID': { cx: 760, cy: 300 }, 'KH': { cx: 740, cy: 250 }, 'MZ': { cx: 580, cy: 380 },
+            'NO': { cx: 520, cy: 120 }, 'IQ': { cx: 590, cy: 220 }, 'CI': { cx: 470, cy: 300 },
+            'NP': { cx: 700, cy: 200 }, 'KG': { cx: 670, cy: 180 }, 'LK': { cx: 700, cy: 280 },
+            'LB': { cx: 580, cy: 230 }, 'TR': { cx: 580, cy: 200 }, 'SO': { cx: 600, cy: 300 },
+            'PH': { cx: 780, cy: 260 }, 'PK': { cx: 680, cy: 220 }
         };
 
         // Mapa mundial con imagen de fondo
@@ -1511,11 +1525,14 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         if (numistaCode) {
             const directCode = numistaCode.toUpperCase();
             // Mapeos específicos para evitar confusiones
-            if (directCode === 'CR' && issuerName && issuerName.toLowerCase().includes('costa')) {
+            if (directCode === 'CR' && issuerName && (issuerName.toLowerCase().includes('costa') || issuerName.toLowerCase().includes('rica'))) {
                 return 'CR';
             }
-            if (directCode === 'CN' && issuerName && issuerName.toLowerCase().includes('china')) {
+            if (directCode === 'CN' && issuerName && (issuerName.toLowerCase().includes('china') || issuerName.toLowerCase().includes('people'))) {
                 return 'CN';
+            }
+            if (directCode === 'RU' && issuerName && (issuerName.toLowerCase().includes('russia') || issuerName.toLowerCase().includes('rusia'))) {
+                return 'RU';
             }
             if (window.COUNTRIES[directCode]) {
                 return directCode;
@@ -1584,8 +1601,8 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'portugal': 'PT',
             'grecia': 'GR', 'greece': 'GR',
             'turquía': 'TR', 'turkey': 'TR',
-            'rusia': 'RU', 'russia': 'RU', 'russian': 'RU',
-            'china': 'CN', 'people\'s republic': 'CN',
+            'rusia': 'RU', 'russia': 'RU', 'russian': 'RU', 'federación rusa': 'RU', 'russian federation': 'RU',
+            'china': 'CN', 'people\'s republic': 'CN', 'república popular': 'CN', 'people republic': 'CN',
             'japón': 'JP', 'japan': 'JP',
             'corea del sur': 'KR', 'south korea': 'KR', 'korea': 'KR',
             'india': 'IN',
@@ -1602,7 +1619,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
             'bolivia': 'BO',
             'uruguay': 'UY',
             'paraguay': 'PY',
-            'costa rica': 'CR',
+            'costa rica': 'CR', 'costa-rica': 'CR', 'rica': 'CR',
             'panamá': 'PA', 'panama': 'PA',
             'guatemala': 'GT',
             'honduras': 'HN',
