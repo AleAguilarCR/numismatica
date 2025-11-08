@@ -440,20 +440,20 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        // Coordenadas de países (cx, cy) - basadas en proyección equirectangular 1000x500
+        // Coordenadas de países (cx, cy) - ajustadas +100px este, -50px norte
         const countryPositions = {
             // América del Norte
-            'US': { cx: 200, cy: 200 }, 'CA': { cx: 200, cy: 150 }, 'MX': { cx: 180, cy: 250 },
+            'US': { cx: 300, cy: 150 }, 'CA': { cx: 300, cy: 100 }, 'MX': { cx: 280, cy: 200 },
             // América Central
-            'GT': { cx: 180, cy: 270 }, 'HN': { cx: 190, cy: 275 }, 'NI': { cx: 195, cy: 280 },
-            'CR': { cx: 200, cy: 285 }, 'PA': { cx: 220, cy: 290 }, 'SV': { cx: 185, cy: 275 },
-            'CU': { cx: 220, cy: 240 }, 'JM': { cx: 230, cy: 250 }, 'DO': { cx: 250, cy: 245 },
-            'TT': { cx: 320, cy: 270 },
+            'GT': { cx: 280, cy: 220 }, 'HN': { cx: 290, cy: 225 }, 'NI': { cx: 295, cy: 230 },
+            'CR': { cx: 300, cy: 235 }, 'PA': { cx: 320, cy: 240 }, 'SV': { cx: 285, cy: 225 },
+            'CU': { cx: 320, cy: 190 }, 'JM': { cx: 330, cy: 200 }, 'DO': { cx: 350, cy: 195 },
+            'TT': { cx: 420, cy: 220 },
             // América del Sur
-            'CO': { cx: 260, cy: 300 }, 'VE': { cx: 290, cy: 280 }, 'GY': { cx: 310, cy: 290 },
-            'SR': { cx: 320, cy: 295 }, 'BR': { cx: 320, cy: 350 }, 'EC': { cx: 250, cy: 320 },
-            'PE': { cx: 270, cy: 350 }, 'BO': { cx: 290, cy: 370 }, 'PY': { cx: 310, cy: 390 },
-            'AR': { cx: 300, cy: 420 }, 'UY': { cx: 330, cy: 430 }, 'CL': { cx: 280, cy: 400 },
+            'CO': { cx: 360, cy: 250 }, 'VE': { cx: 390, cy: 230 }, 'GY': { cx: 410, cy: 240 },
+            'SR': { cx: 420, cy: 245 }, 'BR': { cx: 420, cy: 300 }, 'EC': { cx: 350, cy: 270 },
+            'PE': { cx: 370, cy: 300 }, 'BO': { cx: 390, cy: 320 }, 'PY': { cx: 410, cy: 340 },
+            'AR': { cx: 400, cy: 370 }, 'UY': { cx: 430, cy: 380 }, 'CL': { cx: 380, cy: 350 },
             // Europa Occidental
             'GB': { cx: 480, cy: 170 }, 'IE': { cx: 470, cy: 175 }, 'IS': { cx: 460, cy: 120 },
             'NO': { cx: 520, cy: 120 }, 'SE': { cx: 540, cy: 130 }, 'FI': { cx: 560, cy: 120 },
@@ -543,11 +543,11 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
                     fillColor = '#ffdd00';
                     strokeColor = '#cc9900';
                 } else if (hasMonedas) {
-                    fillColor = '#ff4444';
-                    strokeColor = '#cc2222';
+                    fillColor = '#ff0000';
+                    strokeColor = '#cc0000';
                 } else {
-                    fillColor = '#4444ff';
-                    strokeColor = '#2222cc';
+                    fillColor = '#0000ff';
+                    strokeColor = '#0000cc';
                 }
                 
                 svgContent += `
