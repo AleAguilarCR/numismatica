@@ -376,11 +376,45 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         window.scrollTo(0, 0);
     }
 
-    showWorldMap() {
+    async showWorldMap() {
         console.log('showWorldMap llamado');
-        this.renderWorldMap();
+        await this.renderWorldMap();
         this.showScreen('worldMap');
         this.setupMapDrag();
+    }
+    
+    async getCountryCoordinates(countryCodes) {
+        const coordinates = {};
+        
+        try {
+            // Usar REST Countries API para obtener coordenadas
+            const promises = countryCodes.map(async (code) => {
+                try {
+                    const response = await fetch(`https://restcountries.com/v3.1/alpha/${code}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const country = data[0];
+                        if (country && country.latlng) {
+                            const [lat, lng] = country.latlng;
+                            // Convertir lat/lng a coordenadas del mapa (1000x500)
+                            const x = ((lng + 180) / 360) * 1000;
+                            const y = ((90 - lat) / 180) * 500;
+                            coordinates[code] = { cx: Math.round(x), cy: Math.round(y) };
+                        }
+                    }
+                } catch (error) {
+                    console.log(`Error obteniendo coordenadas para ${code}:`, error.message);
+                }
+            });
+            
+            await Promise.all(promises);
+            console.log('Coordenadas obtenidas de REST Countries:', Object.keys(coordinates).length, 'países');
+            
+        } catch (error) {
+            console.log('Error general obteniendo coordenadas:', error.message);
+        }
+        
+        return coordinates;
     }
     
     setupMapDrag() {
@@ -414,7 +448,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
     }
 
-    renderWorldMap() {
+    async renderWorldMap() {
         const svg = document.getElementById('worldMapSvg');
         if (!svg) {
             console.error('SVG del mapa no encontrado');
@@ -437,11 +471,13 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         });
         
         console.log('Tipos por país:', countryTypes);
-        
         console.log('Países en el mapa:', Object.keys(countryTypes));
 
-        // Coordenadas de países (cx, cy) - ajustadas +100px este, -50px norte
-        const countryPositions = {
+        // Obtener coordenadas dinámicamente
+        const countryPositions = await this.getCountryCoordinates(Object.keys(countryTypes));
+        
+        // Coordenadas de respaldo si falla la API
+        const fallbackPositions = {
             // América del Norte
             'US': { cx: 300, cy: 150 }, 'CA': { cx: 300, cy: 100 }, 'MX': { cx: 280, cy: 200 },
             // América Central
@@ -531,7 +567,7 @@ window.CoinCollectionApp = window.CoinCollectionApp || class CoinCollectionApp {
         
         // Agregar puntos para todos los países con items
         Object.entries(countryTypes).forEach(([countryCode, types]) => {
-            const pos = countryPositions[countryCode];
+            const pos = countryPositions[countryCode] || fallbackPositions[countryCode];
             if (pos) {
                 const hasMonedas = types.moneda;
                 const hasBilletes = types.billete;
